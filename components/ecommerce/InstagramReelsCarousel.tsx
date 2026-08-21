@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Instagram,
@@ -21,11 +21,6 @@ interface ActiveReel {
   is_active: boolean;
   created_at: string;
 }
-
-// In-memory client cache
-let cachedReels: ActiveReel[] | null = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
 declare global {
   interface Window {
@@ -48,36 +43,39 @@ export default function InstagramReelsCarousel() {
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // ----------------------------------------------------
-  // 1. FETCH ACTIVE REELS
+  // 1. FETCH ACTIVE REELS IN REAL TIME (No stale cache)
   // ----------------------------------------------------
-  useEffect(() => {
-    async function loadActiveReels() {
-      const now = Date.now();
-      if (cachedReels && now - cacheTimestamp < CACHE_DURATION_MS) {
-        setReels(cachedReels);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch('/api/instagram-reels');
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
-            cachedReels = json.data;
-            cacheTimestamp = now;
-            setReels(json.data);
-          }
+  const fetchActiveReels = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/instagram-reels?_t=${Date.now()}`, {
+        cache: 'no-store',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setReels(json.data);
         }
-      } catch (err) {
-        console.error('Failed to load active Instagram reels:', err);
-      } finally {
-        setIsLoading(false);
       }
+    } catch (err) {
+      console.error('Failed to load active Instagram reels:', err);
+    } finally {
+      setIsLoading(false);
     }
-
-    loadActiveReels();
   }, []);
+
+  useEffect(() => {
+    fetchActiveReels();
+
+    // Re-fetch on tab focus or visibility change to ensure real-time sync with admin
+    const onFocus = () => fetchActiveReels();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [fetchActiveReels]);
 
   // ----------------------------------------------------
   // 2. HYDRATE ALL INSTAGRAM OEMBED WIDGETS

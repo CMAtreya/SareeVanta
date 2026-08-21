@@ -15,7 +15,9 @@ interface AdminInstagramReel {
 
 const dbPath = path.join(process.cwd(), 'lib', 'admin-instagram-reels.json');
 
-export const revalidate = 300; // Cache for 5 minutes (300 seconds)
+// Force dynamic execution for instant real-time sync with admin changes
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -24,20 +26,23 @@ export async function GET() {
     if (fs.existsSync(dbPath)) {
       const data = fs.readFileSync(dbPath, 'utf-8');
       const parsed = JSON.parse(data);
-      // Filter ONLY is_active = true and order by sort_order ASC
-      reels = parsed
-        .filter((item: AdminInstagramReel) => item.is_active)
-        .sort((a: AdminInstagramReel, b: AdminInstagramReel) => a.sort_order - b.sort_order);
+      if (Array.isArray(parsed)) {
+        // Filter ONLY is_active = true and order by sort_order ASC
+        reels = parsed
+          .filter((item: AdminInstagramReel) => item.is_active)
+          .sort((a: AdminInstagramReel, b: AdminInstagramReel) => a.sort_order - b.sort_order);
+      }
     }
 
     return NextResponse.json(
       {
         success: true,
         data: reels,
+        timestamp: Date.now(),
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         },
       }
     );
