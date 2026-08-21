@@ -173,7 +173,7 @@ export default function ProductDetailPage() {
   };
 
   // Add to Cart Action via POST /api/cart/items
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     try {
       await fetch('/api/cart/items', {
         method: 'POST',
@@ -185,11 +185,11 @@ export default function ProductDetailPage() {
           tailoringExtraINR: tailoringExtra,
         }),
       });
-    } catch (e) {
+    } catch (err) {
       console.warn('API cart items call failed, using client context');
     }
 
-    addToCart(product, quantity, selectedBlouse, tailoringExtra);
+    addToCart(product, quantity, selectedBlouse, tailoringExtra, e);
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 1500);
   };
@@ -662,6 +662,59 @@ export default function ProductDetailPage() {
         </div>
 
         {/* ==================================================== */}
+        {/* "YOU MAY ALSO LIKE" HORIZONTAL CAROUSEL              */}
+        {/* Placed ABOVE Customer Reviews with Equal Height Cards */}
+        {/* ==================================================== */}
+        <section className="mt-16 pt-12 border-t border-[#C87F4A]/20">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <span className="text-xs uppercase tracking-widest font-mono font-bold text-[#C87F4A]">
+                Complementary Handlooms
+              </span>
+              <h2 className="font-editorial text-2xl sm:text-4xl font-normal text-[#1F1B16]">
+                You May Also Like
+              </h2>
+            </div>
+
+            {/* Carousel Arrow Controls */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollCarousel('left')}
+                className="p-2.5 rounded-full bg-white border border-[#C87F4A]/30 hover:bg-[#C87F4A] hover:text-white transition-colors shadow-xs"
+                aria-label="Scroll left"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollCarousel('right')}
+                className="p-2.5 rounded-full bg-white border border-[#C87F4A]/30 hover:bg-[#C87F4A] hover:text-white transition-colors shadow-xs"
+                aria-label="Scroll right"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Horizontal Scroll Track with Equal-Dimensioned Saree Cards */}
+          <div
+            ref={carouselRef}
+            className="flex gap-6 overflow-x-auto pb-6 pt-1 scrollbar-none snap-x items-stretch"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {relatedItems.map((relProduct) => (
+              <div
+                key={relProduct.id}
+                className="w-[270px] sm:w-[300px] md:w-[320px] flex-shrink-0 snap-start flex flex-col"
+              >
+                <ProductCard product={relProduct} />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ==================================================== */}
         {/* CUSTOMER REVIEWS SECTION (Rating summary + cards)    */}
         {/* ==================================================== */}
         <section id="reviews" className="mt-16 bg-white rounded-3xl p-6 sm:p-10 border border-[#C87F4A]/25 shadow-silk">
@@ -754,54 +807,6 @@ export default function ProductDetailPage() {
                     </span>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ==================================================== */}
-        {/* "YOU MAY ALSO LIKE" HORIZONTAL CAROUSEL              */}
-        {/* ==================================================== */}
-        <section className="mt-16 pt-12 border-t border-[#C87F4A]/20">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <span className="text-xs uppercase tracking-widest font-mono font-bold text-[#C87F4A]">
-                Complementary Handlooms
-              </span>
-              <h2 className="font-editorial text-2xl sm:text-4xl font-normal text-[#1F1B16]">
-                You May Also Like
-              </h2>
-            </div>
-
-            {/* Carousel Arrow Controls */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollCarousel('left')}
-                className="p-2.5 rounded-full bg-white border border-[#C87F4A]/30 hover:bg-[#C87F4A] hover:text-white transition-colors shadow-xs"
-                aria-label="Scroll left"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollCarousel('right')}
-                className="p-2.5 rounded-full bg-white border border-[#C87F4A]/30 hover:bg-[#C87F4A] hover:text-white transition-colors shadow-xs"
-                aria-label="Scroll right"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Horizontal Scroll Track */}
-          <div
-            ref={carouselRef}
-            className="flex gap-6 overflow-x-auto pb-4 scrollbar-none snap-x"
-          >
-            {relatedItems.map((relProduct) => (
-              <div key={relProduct.id} className="min-w-[280px] sm:min-w-[320px] snap-start">
-                <ProductCard product={relProduct} />
               </div>
             ))}
           </div>

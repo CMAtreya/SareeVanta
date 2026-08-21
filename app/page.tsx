@@ -90,7 +90,7 @@ export default function HomePage() {
       desc: 'Radiant jewel tones, liquid Mysore crepes, and gossamer organzas designed to capture morning temple lamps and evening Diwali soirées.',
       link: '/products?occasion=Festive+%26+Puja',
       buttonText: 'Explore Festive Wear',
-      image: 'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1000&q=80',
+      image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1000&q=80',
       sampleWeaves: 'Mysore Silk • Paithani • Pure Organza',
       products: products.filter((p) => p.occasion === 'Festive & Puja').slice(0, 3),
     },

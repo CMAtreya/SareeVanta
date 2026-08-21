@@ -33,8 +33,8 @@ export default function AccountWishlistPage() {
     setIsLoading(false);
   }, [wishlist]);
 
-  const handleMoveToCart = (product: Product) => {
-    addToCart(product, 1);
+  const handleMoveToCart = (product: Product, e?: React.MouseEvent) => {
+    addToCart(product, 1, 'Unstitched Standard (Free)', 0, e);
     toggleWishlist(product.id);
   };
 
@@ -135,7 +135,7 @@ export default function AccountWishlistPage() {
                   {/* Move to Cart CTA */}
                   <button
                     type="button"
-                    onClick={() => handleMoveToCart(product)}
+                    onClick={(e) => handleMoveToCart(product, e)}
                     className="px-3.5 py-2 bg-[#C87F4A] hover:bg-[#B36737] text-white rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />

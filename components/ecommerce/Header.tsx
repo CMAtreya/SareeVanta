@@ -24,7 +24,7 @@ import OfferMarquee from './OfferMarquee';
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { cartCount, wishlistCount, setIsCartDrawerOpen, currency, setCurrency } = useCart();
+  const { cartCount, wishlistCount, setIsCartDrawerOpen, currency, setCurrency, cartBounced } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
@@ -488,20 +488,30 @@ export default function Header() {
 
               {/* Cart Drawer Trigger with Spring Badge */}
               <motion.button
+                id="header-cart-button"
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.92 }}
+                animate={
+                  cartBounced
+                    ? {
+                        scale: [1, 1.45, 0.85, 1.25, 1],
+                        rotate: [0, -12, 12, -6, 0],
+                      }
+                    : { scale: 1, rotate: 0 }
+                }
+                transition={{ duration: 0.5, ease: 'easeOut' }}
                 type="button"
                 onClick={() => setIsCartDrawerOpen(true)}
                 className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white/80 transition-colors focus:outline-none"
                 aria-label="Shopping Cart"
               >
-                <ShoppingBag className="w-4 h-4" />
+                <ShoppingBag className={`w-4 h-4 transition-colors ${cartBounced ? 'text-[#C87F4A]' : ''}`} />
                 <AnimatePresence>
                   {cartCount > 0 && (
                     <motion.span
                       key={`cart-${cartCount}`}
                       initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                      animate={{ scale: cartBounced ? 1.35 : 1 }}
                       exit={{ scale: 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 25 }}
                       className="absolute -top-0.5 -right-0.5 bg-[#C87F4A] text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-xs"

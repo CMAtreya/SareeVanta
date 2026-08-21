@@ -113,7 +113,7 @@ const weaveCategories: WeaveCategory[] = [
     kannadaName: 'ಪೈಠಣಿ ಮತ್ತು ಟಿಶ್ಯೂ',
     origin: 'Yeola Looms, Maharashtra',
     tagline: 'Prismatic shot-color silken tapestry with tapestry-woven peacock pallu.',
-    image: 'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=900&q=80',
+    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=900&q=80',
     accentColor: '#72202F',
     sareeCount: '22 Exclusive Drapes',
     gsm: '130 - 170 GSM (Prismatic Sheen)',

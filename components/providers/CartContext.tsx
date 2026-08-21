@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, products } from '@/lib/products';
+import FlyingCartAnimation, { FlyingItem } from '@/components/ecommerce/FlyingCartAnimation';
 
 export interface CartItem {
   product: Product;
@@ -17,6 +18,8 @@ export interface AppliedCoupon {
   description: string;
 }
 
+export type SourcePosition = { x: number; y: number } | React.MouseEvent | HTMLElement | null;
+
 interface CartContextType {
   cart: CartItem[];
   wishlist: string[];
@@ -24,7 +27,13 @@ interface CartContextType {
   isMarqueeDismissed: boolean;
   currency: string;
   setCurrency: (curr: string) => void;
-  addToCart: (product: Product, quantity?: number, blouseOption?: string, tailoringExtraINR?: number) => void;
+  addToCart: (
+    product: Product,
+    quantity?: number,
+    blouseOption?: string,
+    tailoringExtraINR?: number,
+    sourcePosition?: SourcePosition
+  ) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   toggleWishlist: (productId: string) => void;
@@ -39,6 +48,7 @@ interface CartContextType {
   couponDiscountINR: number;
   applyCoupon: (coupon: AppliedCoupon) => void;
   removeCoupon: () => void;
+  cartBounced: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -70,12 +80,69 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [currency, setCurrency] = useState('INR');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
+  // Flying items particle queue
+  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
+  const [cartBounced, setCartBounced] = useState(false);
+
+  const triggerFlyAnimation = (imageUrl: string, sourcePosition?: SourcePosition) => {
+    if (typeof window === 'undefined') return;
+
+    // Locate header shopping cart button in DOM
+    const cartEl =
+      document.getElementById('header-cart-button') ||
+      document.querySelector('[aria-label="Shopping Cart"]');
+
+    const cartRect = cartEl
+      ? cartEl.getBoundingClientRect()
+      : { left: window.innerWidth - 60, top: 25, width: 32, height: 32 };
+
+    const destX = cartRect.left + cartRect.width / 2;
+    const destY = cartRect.top + cartRect.height / 2;
+
+    let startX = window.innerWidth / 2;
+    let startY = window.innerHeight / 2;
+
+    if (sourcePosition) {
+      if ('clientX' in sourcePosition && typeof sourcePosition.clientX === 'number') {
+        startX = sourcePosition.clientX;
+        startY = sourcePosition.clientY;
+      } else if ('getBoundingClientRect' in sourcePosition && typeof sourcePosition.getBoundingClientRect === 'function') {
+        const r = sourcePosition.getBoundingClientRect();
+        startX = r.left + r.width / 2;
+        startY = r.top + r.height / 2;
+      } else if ('x' in sourcePosition && 'y' in sourcePosition) {
+        startX = sourcePosition.x;
+        startY = sourcePosition.y;
+      }
+    }
+
+    const newItem: FlyingItem = {
+      id: `fly-${Date.now()}-${Math.random()}`,
+      image: imageUrl,
+      startX,
+      startY,
+      destX,
+      destY,
+    };
+
+    setFlyingItems((prev) => [...prev, newItem]);
+  };
+
+  const handleFlightComplete = (id: string) => {
+    setFlyingItems((prev) => prev.filter((item) => item.id !== id));
+    // Trigger elastic bounce on cart icon
+    setCartBounced(true);
+    setTimeout(() => setCartBounced(false), 500);
+  };
+
   const addToCart = (
     product: Product,
     quantity = 1,
     blouseOption = 'Unstitched Standard (Free)',
-    tailoringExtraINR = 0
+    tailoringExtraINR = 0,
+    sourcePosition?: SourcePosition
   ) => {
+    // 1. Update Cart Data State
     setCart((prev) => {
       const existing = prev.find(
         (item) => item.product.id === product.id && item.blouseOption === blouseOption
@@ -89,7 +156,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { product, quantity, blouseOption, tailoringExtraINR }];
     });
-    setIsCartDrawerOpen(true);
+
+    // 2. Trigger silk-flight animation to Cart button (WITHOUT opening drawer)
+    const productImage = product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
+    triggerFlyAnimation(productImage, sourcePosition);
   };
 
   const removeFromCart = (productId: string) => {
@@ -168,9 +238,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         couponDiscountINR,
         applyCoupon,
         removeCoupon,
+        cartBounced,
       }}
     >
       {children}
+      {/* Global Flying Saree to Cart Particles */}
+      <FlyingCartAnimation items={flyingItems} onComplete={handleFlightComplete} />
     </CartContext.Provider>
   );
 }

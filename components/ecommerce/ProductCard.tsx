@@ -28,7 +28,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product, 1);
+    addToCart(product, 1, 'Unstitched Standard (Free)', 0, e);
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 1500);
   };
@@ -44,7 +44,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div
-      className="group relative flex flex-col bg-white rounded-2xl overflow-hidden border border-[#C87F4A]/20 transition-all duration-500 hover:shadow-silk-lg hover:border-[#C87F4A]/50"
+      className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-[#C87F4A]/20 transition-all duration-500 hover:shadow-silk-lg hover:border-[#C87F4A]/50"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

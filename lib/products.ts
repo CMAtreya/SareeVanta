@@ -88,7 +88,7 @@ export const products: Product[] = [
         hex: '#D4AF37',
         images: [
           'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1200&q=85',
-          'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1200&q=85',
+          'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
         ],
       },
     ],
@@ -170,7 +170,7 @@ export const products: Product[] = [
         name: 'Rani Pink & Gold',
         hex: '#C2185B',
         images: [
-          'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1200&q=85',
+          'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
           'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85',
         ],
       },
@@ -253,7 +253,7 @@ export const products: Product[] = [
     stockCount: 4,
     images: [
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1200&q=85',
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Full Warp Real Zari Ribbon',
     blousePiece: 'Included (0.9m Contrast Brocade)',
@@ -280,7 +280,7 @@ export const products: Product[] = [
     colorHex: '#4A154B',
     stockCount: 2,
     images: [
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Tested Pure Gold Tapestry Weft',
@@ -308,7 +308,7 @@ export const products: Product[] = [
     colorHex: '#B0E0E6',
     stockCount: 3,
     images: [
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Scalloped Silver Zari Border',
@@ -364,7 +364,7 @@ export const products: Product[] = [
     colorHex: '#C2185B',
     stockCount: 2,
     images: [
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: '57% Silver / 24K Gold Plated',
@@ -451,7 +451,7 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
     image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
     thumbnails: [
       'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
     ],
@@ -466,7 +466,7 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
       'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=300&q=80',
     ],
   },
   {
@@ -479,7 +479,7 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=300&q=80',
     ],
   },
   {
@@ -487,9 +487,9 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
     name: 'Organza',
     desc: 'Gossamer Sheer & Silver Scallops',
     count: '24 Designs',
-    image: 'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=800&q=80',
     thumbnails: [
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
@@ -503,7 +503,7 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
     image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
     thumbnails: [
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
-      'https://images.unsplash.com/photo-1610030469668-93530c17b58f?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
     ],
