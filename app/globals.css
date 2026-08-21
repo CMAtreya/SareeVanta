@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-cormorant: 'Cormorant Garamond', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --bg-ivory: #FAF3E4;
+  --color-terracotta: #C87F4A;
+  --color-charcoal: #1C1A18;
+  --color-gold: #C49746;
+}
+
+/* Lenis Recommended CSS */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* Base Aesthetics */
+body {
+  background-color: var(--bg-ivory);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  selection-background-color: #C87F4A;
+  selection-color: #FFFFFF;
+}
+
+::selection {
+  background-color: #C87F4A;
+  color: #FFFFFF;
+}
+
+/* Custom Heritage Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #FAF3E4;
+}
+::-webkit-scrollbar-thumb {
+  background: #C87F4A;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #944D26;
+}
+
+/* Royal Zari Shimmer Utility */
+.zari-border {
+  border-image: linear-gradient(to right, #C49746, #FAF3E4, #C49746) 1;
+}
+
+.zari-gradient-text {
+  background: linear-gradient(135deg, #A97C2F 0%, #C49746 50%, #865E1E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.silk-shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    rgba(250, 243, 228, 0) 0%,
+    rgba(200, 127, 74, 0.08) 50%,
+    rgba(250, 243, 228, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 4s infinite linear;
+}
+
+/* Editorial Serif Headings */
+h1, h2, h3, .font-editorial {
+  font-family: var(--font-cormorant), var(--font-serif), serif;
+  letter-spacing: -0.01em;
+}
+
+/* Subtle Glassmorphism for Luxury UI */
+.luxury-glass {
+  background: rgba(250, 243, 228, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(200, 127, 74, 0.15);
+}
+
+.luxury-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(200, 127, 74, 0.12);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.luxury-card:hover {
+  border-color: rgba(200, 127, 74, 0.4);
+  box-shadow: 0 20px 40px -15px rgba(200, 127, 74, 0.12);
+  transform: translateY(-3px);
+}
+
+/* Pattern Overlay */
+.mysore-pattern {
+  background-image: radial-gradient(rgba(200, 127, 74, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}

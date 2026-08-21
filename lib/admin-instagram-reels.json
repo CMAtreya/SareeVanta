@@ -1,0 +1,32 @@
+[
+  {
+    "id": "reel-1787302548005",
+    "url": "https://www.instagram.com/reel/DbYZ9ggSJET/",
+    "shortcode": "DbYZ9ggSJET",
+    "caption": "Upgrade your festive wardrobe without breaking the bank. Our latest Ashada Sale feature brings you a magnificent Blended Silk Saree in a deep, rich dark purple, beautifully paired with a vibrant yellow contrast.",
+    "thumbnail_url": null,
+    "sort_order": 2,
+    "is_active": true,
+    "created_at": "2026-08-21T08:55:48.005Z"
+  },
+  {
+    "id": "reel-1787302787852",
+    "url": "https://www.instagram.com/reel/DbIG25kSA1d/",
+    "shortcode": "DbIG25kSA1d",
+    "caption": "A pure cotton drape in the classic contrast of crisp white and deep black, elevated by intricate Baluchari motifs in rich green and black. But the secret hero of this drape? The grey contrast blouse—effortlessly blending the sharp black borders with the pristine white body for a perfectly balanced, sophisticated look.",
+    "thumbnail_url": "blob:http://localhost:3001/e307634b-2b1f-4536-9af9-d3a503acd38f",
+    "sort_order": 1,
+    "is_active": true,
+    "created_at": "2026-08-21T08:59:47.852Z"
+  },
+  {
+    "id": "reel-6",
+    "url": "https://www.instagram.com/reel/DbbJg1Dy2z6/",
+    "shortcode": "DbbJg1Dy2z6",
+    "caption": "Cream Blended Raw Silk with Warli Art border and short striped black pallu ✨",
+    "thumbnail_url": null,
+    "sort_order": 3,
+    "is_active": true,
+    "created_at": "2026-08-21T10:45:00.000Z"
+  }
+]
