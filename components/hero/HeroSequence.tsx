@@ -433,7 +433,7 @@ export default function HeroSequence() {
         >
           <div className="max-w-md sm:max-w-lg bg-[#FAF3E4]/90 backdrop-blur-md rounded-2xl p-7 sm:p-9 border border-[#B8892B]/30 shadow-silk-lg">
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-[#B8892B] font-mono font-semibold mb-2">
-              <span>02 • 24K Tested Zari Metallurgy</span>
+              <span>02 • 100% Tested Pure Zari Heritage</span>
             </div>
 
             <h2 className="font-editorial text-3xl sm:text-4xl lg:text-5xl text-[#1F1B16] font-normal leading-tight mb-3">

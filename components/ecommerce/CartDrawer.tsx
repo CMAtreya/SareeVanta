@@ -124,7 +124,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                       <span className="text-[10px] font-mono uppercase text-[#773D21] block mt-0.5">
-                        {item.product.weave} • {item.blouseOption || 'Unstitched Standard'}
+                        {item.product.weave} • Pure Silk
                       </span>
                     </div>
 

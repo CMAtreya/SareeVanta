@@ -76,7 +76,7 @@ export default function TrustSection() {
               Complimentary Fall & Pico
             </h3>
             <p className="text-xs text-stone-300 leading-relaxed">
-              Every heirloom saree arrives ready-to-wear with premium hand-stitched fall, rolled pico edging, and optional custom bridal blouse tailoring.
+              Every heirloom saree arrives ready-to-wear with premium hand-stitched fall and rolled interlocking pico edging.
             </p>
           </div>
 
@@ -122,7 +122,7 @@ export default function TrustSection() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-stone-300">
                   <CheckCircle2 className="w-4 h-4 text-[#C87F4A]" />
-                  <span>Custom blouse tailoring on site</span>
+                  <span>Insured tamper-proof security delivery</span>
                 </div>
               </div>
             </div>

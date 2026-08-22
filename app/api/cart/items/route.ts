@@ -4,7 +4,7 @@ import { products } from '@/lib/products';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { productId, quantity = 1, blouseOption = 'Unstitched Standard (Free)', tailoringExtraINR = 0 } = body;
+    const { productId, quantity = 1, blouseOption, tailoringExtraINR = 0 } = body;
 
     const product = products.find((p) => p.id === productId);
     if (!product) {

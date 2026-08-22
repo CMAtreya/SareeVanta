@@ -61,15 +61,6 @@ export default function ProductDetailPage() {
 
   // Purchase States
   const [quantity, setQuantity] = useState(1);
-  const [selectedBlouse, setSelectedBlouse] = useState('Unstitched Standard (Free)');
-  const [tailoringExtra, setTailoringExtra] = useState(0);
-  const [isTailoringModalOpen, setIsTailoringModalOpen] = useState(false);
-  const [tailoringSpecs, setTailoringSpecs] = useState({
-    bust: '36',
-    waist: '30',
-    sleeveLength: '10',
-    neckStyle: 'Classic Round U-Back',
-  });
   const [addedAnimation, setAddedAnimation] = useState(false);
 
   // Accordion State
@@ -83,6 +74,9 @@ export default function ProductDetailPage() {
   const toggleAccordion = (key: string) => {
     setOpenAccordions((prev) => ({ ...prev, [key]: !prev[key] }));
   };
+
+  // More Information vs More Info Tab State
+  const [infoTab, setInfoTab] = useState<'moreInformation' | 'moreInfo'>('moreInformation');
 
   // Reviews State
   const [reviews, setReviews] = useState<Review[]>(initialProduct.reviewsList || []);
@@ -161,7 +155,7 @@ export default function ProductDetailPage() {
   };
 
   const inWishlist = isInWishlist(product.id);
-  const totalPriceINR = (product.priceINR + tailoringExtra) * quantity;
+  const totalPriceINR = product.priceINR * quantity;
   const stock = product.stockCount ?? 2;
 
   const formatPrice = (inr: number) => {
@@ -181,15 +175,13 @@ export default function ProductDetailPage() {
         body: JSON.stringify({
           productId: product.id,
           quantity,
-          blouseOption: selectedBlouse,
-          tailoringExtraINR: tailoringExtra,
         }),
       });
     } catch (err) {
       console.warn('API cart items call failed, using client context');
     }
 
-    addToCart(product, quantity, selectedBlouse, tailoringExtra, e);
+    addToCart(product, quantity, undefined, 0, e);
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 1500);
   };
@@ -366,48 +358,53 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Price Row with Currency & Tax Guarantee */}
-            <div className="p-4 rounded-2xl bg-white border border-[#C87F4A]/25 flex items-baseline justify-between shadow-sm">
-              <div className="flex flex-col">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-editorial text-3xl sm:text-4xl font-bold text-[#1F1B16]">
-                    {formatPrice(totalPriceINR)}
+            {/* Price Row with Scratched Price Above Discounted Price & Discount Percentage Beside it */}
+            {(() => {
+              const originalUnitPrice = product.originalPriceINR && product.originalPriceINR > product.priceINR
+                ? product.originalPriceINR
+                : Math.round((product.priceINR * 1.25) / 100) * 100;
+              const discountPercent = Math.round(((originalUnitPrice - product.priceINR) / originalUnitPrice) * 100);
+
+              return (
+                <div className="p-4 rounded-2xl bg-white border border-[#C87F4A]/25 flex items-center justify-between shadow-sm">
+                  <div className="flex flex-col">
+                    {/* Scratched Original Price Above Discounted Price with Discount Percentage Beside it */}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm sm:text-base text-stone-400 line-through font-sans">
+                        {formatPrice(originalUnitPrice * quantity)}
+                      </span>
+                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        {discountPercent}% OFF
+                      </span>
+                    </div>
+
+                    {/* Discounted / Selling Price */}
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-editorial text-3xl sm:text-4xl font-bold text-[#1F1B16]">
+                        {formatPrice(totalPriceINR)}
+                      </span>
+                      <span className="text-xs text-stone-500 font-sans">
+                        (Incl. of all taxes)
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="text-[10px] sm:text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
+                    GST & Customs Included
                   </span>
-                  {product.originalPriceINR && (
-                    <span className="text-sm text-stone-400 line-through font-editorial">
-                      {formatPrice(product.originalPriceINR * quantity)}
-                    </span>
-                  )}
                 </div>
-                {tailoringExtra > 0 && (
-                  <span className="text-[11px] font-mono text-[#773D21] mt-0.5">
-                    Includes {formatPrice(tailoringExtra * quantity)} Bespoke Tailoring
-                  </span>
-                )}
-              </div>
+              );
+            })()}
 
-              <span className="text-[10px] sm:text-[11px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full font-semibold border border-emerald-200">
-                GST & Customs Included
-              </span>
-            </div>
-
-            {/* Weave / Fabric / Blouse-Included Spec Chips */}
+            {/* Weave Tradition & Fabric Spec Chips */}
             <div className="grid grid-cols-2 gap-2.5 text-xs font-sans">
-              <div className="p-2.5 bg-white/70 rounded-xl border border-[#C87F4A]/20">
-                <span className="text-[10px] uppercase font-mono text-stone-500 block">Weave & Craft</span>
-                <span className="font-semibold text-[#1F1B16]">{product.weave} Tradition</span>
+              <div className="p-3 bg-white/80 rounded-xl border border-[#C87F4A]/20 shadow-xs">
+                <span className="text-[10px] uppercase font-mono text-stone-500 block">Weave Tradition</span>
+                <span className="font-semibold text-[#1F1B16]">{product.weave}</span>
               </div>
-              <div className="p-2.5 bg-white/70 rounded-xl border border-[#C87F4A]/20">
-                <span className="text-[10px] uppercase font-mono text-stone-500 block">Fabric Purity</span>
+              <div className="p-3 bg-white/80 rounded-xl border border-[#C87F4A]/20 shadow-xs">
+                <span className="text-[10px] uppercase font-mono text-stone-500 block">Fabric</span>
                 <span className="font-semibold text-[#1F1B16]">{product.fabric}</span>
-              </div>
-              <div className="p-2.5 bg-white/70 rounded-xl border border-[#C87F4A]/20">
-                <span className="text-[10px] uppercase font-mono text-stone-500 block">Blouse Piece</span>
-                <span className="font-semibold text-[#1F1B16]">Included 0.8m Running</span>
-              </div>
-              <div className="p-2.5 bg-white/70 rounded-xl border border-[#C87F4A]/20">
-                <span className="text-[10px] uppercase font-mono text-stone-500 block">Zari Metallurgy</span>
-                <span className="font-semibold text-[#1F1B16]">{product.zariGrade}</span>
               </div>
             </div>
 
@@ -458,12 +455,12 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
-            {/* Quantity Stepper & Blouse Customization Button */}
+            {/* Quantity Stepper */}
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-[#1F1B16] flex items-center justify-between">
                 <span>Select Quantity:</span>
                 <span className="text-[11px] font-mono text-stone-500 font-normal">
-                  Standard 5.5m Saree + 0.8m Blouse Piece
+                  Standard 5.5m Pure Silk Saree
                 </span>
               </label>
 
@@ -479,7 +476,7 @@ export default function ProductDetailPage() {
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="w-10 text-center font-mono font-bold text-sm text-[#1F1B16]">
+                  <span className="w-12 text-center font-mono font-bold text-sm text-[#1F1B16]">
                     {quantity}
                   </span>
                   <button
@@ -492,26 +489,6 @@ export default function ProductDetailPage() {
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
-
-                {/* Optional Custom Blouse Tailoring Trigger */}
-                <button
-                  type="button"
-                  onClick={() => setIsTailoringModalOpen(true)}
-                  className="flex-1 py-2.5 px-3 bg-white/70 border border-[#C87F4A]/30 hover:border-[#C87F4A] rounded-xl text-left flex items-center justify-between transition-colors group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Scissors className="w-3.5 h-3.5 text-[#C87F4A]" />
-                    <div>
-                      <span className="text-xs font-semibold text-[#1F1B16] block group-hover:text-[#C87F4A]">
-                        {selectedBlouse}
-                      </span>
-                      <span className="text-[10px] text-stone-500 font-sans">
-                        Click to customize measurements
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-3.5 h-3.5 text-stone-400 group-hover:text-[#C87F4A]" />
-                </button>
               </div>
             </div>
 
@@ -563,100 +540,166 @@ export default function ProductDetailPage() {
                 <Sparkles className="w-4 h-4 text-[#C87F4A]" />
                 <span>Try This on AI Avatar Studio</span>
               </Link>
-            </div>
-          </div>
-        </div>
 
-        {/* ==================================================== */}
-        {/* BELOW THE FOLD: ACCORDION FABRIC & CARE DETAILS      */}
-        {/* ==================================================== */}
-        <div className="mt-16 bg-white rounded-3xl p-6 sm:p-10 border border-[#C87F4A]/25 shadow-silk">
-          <h2 className="font-editorial text-2xl sm:text-3xl font-normal text-[#1F1B16] mb-6">
-            Fabric, Provenance & Preservation Details
-          </h2>
-
-          <div className="divide-y divide-[#C87F4A]/15">
-            {/* Accordion 1: Fabric & Weave Details */}
-            <div className="py-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('fabric')}
-                className="flex items-center justify-between w-full text-left font-editorial text-lg font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors"
-              >
-                <span>1. Fabric Architecture & Weaving Craft</span>
-                {openAccordions.fabric ? <ChevronUp className="w-5 h-5 text-[#C87F4A]" /> : <ChevronDown className="w-5 h-5" />}
-              </button>
-
-              {openAccordions.fabric && (
-                <div className="mt-3 text-xs sm:text-sm text-stone-700 font-sans leading-relaxed space-y-2">
-                  <p>{product.description}</p>
-                  <p>
-                    Woven with 100% natural Karnataka Mulberry Silk and twisted yarn, imparting the legendary fluid crepe drape that gracefully accentuates formal and bridal movements.
-                  </p>
+              {/* ==================================================== */}
+              {/* INNOVATIVE PRODUCT SPECIFICATIONS & INFO TABS         */}
+              {/* Placed Directly Below "Try This on AI Avatar Studio"  */}
+              {/* ==================================================== */}
+              <section className="mt-8 bg-white rounded-3xl p-5 sm:p-7 border border-[#C87F4A]/25 shadow-silk">
+                {/* Centered Pill Tab Switcher */}
+                <div className="flex items-center justify-center gap-3 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setInfoTab('moreInformation')}
+                    className={`px-5 py-2 rounded-full text-xs sm:text-sm font-sans font-semibold transition-all duration-200 ${
+                      infoTab === 'moreInformation'
+                        ? 'bg-[#A33B45] text-white shadow-md'
+                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                    }`}
+                  >
+                    Product Information
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInfoTab('moreInfo')}
+                    className={`px-5 py-2 rounded-full text-xs sm:text-sm font-sans font-semibold transition-all duration-200 ${
+                      infoTab === 'moreInfo'
+                        ? 'bg-[#A33B45] text-white shadow-md'
+                        : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                    }`}
+                  >
+                    More Info
+                  </button>
                 </div>
-              )}
-            </div>
 
-            {/* Accordion 2: Zari Metallurgy & Loom Traceability */}
-            <div className="py-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('zari')}
-                className="flex items-center justify-between w-full text-left font-editorial text-lg font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors"
-              >
-                <span>2. Zari Metallurgy & Loom Provenance</span>
-                {openAccordions.zari ? <ChevronUp className="w-5 h-5 text-[#C87F4A]" /> : <ChevronDown className="w-5 h-5" />}
-              </button>
+                {/* Tab 1: Detailed Specifications Matrix */}
+                {infoTab === 'moreInformation' && (
+                  <div className="animate-fade-in">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0 border-t border-stone-100">
+                      {/* Left Column */}
+                      <div className="divide-y divide-stone-100">
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Fabric:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              {product.fabric || 'Pure Mulberry Silk'}
+                            </span>
+                          </div>
+                        </div>
 
-              {openAccordions.zari && (
-                <div className="mt-3 text-xs sm:text-sm text-stone-700 font-sans leading-relaxed space-y-2">
-                  <p>
-                    <strong>Zari Composition:</strong> {product.zariGrade}. Guaranteed 57% silver electroplated with 24-karat pure yellow gold ribbon without synthetic copper adulteration.
-                  </p>
-                  <p>
-                    <strong>Master Loom Guild:</strong> {product.artisanCluster}. Every meter represents generational shuttle mastery passed down through 5 generations of heritage weavers.
-                  </p>
-                </div>
-              )}
-            </div>
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Weave Tradition:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              {product.weave}
+                            </span>
+                          </div>
+                        </div>
 
-            {/* Accordion 3: Wash & Cedar Storage Care */}
-            <div className="py-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('care')}
-                className="flex items-center justify-between w-full text-left font-editorial text-lg font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors"
-              >
-                <span>3. Silk Care & Cedar Storage Guidelines</span>
-                {openAccordions.care ? <ChevronUp className="w-5 h-5 text-[#C87F4A]" /> : <ChevronDown className="w-5 h-5" />}
-              </button>
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Pallu Colour:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              {product.color}
+                            </span>
+                          </div>
+                        </div>
 
-              {openAccordions.care && (
-                <div className="mt-3 text-xs sm:text-sm text-stone-700 font-sans leading-relaxed space-y-2">
-                  <p>✦ <strong>Dry Clean Exclusively:</strong> Pure silk with real metallic zari must only be professionally dry cleaned.</p>
-                  <p>✦ <strong>Breathable Muslin Wrap:</strong> Store in acid-free unbleached cotton/muslin bags with natural cedar blocks. Avoid plastic wrapping.</p>
-                  <p>✦ <strong>Fold Rotation:</strong> Air the saree and change the fold lines every 4-6 months to prevent creasing on metallic zari wefts.</p>
-                </div>
-              )}
-            </div>
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Artisan Cluster:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              {product.artisanCluster}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-            {/* Accordion 4: Shipping, Fall & Pico Guarantee */}
-            <div className="py-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion('shipping')}
-                className="flex items-center justify-between w-full text-left font-editorial text-lg font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors"
-              >
-                <span>4. Complimentary Fall, Pico & Express Shipping</span>
-                {openAccordions.shipping ? <ChevronUp className="w-5 h-5 text-[#C87F4A]" /> : <ChevronDown className="w-5 h-5" />}
-              </button>
+                      {/* Right Column */}
+                      <div className="divide-y divide-stone-100">
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Color:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              {product.color}
+                            </span>
+                          </div>
+                        </div>
 
-              {openAccordions.shipping && (
-                <div className="mt-3 text-xs sm:text-sm text-stone-700 font-sans leading-relaxed space-y-2">
-                  <p>✦ <strong>Complimentary Ready-to-Drape:</strong> Includes hand-stitched fall and interlocking pico border finish at no extra charge.</p>
-                  <p>✦ <strong>Insured Express Courier:</strong> Dispatched via BlueDart / DHL Express in tamper-proof waterproof security boxes within 2-4 business days.</p>
-                </div>
-              )}
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Zari:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-4 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              Pure Silk
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Saree Dimension:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              5.5 M X 1.14 M
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Wash Care:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              Dryclean
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 2: More Info (Provenance, Silk Mark & Care Details) */}
+                {infoTab === 'moreInfo' && (
+                  <div className="animate-fade-in pt-2">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D9A876]/30 space-y-2">
+                        <h4 className="font-editorial text-sm font-bold text-stone-900 flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-[#A33B45]" />
+                          <span>Loom Provenance & Certification</span>
+                        </h4>
+                        <p className="text-xs text-stone-700 leading-relaxed">
+                          Woven in the legendary handlooms of {product.artisanCluster}. Each piece is certified by Central Silk Board with Silk Mark hologram authentication guaranteeing 100% natural silk fibers.
+                        </p>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D9A876]/30 space-y-2">
+                        <h4 className="font-editorial text-sm font-bold text-stone-900 flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-[#A33B45]" />
+                          <span>Preservation & Cedar Storage</span>
+                        </h4>
+                        <p className="text-xs text-stone-700 leading-relaxed">
+                          Store wrapped in breathable unbleached cotton/muslin bags with natural cedar blocks. Rotate fold lines every 4-6 months to maintain generational luster.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
             </div>
           </div>
         </div>
@@ -890,84 +933,6 @@ export default function ProductDetailPage() {
                   Submit Patron Review
                 </button>
               </form>
-            </div>
-          </div>
-        )}
-
-        {/* Custom Tailoring Modal */}
-        {isTailoringModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setIsTailoringModalOpen(false)}
-            />
-            <div className="relative bg-[#FAF3E4] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-[#C87F4A]/30 z-10 text-[#1F1B16] space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#C87F4A]/20">
-                <div className="flex items-center gap-2">
-                  <Scissors className="w-5 h-5 text-[#C87F4A]" />
-                  <h3 className="font-editorial text-xl font-bold">
-                    Bespoke Tailoring Specifications
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsTailoringModalOpen(false)}
-                  className="p-1 text-stone-500 hover:text-black"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-xs font-sans">
-                <div>
-                  <label className="font-semibold text-stone-700 block mb-1">Bust (Inches)</label>
-                  <input
-                    type="number"
-                    value={tailoringSpecs.bust}
-                    onChange={(e) => setTailoringSpecs({ ...tailoringSpecs, bust: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-stone-700 block mb-1">Waist (Inches)</label>
-                  <input
-                    type="number"
-                    value={tailoringSpecs.waist}
-                    onChange={(e) => setTailoringSpecs({ ...tailoringSpecs, waist: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-stone-700 block mb-1">Sleeve Length (Inches)</label>
-                  <input
-                    type="number"
-                    value={tailoringSpecs.sleeveLength}
-                    onChange={(e) => setTailoringSpecs({ ...tailoringSpecs, sleeveLength: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="font-semibold text-stone-700 block mb-1">Neck & Back Style</label>
-                  <select
-                    value={tailoringSpecs.neckStyle}
-                    onChange={(e) => setTailoringSpecs({ ...tailoringSpecs, neckStyle: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs"
-                  >
-                    <option>Classic Round U-Back</option>
-                    <option>Royal Sweetheart Neck</option>
-                    <option>Temple Deep V-Back with Latkan</option>
-                    <option>Elbow Sleeve Brocade Cut</option>
-                  </select>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsTailoringModalOpen(false)}
-                className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-3 rounded-sm text-xs font-bold uppercase tracking-widest shadow-md"
-              >
-                Confirm Measurements & Save
-              </button>
             </div>
           </div>
         )}

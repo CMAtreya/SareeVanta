@@ -34,7 +34,7 @@ export default function AccountWishlistPage() {
   }, [wishlist]);
 
   const handleMoveToCart = (product: Product, e?: React.MouseEvent) => {
-    addToCart(product, 1, 'Unstitched Standard (Free)', 0, e);
+    addToCart(product, 1, undefined, 0, e);
     toggleWishlist(product.id);
   };
 

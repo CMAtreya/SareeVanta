@@ -123,12 +123,10 @@ export default function OrderTrackingPage() {
           {
             product: products[0],
             quantity: 1,
-            blouseOption: 'Unstitched Standard (Free)',
           },
           {
             product: products[1],
             quantity: 1,
-            blouseOption: 'Custom Tailored Bespoke (+₹1,800)',
           },
         ],
         subtotalINR: 94300,
@@ -286,7 +284,7 @@ export default function OrderTrackingPage() {
                       {item.product.title}
                     </h4>
                     <span className="text-[10px] text-stone-500 font-sans block">
-                      Qty: {item.quantity} • {item.blouseOption || 'Unstitched'}
+                      Qty: {item.quantity} • Pure Silk
                     </span>
                   </div>
                   <span className="font-mono text-xs font-bold text-[#1F1B16] flex-shrink-0">

@@ -210,16 +210,14 @@ function OrderConfirmationContent() {
                       priceINR: 28500,
                       image:
                         'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80',
-                      blouse: 'Unstitched Standard (Free)',
                       qty: 1,
                     },
                     {
                       title: 'Kanchipuram Heavy Korvai Bridal Silk Saree',
                       weave: 'Kanchipuram',
-                      priceINR: 65800,
+                      priceINR: 64000,
                       image:
                         'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=400&q=80',
-                      blouse: 'Custom Tailored Bespoke (+₹1,800)',
                       qty: 1,
                     },
                   ].map((item, idx) => (
@@ -241,7 +239,7 @@ function OrderConfirmationContent() {
                             {item.title}
                           </h4>
                           <span className="text-[11px] text-stone-500 font-sans block mt-0.5">
-                            Qty: {item.qty} • {item.blouse}
+                            Qty: {item.qty} • Pure Silk
                           </span>
                         </div>
                       </div>

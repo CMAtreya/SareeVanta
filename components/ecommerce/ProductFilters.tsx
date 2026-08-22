@@ -201,7 +201,7 @@ export default function ProductFilters({
         )}
       </div>
 
-      {/* 3. Price Range Slider & Preset Pills */}
+      {/* 3. Dual Drag Price Range Slider & Preset Chips */}
       <div className="border-b border-[#C87F4A]/15 pb-4">
         <button
           type="button"
@@ -216,52 +216,117 @@ export default function ProductFilters({
           )}
         </button>
 
-        {openSections.price && (
-          <div className="mt-3 space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-stone-700">
-              <span className="bg-white/80 px-2 py-1 rounded border border-stone-200">
-                ₹{priceRange[0].toLocaleString('en-IN')}
-              </span>
-              <span className="text-stone-400 text-[10px]">to</span>
-              <span className="bg-white/80 px-2 py-1 rounded border border-stone-200">
-                ₹{priceRange[1].toLocaleString('en-IN')}
-              </span>
-            </div>
+        {openSections.price && (() => {
+          const roundPrice = (val: number) => Math.round(val / 1000) * 1000;
+          const minPercent = Math.min(100, Math.max(0, ((priceRange[0] - 10000) / (100000 - 10000)) * 100));
+          const maxPercent = Math.min(100, Math.max(0, ((priceRange[1] - 10000) / (100000 - 10000)) * 100));
 
-            <input
-              type="range"
-              min="10000"
-              max="100000"
-              step="2500"
-              value={priceRange[1]}
-              onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value, 10)])}
-              className="w-full accent-[#C87F4A] cursor-pointer"
-            />
+          const handleMinChange = (val: number) => {
+            const rounded = roundPrice(val);
+            const safeMin = Math.min(Math.max(10000, rounded), priceRange[1] - 2000);
+            setPriceRange([safeMin, priceRange[1]]);
+          };
 
-            {/* Quick Price Preset Chips */}
-            <div className="grid grid-cols-2 gap-1.5 pt-1">
-              {[
-                { label: 'Under ₹25k', range: [10000, 25000] },
-                { label: '₹25k – ₹50k', range: [25000, 50000] },
-                { label: '₹50k – ₹75k', range: [50000, 75000] },
-                { label: 'Above ₹75k', range: [75000, 100000] },
-              ].map((preset, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setPriceRange(preset.range as [number, number])}
-                  className={`text-[10px] font-sans py-1 px-2 rounded-md border text-center transition-all ${
-                    priceRange[0] === preset.range[0] && priceRange[1] === preset.range[1]
-                      ? 'bg-[#C87F4A] text-white border-[#C87F4A] font-semibold'
-                      : 'bg-white/70 text-stone-600 border-stone-200 hover:border-[#C87F4A]'
-                  }`}
-                >
-                  {preset.label}
-                </button>
-              ))}
+          const handleMaxChange = (val: number) => {
+            const rounded = roundPrice(val);
+            const safeMax = Math.max(Math.min(100000, rounded), priceRange[0] + 2000);
+            setPriceRange([priceRange[0], safeMax]);
+          };
+
+          return (
+            <div className="mt-3 space-y-3.5">
+              {/* Min & Max Price Display Box */}
+              <div className="flex items-center justify-between text-xs font-mono text-stone-700">
+                <div className="flex flex-col">
+                  <span className="text-[9px] uppercase font-sans text-stone-400 font-semibold mb-0.5">Starting Price</span>
+                  <span className="bg-white px-2.5 py-1 rounded-md border border-[#C87F4A]/30 font-bold text-[#7A1C30]">
+                    ₹{priceRange[0].toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <span className="text-stone-400 text-xs font-serif mt-3">—</span>
+                <div className="flex flex-col items-end">
+                  <span className="text-[9px] uppercase font-sans text-stone-400 font-semibold mb-0.5">Ending Price</span>
+                  <span className="bg-white px-2.5 py-1 rounded-md border border-[#C87F4A]/30 font-bold text-[#7A1C30]">
+                    ₹{priceRange[1].toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Dual Range Drag Slider Track */}
+              <div className="relative w-full h-8 flex items-center select-none py-2">
+                {/* Background Track */}
+                <div className="absolute left-0 right-0 h-2 bg-stone-200 rounded-full" />
+                {/* Active Highlighted Range Bar */}
+                <div
+                  className="absolute h-2 bg-gradient-to-r from-[#7A1C30] via-[#A33B45] to-[#C87F4A] rounded-full shadow-xs"
+                  style={{
+                    left: `${minPercent}%`,
+                    width: `${Math.max(0, maxPercent - minPercent)}%`,
+                  }}
+                />
+
+                {/* Starting Price Drag Thumb */}
+                <input
+                  type="range"
+                  min="10000"
+                  max="100000"
+                  step="1000"
+                  value={priceRange[0]}
+                  onChange={(e) => handleMinChange(parseInt(e.target.value, 10))}
+                  className="absolute w-full h-2 appearance-none bg-transparent pointer-events-none cursor-pointer z-20 
+                    [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
+                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 
+                    [&::-webkit-slider-thumb]:border-[#7A1C30] [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab
+                    [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 
+                    [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 
+                    [&::-moz-range-thumb]:border-[#7A1C30] [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-grab"
+                  aria-label="Starting price drag slider"
+                />
+
+                {/* Ending Price Drag Thumb */}
+                <input
+                  type="range"
+                  min="10000"
+                  max="100000"
+                  step="1000"
+                  value={priceRange[1]}
+                  onChange={(e) => handleMaxChange(parseInt(e.target.value, 10))}
+                  className="absolute w-full h-2 appearance-none bg-transparent pointer-events-none cursor-pointer z-30 
+                    [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
+                    [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 
+                    [&::-webkit-slider-thumb]:border-[#C87F4A] [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-grab
+                    [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 
+                    [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 
+                    [&::-moz-range-thumb]:border-[#C87F4A] [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-grab"
+                  aria-label="Ending price drag slider"
+                />
+              </div>
+
+              {/* Rounded Off Price Preset Chips */}
+              <div className="grid grid-cols-2 gap-1.5 pt-1">
+                {[
+                  { label: 'Under ₹25k', range: [10000, 25000] },
+                  { label: '₹25k – ₹50k', range: [25000, 50000] },
+                  { label: '₹50k – ₹75k', range: [50000, 75000] },
+                  { label: 'Above ₹75k', range: [75000, 100000] },
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setPriceRange(preset.range as [number, number])}
+                    className={`text-[10px] font-sans py-1 px-2 rounded-md border text-center transition-all ${
+                      priceRange[0] === preset.range[0] && priceRange[1] === preset.range[1]
+                        ? 'bg-[#7A1C30] text-white border-[#7A1C30] font-semibold shadow-xs'
+                        : 'bg-white/70 text-stone-600 border-stone-200 hover:border-[#C87F4A]'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* 4. Fabric Types with Item Counts */}

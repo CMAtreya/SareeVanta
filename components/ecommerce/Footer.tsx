@@ -105,10 +105,10 @@ export default function Footer() {
               </div>
               <div>
                 <h3 className="font-editorial text-2xl font-bold tracking-tight text-white uppercase">
-                  Neelsareehouse
+                  NEEL SAREE HOUSE
                 </h3>
                 <span className="text-[9px] tracking-[0.28em] uppercase text-[#C87F4A] font-mono block">
-                  Mysuru • Estd. 2021
+                  A MYSURU ROYAL PRODUCT
                 </span>
               </div>
             </Link>

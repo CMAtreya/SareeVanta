@@ -16,12 +16,10 @@ export async function GET() {
         {
           product: products[0],
           quantity: 1,
-          blouseOption: 'Unstitched Standard (Free)',
         },
         {
           product: products[1],
           quantity: 1,
-          blouseOption: 'Custom Tailored Bespoke (+₹1,800)',
         },
       ],
     },
@@ -39,7 +37,6 @@ export async function GET() {
         {
           product: products[2],
           quantity: 1,
-          blouseOption: 'Unstitched Standard (Free)',
         },
       ],
     },
@@ -57,7 +54,6 @@ export async function GET() {
         {
           product: products[3],
           quantity: 1,
-          blouseOption: 'Unstitched Standard (Free)',
         },
       ],
     },

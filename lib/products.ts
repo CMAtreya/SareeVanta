@@ -31,7 +31,7 @@ export interface Product {
   colorHex: string;
   images: string[];
   zariGrade: string;
-  blousePiece: string;
+  blousePiece?: string;
   dimensions: string;
   inStock: boolean;
   stockCount?: number;
@@ -93,8 +93,7 @@ export const products: Product[] = [
       },
     ],
     zariGrade: 'Tested Pure Gold & Silver Ribbon',
-    blousePiece: 'Included (0.8m Unstitched Running Crepe)',
-    dimensions: '5.5m Saree + 0.8m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isBestseller: true,
     isBridal: true,
@@ -134,7 +133,7 @@ export const products: Product[] = [
         date: '10 Jan 2026',
         title: 'Pure understated royalty',
         comment:
-          'Exceeded all expectations. The color is deep auspicious crimson without being garish. Tailoring was done to exact blouse measurements.',
+          'Exceeded all expectations. The color is deep auspicious crimson without being garish. Fabric drape is absolutely regal.',
         verified: true,
       },
     ],
@@ -176,7 +175,6 @@ export const products: Product[] = [
       },
     ],
     zariGrade: '57% Silver / 0.6% 24K Pure Gold',
-    blousePiece: 'Included (0.8m Contrast Brocade Blouse)',
     dimensions: '6.2m Comprehensive Bridal Length',
     inStock: true,
     isBridal: true,
@@ -229,8 +227,7 @@ export const products: Product[] = [
       },
     ],
     zariGrade: 'Fine Antique Kadwa Micro-Zari',
-    blousePiece: 'Included (0.8m Brocade Blouse)',
-    dimensions: '5.5m Saree + 0.8m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isNew: true,
     description:
@@ -246,6 +243,7 @@ export const products: Product[] = [
     fabric: 'Georgette',
     occasion: 'Festive & Puja',
     priceINR: 36000,
+    originalPriceINR: 42000,
     rating: 4.9,
     reviewCount: 27,
     color: 'Champagne Gold',
@@ -256,8 +254,7 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Full Warp Real Zari Ribbon',
-    blousePiece: 'Included (0.9m Contrast Brocade)',
-    dimensions: '5.5m Saree + 0.9m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isBestseller: true,
     description:
@@ -284,7 +281,6 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Tested Pure Gold Tapestry Weft',
-    blousePiece: 'Included (0.8m Contrast Blouse)',
     dimensions: '6.0m Traditional Drape',
     inStock: true,
     isNew: true,
@@ -312,8 +308,7 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Scalloped Silver Zari Border',
-    blousePiece: 'Included (0.8m Raw Silk Blouse)',
-    dimensions: '5.5m Saree + 0.8m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isNew: true,
     description:
@@ -340,8 +335,7 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Tested Pure Gold Border Inlay',
-    blousePiece: 'Included (0.8m Unstitched Silk)',
-    dimensions: '5.5m Saree + 0.8m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isBridal: true,
     description:
@@ -368,7 +362,6 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: '57% Silver / 24K Gold Plated',
-    blousePiece: 'Included (0.8m Contrast Brocade)',
     dimensions: '6.2m Bridal Length',
     inStock: true,
     isBridal: true,
@@ -386,6 +379,7 @@ export const products: Product[] = [
     fabric: 'Pure Mulberry Silk',
     occasion: 'Daily Classic',
     priceINR: 31000,
+    originalPriceINR: 36000,
     rating: 4.8,
     reviewCount: 22,
     color: 'Peacock Teal',
@@ -396,8 +390,7 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Tested Pure Gold Ribbon',
-    blousePiece: 'Included (0.8m Running Crepe)',
-    dimensions: '5.5m Saree + 0.8m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     description:
       'Signature Mysuru royal crepe woven with Kasuti diamond motifs along the pallu and contrasting rich gold zari borders.',
@@ -423,8 +416,7 @@ export const products: Product[] = [
       'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1200&q=85',
     ],
     zariGrade: 'Fine Gold Wire Extra-Weft',
-    blousePiece: 'Included (0.8m Blouse Piece)',
-    dimensions: '5.5m Saree + 0.8m Blouse',
+    dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     description:
       'A gossamer blend of wild raw Tussar and spun mulberry silk with delicate circular gold ashrafi bootas scattered across the body.',

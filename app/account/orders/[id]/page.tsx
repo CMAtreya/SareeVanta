@@ -64,12 +64,10 @@ export default function AccountOrderDetailPage() {
       {
         product: products[0],
         quantity: 1,
-        blouseOption: 'Unstitched Standard (Free)',
       },
       {
         product: products[1],
         quantity: 1,
-        blouseOption: 'Custom Tailored Bespoke (+₹1,800)',
       },
     ],
     subtotalINR: 94300,
@@ -88,7 +86,7 @@ export default function AccountOrderDetailPage() {
 
   const handleReorder = () => {
     order.items.forEach((item) => {
-      addToCart(item.product, item.quantity, item.blouseOption);
+      addToCart(item.product, item.quantity);
     });
     setReordered(true);
     setTimeout(() => {
@@ -209,12 +207,8 @@ export default function AccountOrderDetailPage() {
                     >
                       {item.product.title}
                     </Link>
-                    <div className="flex items-center gap-1.5 text-xs text-stone-600 font-sans">
-                      <Scissors className="w-3 h-3 text-[#C87F4A]" />
-                      <span>{item.blouseOption || 'Unstitched Standard (Free)'}</span>
-                    </div>
                     <span className="text-[10px] font-mono text-emerald-800 block">
-                      Govt. Silk Mark Certified • 24K Tested Zari
+                      Govt. Silk Mark Certified • 100% Pure Silk
                     </span>
                   </div>
                 </div>

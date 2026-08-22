@@ -7,19 +7,12 @@ export async function GET() {
     {
       product: products[0],
       quantity: 1,
-      blouseOption: 'Unstitched Standard (Free)',
       tailoringExtraINR: 0,
-    },
-    {
-      product: products[1],
-      quantity: 1,
-      blouseOption: 'Custom Tailored Bespoke (+₹1,800)',
-      tailoringExtraINR: 1800,
     },
   ];
 
   const subtotal = items.reduce(
-    (sum, item) => sum + (item.product.priceINR + item.tailoringExtraINR) * item.quantity,
+    (sum, item) => sum + (item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity,
     0
   );
 

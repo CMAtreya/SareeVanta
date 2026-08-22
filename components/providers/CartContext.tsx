@@ -58,14 +58,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     {
       product: products[0],
       quantity: 1,
-      blouseOption: 'Unstitched Standard (Free)',
       tailoringExtraINR: 0,
-    },
-    {
-      product: products[1],
-      quantity: 1,
-      blouseOption: 'Custom Tailored Bespoke (+₹1,800)',
-      tailoringExtraINR: 1800,
     },
   ]);
 
@@ -138,18 +131,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const addToCart = (
     product: Product,
     quantity = 1,
-    blouseOption = 'Unstitched Standard (Free)',
+    blouseOption?: string,
     tailoringExtraINR = 0,
     sourcePosition?: SourcePosition
   ) => {
     // 1. Update Cart Data State
     setCart((prev) => {
       const existing = prev.find(
-        (item) => item.product.id === product.id && item.blouseOption === blouseOption
+        (item) => item.product.id === product.id
       );
       if (existing) {
         return prev.map((item) =>
-          item.product.id === product.id && item.blouseOption === blouseOption
+          item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity }
             : item
         );

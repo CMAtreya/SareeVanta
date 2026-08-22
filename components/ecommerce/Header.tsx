@@ -14,31 +14,115 @@ import {
   Phone,
   Sparkles,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ArrowRight,
-  Globe,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 import { weaveCategories, fabricFilters, occasionFilters } from '@/lib/products';
-import OfferMarquee from './OfferMarquee';
+
+const announcements = [
+  {
+    id: 1,
+    content: (
+      <span>
+        Additional 10% off By Using <strong className="font-bold tracking-wider">WELCOME</strong> Coupon on selected Products <span className="underline cursor-pointer hover:text-amber-200">T&C</span> Apply.
+      </span>
+    ),
+  },
+  {
+    id: 2,
+    content: (
+      <span>
+        ✦ Complimentary Insured Express Delivery Across India & 45+ Countries.
+      </span>
+    ),
+  },
+  {
+    id: 3,
+    content: (
+      <span>
+        ✦ 100% Central Silk Board Certified Pure Heirloom Handloom Silks.
+      </span>
+    ),
+  },
+  {
+    id: 4,
+    content: (
+      <span>
+        ✦ Visit Our Mysuru Flagship Heritage Salon on Sayyaji Rao Road.
+      </span>
+    ),
+  },
+];
+
+const searchScrollPhrases = [
+  'Search for Kanchipuram sarees',
+  'Search for Paithani sarees',
+  'Search for Mysore silk sarees',
+  'Search for Banarasi katan silk',
+  'Search for Festive sarees',
+  'Search for Bridal pure zari silk',
+  'Search for Soft silk sarees',
+];
+
+const colorOptions = [
+  { name: 'Royal Crimson', hex: '#8B1E3F' },
+  { name: 'Vermilion Red', hex: '#C0392B' },
+  { name: 'Forest Emerald', hex: '#1E4D2B' },
+  { name: 'Royal Violet', hex: '#4A235A' },
+  { name: 'Champagne Gold', hex: '#D4AF37' },
+  { name: 'Mustard Sandalwood', hex: '#C87F4A' },
+];
+
+const patternOptions = [
+  { name: 'Kasuti Diamonds', desc: 'Mysuru Crest Motif' },
+  { name: 'Peacock Mayil & Yanai', desc: 'Kanchipuram Heritage' },
+  { name: 'Temple Korvai Border', desc: 'Sacred 3-Shuttle Weave' },
+  { name: 'Floral Kadwa Meenakari', desc: 'Banarasi Gold Art' },
+  { name: 'Asawali Floral Vines', desc: 'Paithani Tapestry' },
+  { name: 'Ashrafi Bootas', desc: 'Chanderi Gold Dots' },
+];
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const { cartCount, wishlistCount, setIsCartDrawerOpen, currency, setCurrency, cartBounced } = useCart();
+  const { cartCount, wishlistCount, setIsCartDrawerOpen, cartBounced } = useCart();
+
+  const [announcementIndex, setAnnouncementIndex] = useState(0);
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<{ type: string; text: string; url: string }[]>([]);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [matchingProducts, setMatchingProducts] = useState<any[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Debounced search autocomplete in Header
+  // Auto-rotate announcement bar
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-rotate search placeholder phrases (scrolling search text)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % searchScrollPhrases.length);
+    }, 2800);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Debounced search autocomplete & matching products
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchSuggestions([]);
+      setMatchingProducts([]);
       return;
     }
     const timer = setTimeout(async () => {
@@ -47,6 +131,7 @@ export default function Header() {
         if (res.ok) {
           const data = await res.json();
           setSearchSuggestions(data.suggestions || []);
+          setMatchingProducts(data.products?.slice(0, 4) || []);
         }
       } catch (err) {
         console.error(err);
@@ -63,578 +148,581 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  const prevAnnouncement = () => {
+    setAnnouncementIndex((prev) => (prev - 1 + announcements.length) % announcements.length);
+  };
+
+  const nextAnnouncement = () => {
+    setAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+  };
+
   const handleMouseEnter = (menuKey: string) => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setActiveDropdown(menuKey);
-    setHoveredNav(menuKey);
   };
 
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => {
       setActiveDropdown(null);
-      setHoveredNav(null);
-    }, 200);
+    }, 220);
   };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      setIsSearchOpen(false);
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    const query = searchQuery.trim() || searchScrollPhrases[phraseIndex].replace(/^Search for /i, '');
+    if (query) {
+      setSearchFocused(false);
+      router.push(`/search?q=${encodeURIComponent(query)}`);
     }
   };
 
   return (
-    <>
-      {/* Top Promotional Offer Marquee */}
-      <OfferMarquee />
+    <header className="w-full z-40 sticky top-0">
+      {/* 1. TOP PROMOTIONAL ANNOUNCEMENT BAR (Deep Crimson / Maroon) */}
+      <div className="bg-[#7A1C30] text-white py-1.5 px-3 sm:px-6 relative z-50 text-[11px] sm:text-xs font-sans tracking-wide">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button
+            type="button"
+            onClick={prevAnnouncement}
+            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0"
+            aria-label="Previous announcement"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
 
-      {/* Main Luxury Header - UI/UX Pro Max 3-Column Centered Layout */}
-      <header
-        className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+          <div className="flex-1 text-center overflow-hidden px-2 h-5 flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={announcementIndex}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.28, ease: 'easeInOut' }}
+                className="truncate font-medium text-stone-100"
+              >
+                {announcements[announcementIndex].content}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <button
+            type="button"
+            onClick={nextAnnouncement}
+            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0"
+            aria-label="Next announcement"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. MAIN HEADER ROW (Glassmorphism, Centered Scrolling Search Pill, Action Icons) */}
+      <div
+        className={`w-full transition-all duration-300 ${
           isScrolled
-            ? 'bg-[#FAF3E4]/95 backdrop-blur-md shadow-sm border-b border-[#C87F4A]/25 py-2'
-            : 'bg-[#FAF3E4] border-b border-[#C87F4A]/15 py-2.5 sm:py-3'
+            ? 'bg-[#FAF3E4]/90 backdrop-blur-md shadow-sm border-b border-[#C87F4A]/25'
+            : 'bg-[#FAF3E4]/95 backdrop-blur-md border-b border-[#C87F4A]/20'
         }`}
       >
-        <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
-          <div className="flex items-center justify-between h-10">
-            {/* 1. Left: Mobile Menu Trigger + Compact Brand Identity (min-w-[180px]) */}
-            <div className="flex items-center gap-2.5 min-w-max lg:min-w-[200px] flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(true)}
-                className="text-[#1F1B16] hover:text-[#C87F4A] transition-colors p-1.5 lg:hidden rounded-md focus:outline-none"
-                aria-label="Open Navigation Menu"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-3 sm:gap-6">
+          {/* Mobile Menu Button (Small Screens) */}
+          <div className="flex items-center lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="text-[#1F1B16] hover:text-[#7A1C30] p-1.5 -ml-1 focus:outline-none"
+              aria-label="Open Navigation Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
 
-              <Link
-                href="/"
-                className="flex items-center gap-2 group focus:outline-none"
-              >
-                {/* Decreased Size Brand Logo Emblem */}
-                <motion.div
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  className="relative w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0 rounded-full p-[1.5px] bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B] shadow-xs"
-                >
-                  <div className="w-full h-full rounded-full bg-[#FAF3E4] overflow-hidden flex items-center justify-center p-0.5">
-                    <img
-                      src="/logo.png"
-                      alt="Neelsareehouse Logo"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                </motion.div>
-
-                {/* Decreased Size Brand Wordmark & Estd. 2021 */}
-                <div className="flex flex-col justify-center">
-                  <span className="font-editorial text-sm sm:text-base font-bold tracking-[0.1em] text-[#1F1B16] leading-none uppercase group-hover:text-[#C87F4A] transition-colors">
-                    Neelsareehouse
-                  </span>
-                  <span className="text-[8px] tracking-[0.22em] uppercase text-[#773D21] font-mono font-medium mt-0.5 leading-none">
-                    Mysuru • Estd. 2021
-                  </span>
-                </div>
-              </Link>
+          {/* Left: Brand Identity Logo (NEELSAREEHOUSE MYSURU • ESTD. 2021) */}
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 sm:gap-3 focus:outline-none group flex-shrink-0"
+          >
+            {/* Brand Emblem Logo with Gold Gradient Ring */}
+            <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full p-[2px] bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B] shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+              <div className="w-full h-full rounded-full overflow-hidden bg-[#FAF3E4] flex items-center justify-center p-0.5 border border-white/60">
+                <img
+                  src="/logo.png"
+                  alt="NEELSAREEHOUSE Emblem"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
 
-            {/* 2. Center: Perfectly Centered Mega-Menu Navigation */}
-            <nav
-              className="hidden lg:flex flex-1 items-center justify-center gap-1 xl:gap-2 text-[11px] xl:text-[12px] tracking-[0.12em] uppercase font-sans font-semibold text-[#1F1B16]/85"
+            <div className="flex flex-col items-start">
+              <span className="font-editorial text-xl sm:text-2xl lg:text-[26px] font-bold tracking-[0.06em] text-[#1F1B16] uppercase group-hover:text-[#7A1C30] transition-colors leading-none">
+                NEELSAREEHOUSE
+              </span>
+              <span className="text-[8px] sm:text-[9.5px] tracking-[0.28em] font-sans font-bold text-[#C87F4A] uppercase mt-1 leading-none">
+                MYSURU • ESTD. 2021
+              </span>
+            </div>
+          </Link>
+
+          {/* Center: Long Rounded-Full Search Pill Bar with Animated Scrolling Placeholder */}
+          <div className="flex-1 max-w-xl xl:max-w-2xl mx-2 sm:mx-6 relative">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="relative w-full"
             >
-              {/* 1. Shop By Weave Dropdown */}
               <div
-                className="relative py-1"
-                onMouseEnter={() => handleMouseEnter('weave')}
-                onMouseLeave={handleMouseLeave}
+                onClick={() => searchInputRef.current?.focus()}
+                className={`relative w-full h-10 sm:h-11 px-5 rounded-full bg-white/80 backdrop-blur-sm border transition-all duration-200 flex items-center justify-between cursor-text ${
+                  searchFocused
+                    ? 'border-[#7A1C30] ring-1 ring-[#7A1C30]/20 bg-white shadow-sm'
+                    : 'border-[#D9A876]/70 hover:border-[#7A1C30]/70'
+                }`}
               >
-                <Link
-                  href="/products"
-                  className={`relative px-2.5 py-1.5 rounded-full transition-colors flex items-center gap-1 z-10 ${
-                    activeDropdown === 'weave' || hoveredNav === 'weave'
-                      ? 'text-[#C87F4A]'
-                      : 'text-[#1F1B16]/85 hover:text-[#C87F4A]'
-                  }`}
-                >
-                  <span>Shop By Weave</span>
-                  <ChevronDown
-                    className={`w-3 h-3 transition-transform duration-200 ${
-                      activeDropdown === 'weave' ? 'rotate-180 text-[#C87F4A]' : ''
-                    }`}
-                  />
-                  {hoveredNav === 'weave' && (
-                    <motion.span
-                      layoutId="navHoverPill"
-                      className="absolute inset-0 bg-[#C87F4A]/10 rounded-full -z-10 border border-[#C87F4A]/20"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                    />
-                  )}
-                </Link>
+                {/* Real Text Input */}
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setSearchFocused(false), 250)}
+                  className="w-full bg-transparent text-xs sm:text-sm text-[#1F1B16] focus:outline-none z-10 font-sans pr-12"
+                />
 
-                <AnimatePresence>
-                  {activeDropdown === 'weave' && (
-                    <div className="absolute top-full -left-12 pt-2 z-50">
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 5, scale: 0.98 }}
-                        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-[640px] bg-[#FAF3E4]/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#C87F4A]/30 p-5"
-                      >
-                        <div className="flex items-center justify-between pb-2.5 border-b border-[#C87F4A]/20 mb-3">
-                          <span className="text-[10px] uppercase tracking-widest text-[#C87F4A] font-mono font-bold">
-                            Royal Handloom Clusters
-                          </span>
-                          <Link
-                            href="/products"
-                            onClick={() => setActiveDropdown(null)}
-                            className="text-[10px] text-[#773D21] hover:text-[#C87F4A] font-medium flex items-center gap-1 font-sans uppercase tracking-wider"
-                          >
-                            <span>Explore All (600+ Pieces)</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </Link>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          {weaveCategories.map((wc) => (
-                            <Link
-                              key={wc.id}
-                              href={`/products?weave=${encodeURIComponent(wc.name)}`}
-                              onClick={() => setActiveDropdown(null)}
-                              className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-white transition-colors border border-transparent hover:border-[#C87F4A]/25 group/item"
-                            >
-                              <img
-                                src={wc.image}
-                                alt={wc.name}
-                                className="w-9 h-9 rounded-lg object-cover border border-[#C87F4A]/20 group-hover/item:scale-105 transition-transform"
-                              />
-                              <div>
-                                <span className="text-xs font-editorial font-bold text-[#1F1B16] group-hover/item:text-[#C87F4A] block leading-tight">
-                                  {wc.name}
-                                </span>
-                                <span className="text-[10px] text-stone-500 font-sans">
-                                  {wc.count}
-                                </span>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* 2. Shop By Fabric Dropdown */}
-              <div
-                className="relative py-1"
-                onMouseEnter={() => handleMouseEnter('fabric')}
-                onMouseLeave={handleMouseLeave}
-              >
-                <Link
-                  href="/products"
-                  className={`relative px-2.5 py-1.5 rounded-full transition-colors flex items-center gap-1 z-10 ${
-                    activeDropdown === 'fabric' || hoveredNav === 'fabric'
-                      ? 'text-[#C87F4A]'
-                      : 'text-[#1F1B16]/85 hover:text-[#C87F4A]'
-                  }`}
-                >
-                  <span>Shop By Fabric</span>
-                  <ChevronDown
-                    className={`w-3 h-3 transition-transform duration-200 ${
-                      activeDropdown === 'fabric' ? 'rotate-180 text-[#C87F4A]' : ''
-                    }`}
-                  />
-                  {hoveredNav === 'fabric' && (
-                    <motion.span
-                      layoutId="navHoverPill"
-                      className="absolute inset-0 bg-[#C87F4A]/10 rounded-full -z-10 border border-[#C87F4A]/20"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                    />
-                  )}
-                </Link>
-
-                <AnimatePresence>
-                  {activeDropdown === 'fabric' && (
-                    <div className="absolute top-full -left-6 pt-2 z-50">
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 5, scale: 0.98 }}
-                        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-[400px] bg-[#FAF3E4]/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#C87F4A]/30 p-4"
-                      >
-                        <span className="text-[10px] uppercase tracking-widest text-[#C87F4A] font-mono font-bold block pb-2 border-b border-[#C87F4A]/20 mb-2.5">
-                          Pure Silk & Handloom Textures
-                        </span>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {fabricFilters.map((fabric, idx) => (
-                            <Link
-                              key={idx}
-                              href={`/products?fabric=${encodeURIComponent(fabric)}`}
-                              onClick={() => setActiveDropdown(null)}
-                              className="px-2.5 py-1.5 text-xs font-sans text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white rounded-lg transition-colors"
-                            >
-                              {fabric}
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* 3. Shop By Occasion Dropdown */}
-              <div
-                className="relative py-1"
-                onMouseEnter={() => handleMouseEnter('occasion')}
-                onMouseLeave={handleMouseLeave}
-              >
-                <Link
-                  href="/products"
-                  className={`relative px-2.5 py-1.5 rounded-full transition-colors flex items-center gap-1 z-10 ${
-                    activeDropdown === 'occasion' || hoveredNav === 'occasion'
-                      ? 'text-[#C87F4A]'
-                      : 'text-[#1F1B16]/85 hover:text-[#C87F4A]'
-                  }`}
-                >
-                  <span>Occasions</span>
-                  <ChevronDown
-                    className={`w-3 h-3 transition-transform duration-200 ${
-                      activeDropdown === 'occasion' ? 'rotate-180 text-[#C87F4A]' : ''
-                    }`}
-                  />
-                  {hoveredNav === 'occasion' && (
-                    <motion.span
-                      layoutId="navHoverPill"
-                      className="absolute inset-0 bg-[#C87F4A]/10 rounded-full -z-10 border border-[#C87F4A]/20"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                    />
-                  )}
-                </Link>
-
-                <AnimatePresence>
-                  {activeDropdown === 'occasion' && (
-                    <div className="absolute top-full left-0 pt-2 z-50">
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 5, scale: 0.98 }}
-                        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                        className="w-[340px] bg-[#FAF3E4]/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-[#C87F4A]/30 p-4"
-                      >
-                        <span className="text-[10px] uppercase tracking-widest text-[#C87F4A] font-mono font-bold block pb-2 border-b border-[#C87F4A]/20 mb-2.5">
-                          Curations by Celebration
-                        </span>
-                        <div className="space-y-1">
-                          {occasionFilters.map((occ, idx) => (
-                            <Link
-                              key={idx}
-                              href={`/products?occasion=${encodeURIComponent(occ)}`}
-                              onClick={() => setActiveDropdown(null)}
-                              className="flex items-center justify-between px-2.5 py-1.5 text-xs font-sans text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white rounded-lg transition-colors"
-                            >
-                              <span>{occ}</span>
-                              <ArrowRight className="w-3 h-3 text-[#C87F4A]" />
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* 4. New Arrivals */}
-              <div
-                className="relative py-1"
-                onMouseEnter={() => setHoveredNav('new')}
-                onMouseLeave={() => setHoveredNav(null)}
-              >
-                <Link
-                  href="/products?filter=new"
-                  className="relative px-2.5 py-1.5 rounded-full transition-colors flex items-center z-10 hover:text-[#C87F4A]"
-                >
-                  <span>New Arrivals</span>
-                  {hoveredNav === 'new' && (
-                    <motion.span
-                      layoutId="navHoverPill"
-                      className="absolute inset-0 bg-[#C87F4A]/10 rounded-full -z-10 border border-[#C87F4A]/20"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                    />
-                  )}
-                </Link>
-              </div>
-
-              {/* 5. Bridal */}
-              <div
-                className="relative py-1"
-                onMouseEnter={() => setHoveredNav('bridal')}
-                onMouseLeave={() => setHoveredNav(null)}
-              >
-                <Link
-                  href="/products?occasion=Bridal+%26+Muhurtham"
-                  className="relative px-2.5 py-1.5 rounded-full text-[#9E2A2B] hover:text-[#C87F4A] font-bold transition-colors flex items-center gap-1 z-10"
-                >
-                  <span>Bridal</span>
-                  <Sparkles className="w-3 h-3 text-[#C87F4A]" />
-                  {hoveredNav === 'bridal' && (
-                    <motion.span
-                      layoutId="navHoverPill"
-                      className="absolute inset-0 bg-red-50/80 rounded-full -z-10 border border-red-200/60"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                    />
-                  )}
-                </Link>
-              </div>
-
-              {/* 6. OUR STORY (MANDATORY INVARIANT LINK TO /our-story) */}
-              <div
-                className="relative py-1"
-                onMouseEnter={() => setHoveredNav('story')}
-                onMouseLeave={() => setHoveredNav(null)}
-              >
-                <Link
-                  href="/our-story"
-                  className={`relative px-3 py-1.5 rounded-full font-bold transition-colors flex items-center z-10 ${
-                    pathname === '/our-story'
-                      ? 'text-white bg-[#C87F4A] shadow-xs'
-                      : 'text-[#C87F4A] hover:text-[#9E471D]'
-                  }`}
-                >
-                  <span>Our Story</span>
-                  {hoveredNav === 'story' && pathname !== '/our-story' && (
-                    <motion.span
-                      layoutId="navHoverPill"
-                      className="absolute inset-0 bg-[#C87F4A]/15 rounded-full -z-10 border border-[#C87F4A]/30"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.3 }}
-                    />
-                  )}
-                </Link>
-              </div>
-            </nav>
-
-            {/* 3. Right: Action Suite with Framer Motion Spring Badges (min-w-[200px] justify-end) */}
-            <div className="flex items-center justify-end gap-1 sm:gap-1.5 min-w-max lg:min-w-[200px] flex-shrink-0">
-              {/* Currency Selector */}
-              <div className="hidden xl:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/70 border border-[#C87F4A]/20 text-xs text-stone-600 mr-1">
-                <Globe className="w-3 h-3 text-[#C87F4A]" />
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="bg-transparent text-[10.5px] font-mono font-semibold uppercase text-[#1F1B16] focus:outline-none cursor-pointer"
-                  aria-label="Select Currency"
-                >
-                  <option value="INR">INR (₹)</option>
-                  <option value="USD">USD ($)</option>
-                  <option value="GBP">GBP (£)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="AED">AED (د.إ)</option>
-                </select>
-              </div>
-
-              {/* Search Trigger */}
-              <motion.button
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
-                type="button"
-                onClick={() => setIsSearchOpen(true)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white/80 transition-colors focus:outline-none"
-                aria-label="Search Silk Sarees"
-              >
-                <Search className="w-4 h-4" />
-              </motion.button>
-
-              {/* Account Link */}
-              <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
-                <Link
-                  href="/account"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white/80 transition-colors hidden sm:flex focus:outline-none"
-                  aria-label="Customer Account"
-                >
-                  <User className="w-4 h-4" />
-                </Link>
-              </motion.div>
-
-              {/* Wishlist Link with Spring Badge */}
-              <motion.div whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}>
-                <Link
-                  href="/account/wishlist"
-                  className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white/80 transition-colors focus:outline-none"
-                  aria-label="Wishlist"
-                >
-                  <Heart className="w-4 h-4" />
-                  <AnimatePresence>
-                    {wishlistCount > 0 && (
+                {/* Animated Scrolling Placeholder (When input is empty) */}
+                {!searchQuery && (
+                  <div className="absolute left-5 right-12 inset-y-0 flex items-center pointer-events-none overflow-hidden">
+                    <AnimatePresence mode="wait">
                       <motion.span
-                        key={`wishlist-${wishlistCount}`}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        exit={{ scale: 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                        className="absolute -top-0.5 -right-0.5 bg-[#1F1B16] text-[#FAF3E4] text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-xs"
+                        key={phraseIndex}
+                        initial={{ opacity: 0, y: 14 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -14 }}
+                        transition={{ duration: 0.32, ease: 'easeOut' }}
+                        className="text-xs sm:text-sm text-stone-500 font-sans truncate select-none"
                       >
-                        {wishlistCount}
+                        {searchScrollPhrases[phraseIndex]}
                       </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
-              </motion.div>
+                    </AnimatePresence>
+                  </div>
+                )}
 
-              {/* Cart Drawer Trigger with Spring Badge */}
-              <motion.button
-                id="header-cart-button"
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.92 }}
+                {/* Clear (X) or Search Button */}
+                <div className="flex items-center gap-1 z-10">
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchQuery('');
+                      }}
+                      className="text-stone-400 hover:text-stone-700 p-1 transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="text-[#C87F4A] hover:text-[#7A1C30] transition-colors p-1 flex-shrink-0 focus:outline-none"
+                    aria-label="Submit Search"
+                  >
+                    <Search className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.75]" />
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Instant Search Suggestions & Products Dropdown */}
+            {searchFocused && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#FAF3E4]/98 backdrop-blur-2xl rounded-2xl shadow-2xl border border-[#C87F4A]/30 p-4 z-50 animate-fade-in max-h-[480px] overflow-y-auto">
+                {/* 1. Live Matching Products */}
+                {matchingProducts.length > 0 && (
+                  <div className="mb-4">
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-[#7A1C30] px-2 block mb-2">
+                      Matching Sarees ({matchingProducts.length})
+                    </span>
+                    <div className="space-y-1.5">
+                      {matchingProducts.map((prod) => (
+                        <button
+                          key={prod.id}
+                          type="button"
+                          onMouseDown={() => router.push(`/products/${prod.slug}`)}
+                          className="w-full text-left p-2 rounded-xl hover:bg-white flex items-center gap-3 transition-colors border border-transparent hover:border-[#C87F4A]/20 group"
+                        >
+                          <div className="w-10 h-12 rounded-lg overflow-hidden bg-stone-100 flex-shrink-0 border border-stone-200">
+                            <img
+                              src={prod.images?.[0]}
+                              alt={prod.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-mono text-[#C87F4A] uppercase font-semibold">
+                                {prod.weave}
+                              </span>
+                              {prod.silkMarkCertified && (
+                                <span className="text-[8.5px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded">
+                                  Silk Mark
+                                </span>
+                              )}
+                            </div>
+                            <h5 className="text-xs font-editorial font-medium text-stone-900 truncate group-hover:text-[#7A1C30]">
+                              {prod.title}
+                            </h5>
+                            <span className="text-xs font-bold text-stone-800 font-sans">
+                              ₹{prod.priceINR.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Categorical Suggestions */}
+                {searchSuggestions.length > 0 && (
+                  <div className="space-y-1 mb-4">
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-[#7A1C30] px-2 block">
+                      Search Suggestions
+                    </span>
+                    {searchSuggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onMouseDown={() => router.push(sug.url)}
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white text-xs font-sans text-[#1F1B16] flex items-center justify-between transition-colors group"
+                      >
+                        <span className="font-medium group-hover:text-[#7A1C30]">{sug.text}</span>
+                        <span className="text-[10px] font-mono text-[#C87F4A] uppercase">
+                          {sug.type}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 3. Popular Searches Pills */}
+                <div className="space-y-2 pt-2 border-t border-[#C87F4A]/15">
+                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-500 block px-2">
+                    Popular Searches
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 px-1">
+                    {[
+                      'Mysore Silk Crepe',
+                      'Bridal Kanchipuram',
+                      'Banarasi Katan',
+                      '24K Pure Zari',
+                      'Soft Silk Sarees',
+                      'Champagne Tissue',
+                    ].map((term, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onMouseDown={() => {
+                          setSearchQuery(term);
+                          router.push(`/search?q=${encodeURIComponent(term)}`);
+                        }}
+                        className="text-[11px] bg-white hover:bg-[#7A1C30] hover:text-white px-2.5 py-1 rounded-full text-stone-700 transition-colors border border-[#C87F4A]/20 font-sans"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: User Profile, Wishlist, Shopping Bag Icon Cluster (INR Removed) */}
+          <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
+            {/* Profile / Account */}
+            <Link
+              href="/account"
+              className="p-1.5 text-stone-800 hover:text-[#7A1C30] transition-colors focus:outline-none"
+              aria-label="User Account"
+            >
+              <User className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.5]" />
+            </Link>
+
+            {/* Wishlist with Red Circular Badge */}
+            <Link
+              href="/account/wishlist"
+              className="relative p-1.5 text-stone-800 hover:text-[#7A1C30] transition-colors focus:outline-none"
+              aria-label="Wishlist"
+            >
+              <Heart className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.5]" />
+              <span className="absolute -top-0.5 -right-0.5 bg-[#7A1C30] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold font-sans">
+                {wishlistCount}
+              </span>
+            </Link>
+
+            {/* Shopping Bag with Red Circular Badge & Spring Elastic Bounce */}
+            <button
+              id="header-cart-button"
+              type="button"
+              onClick={() => setIsCartDrawerOpen(true)}
+              className="relative p-1.5 text-stone-800 hover:text-[#7A1C30] transition-colors focus:outline-none"
+              aria-label="Shopping Bag"
+            >
+              <motion.div
                 animate={
                   cartBounced
                     ? {
-                        scale: [1, 1.45, 0.85, 1.25, 1],
-                        rotate: [0, -12, 12, -6, 0],
+                        scale: [1, 1.4, 0.85, 1.2, 1],
+                        rotate: [0, -10, 10, -5, 0],
                       }
                     : { scale: 1, rotate: 0 }
                 }
                 transition={{ duration: 0.5, ease: 'easeOut' }}
-                type="button"
-                onClick={() => setIsCartDrawerOpen(true)}
-                className="relative w-8 h-8 rounded-full flex items-center justify-center text-[#1F1B16] hover:text-[#C87F4A] hover:bg-white/80 transition-colors focus:outline-none"
-                aria-label="Shopping Cart"
               >
-                <ShoppingBag className={`w-4 h-4 transition-colors ${cartBounced ? 'text-[#C87F4A]' : ''}`} />
-                <AnimatePresence>
-                  {cartCount > 0 && (
-                    <motion.span
-                      key={`cart-${cartCount}`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: cartBounced ? 1.35 : 1 }}
-                      exit={{ scale: 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                      className="absolute -top-0.5 -right-0.5 bg-[#C87F4A] text-white text-[9px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold shadow-xs"
-                    >
-                      {cartCount}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            </div>
+                <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.5]" />
+              </motion.div>
+              <span className="absolute -top-0.5 -right-0.5 bg-[#7A1C30] text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold font-sans">
+                {cartCount}
+              </span>
+            </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Expandable Search Modal with Glassmorphism & Framer Motion */}
-      <AnimatePresence>
-        {isSearchOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => setIsSearchOpen(false)}
-            />
-
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-              className="relative bg-[#FAF3E4] rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-[#C87F4A]/30 z-10 text-[#1F1B16]"
+      {/* 3. BOTTOM CATEGORY NAVIGATION BAR (Glassmorphic 4-Category Bar) */}
+      <nav className="hidden lg:block w-full bg-[#FAF3E4]/85 backdrop-blur-md border-b border-[#C87F4A]/15 py-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ul className="flex items-center justify-center gap-10 xl:gap-14 text-xs font-sans font-semibold tracking-wide uppercase text-stone-800">
+            {/* 1. Shop by Category (Comprehensive Mega-Menu) */}
+            <li
+              className="relative py-1"
+              onMouseEnter={() => handleMouseEnter('categories')}
+              onMouseLeave={handleMouseLeave}
             >
               <button
                 type="button"
-                onClick={() => setIsSearchOpen(false)}
-                className="absolute top-5 right-5 text-stone-500 hover:text-black p-1.5 rounded-full bg-white border border-stone-200 focus:outline-none"
+                className={`hover:text-[#7A1C30] transition-colors flex items-center gap-1.5 focus:outline-none ${
+                  activeDropdown === 'categories' ? 'text-[#7A1C30] font-bold' : ''
+                }`}
               >
-                <X className="w-4 h-4" />
+                <span>Shop By Category</span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  activeDropdown === 'categories' ? 'rotate-180 text-[#7A1C30]' : 'text-stone-500'
+                }`} />
               </button>
 
-              <span className="text-xs uppercase tracking-widest text-[#C87F4A] font-bold block mb-2 font-mono">
-                Search Neelsareehouse Catalog
-              </span>
-
-              <form onSubmit={handleSearchSubmit} className="relative mt-2">
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Search by weave, fabric, occasion, color (e.g. Mysore Crepe, Kanchipuram Bridal, 24K Zari)..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-4 pr-12 py-3.5 bg-white border border-[#C87F4A]/30 rounded-xl text-sm focus:outline-none focus:border-[#C87F4A] shadow-inner font-sans text-[#1F1B16]"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-3 p-1.5 bg-[#C87F4A] text-white rounded-lg hover:bg-[#B36737] transition-colors"
-                  aria-label="Submit search"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-              </form>
-
-              {/* Live Autocomplete List */}
-              {searchSuggestions.length > 0 && (
-                <div className="mt-3 p-2 bg-white rounded-xl border border-[#C87F4A]/20 shadow-xs space-y-1">
-                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-[#C87F4A] px-2 block">
-                    Suggestions
-                  </span>
-                  {searchSuggestions.map((sug, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setIsSearchOpen(false);
-                        router.push(sug.url);
-                      }}
-                      className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-[#FAF3E4] text-xs font-sans text-[#1F1B16] flex items-center justify-between transition-colors group"
+              <AnimatePresence>
+                {activeDropdown === 'categories' && (
+                  <div className="absolute top-full -left-36 pt-3 z-50">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="w-[900px] bg-gradient-to-b from-[#FAF5EE]/95 via-white/90 to-[#FAF3E4]/95 backdrop-blur-2xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(122,28,48,0.18)] border border-white/80 ring-1 ring-[#C87F4A]/25 p-7 text-stone-900 overflow-hidden relative"
                     >
-                      <span className="truncate group-hover:text-[#C87F4A] font-medium">
-                        {sug.text}
-                      </span>
-                      <span className="text-[9px] uppercase font-mono text-stone-400">
-                        {sug.type}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      {/* Subtle Glass Shimmer / Radial Ambient Glow */}
+                      <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-[#7A1C30]/10 via-[#C87F4A]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
+                      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-gradient-to-tr from-[#C87F4A]/10 via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
 
-              <div className="mt-5">
-                <span className="text-[11px] uppercase tracking-wider font-semibold text-[#773D21] block mb-2 font-sans">
-                  Popular Searches
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    'Mysore Silk Crepe',
-                    'Bridal Kanchipuram',
-                    'Banarasi Katan',
-                    '24K Pure Zari',
-                    'Soft Silk Sarees',
-                    'Champagne Tissue',
-                  ].map((tag, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setIsSearchOpen(false);
-                        router.push(`/search?q=${encodeURIComponent(tag)}`);
-                      }}
-                      className="bg-white hover:bg-[#C87F4A] hover:text-white text-stone-700 text-xs px-3 py-1.5 rounded-full border border-[#C87F4A]/20 transition-colors"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                      {/* Header row in mega menu */}
+                      <div className="relative flex items-center justify-between pb-3.5 border-b border-[#C87F4A]/20 mb-6">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#7A1C30]" />
+                          <span className="text-[11px] uppercase tracking-[0.25em] text-[#7A1C30] font-mono font-bold">
+                            Royal Handloom Curation Matrix
+                          </span>
+                        </div>
+                        <Link
+                          href="/products"
+                          onClick={() => setActiveDropdown(null)}
+                          className="text-[11px] text-[#7A1C30] hover:text-[#5B1021] font-bold flex items-center gap-1.5 uppercase tracking-wider bg-white/80 hover:bg-white px-3 py-1 rounded-full border border-[#C87F4A]/30 transition-all shadow-2xs"
+                        >
+                          <span>Explore All Handlooms (600+ Pieces)</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
 
-      {/* Mobile Drawer Menu with Framer Motion */}
+                      <div className="relative grid grid-cols-5 gap-4">
+                        {/* 1. Shop by Weave */}
+                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                          <div>
+                            <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
+                              Shop by Weave
+                            </span>
+                            <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
+                          </div>
+                          <ul className="space-y-1 text-xs text-stone-700 font-sans font-normal normal-case">
+                            {weaveCategories.map((wc) => (
+                              <li key={wc.id}>
+                                <Link
+                                  href={`/products?weave=${encodeURIComponent(wc.name)}`}
+                                  onClick={() => setActiveDropdown(null)}
+                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
+                                >
+                                  {wc.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* 2. Shop by Fabric */}
+                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                          <div>
+                            <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
+                              Shop by Fabric
+                            </span>
+                            <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
+                          </div>
+                          <ul className="space-y-1 text-xs text-stone-700 font-sans font-normal normal-case">
+                            {fabricFilters.map((fabric, idx) => (
+                              <li key={idx}>
+                                <Link
+                                  href={`/products?fabric=${encodeURIComponent(fabric)}`}
+                                  onClick={() => setActiveDropdown(null)}
+                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
+                                >
+                                  {fabric}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* 3. Shop by Occasion */}
+                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                          <div>
+                            <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
+                              Shop by Occasion
+                            </span>
+                            <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
+                          </div>
+                          <ul className="space-y-1 text-xs text-stone-700 font-sans font-normal normal-case">
+                            {occasionFilters.map((occ, idx) => (
+                              <li key={idx}>
+                                <Link
+                                  href={`/products?occasion=${encodeURIComponent(occ)}`}
+                                  onClick={() => setActiveDropdown(null)}
+                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
+                                >
+                                  {occ}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* 4. Shop by Color */}
+                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                          <div>
+                            <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
+                              Shop by Color
+                            </span>
+                            <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
+                          </div>
+                          <ul className="space-y-1.5 text-xs text-stone-700 font-sans font-normal normal-case">
+                            {colorOptions.map((c, idx) => (
+                              <li key={idx}>
+                                <Link
+                                  href={`/products?color=${encodeURIComponent(c.name)}`}
+                                  onClick={() => setActiveDropdown(null)}
+                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all flex items-center gap-2 group"
+                                >
+                                  <span
+                                    className="w-3 h-3 rounded-full border border-stone-300 shadow-2xs group-hover:scale-110 transition-transform flex-shrink-0"
+                                    style={{ backgroundColor: c.hex }}
+                                  />
+                                  <span className="truncate font-medium">{c.name}</span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        {/* 5. Shop by Pattern */}
+                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                          <div>
+                            <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
+                              Shop by Pattern
+                            </span>
+                            <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
+                          </div>
+                          <ul className="space-y-1.5 text-xs text-stone-700 font-sans font-normal normal-case">
+                            {patternOptions.map((p, idx) => (
+                              <li key={idx}>
+                                <Link
+                                  href={`/products?search=${encodeURIComponent(p.name)}`}
+                                  onClick={() => setActiveDropdown(null)}
+                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block group"
+                                >
+                                  <span className="block truncate font-medium text-xs leading-tight">{p.name}</span>
+                                  <span className="block text-[9.5px] text-stone-400 font-mono tracking-tight leading-tight">{p.desc}</span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Footer Badge strip in mega menu */}
+                      <div className="relative mt-5 pt-3.5 border-t border-[#C87F4A]/15 flex items-center justify-between text-[10.5px] font-mono text-[#7A1C30]">
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-[#C87F4A]" />
+                            <span>100% Central Silk Board Silk Mark</span>
+                          </span>
+                          <span className="text-stone-300">•</span>
+                          <span>24K Tested Zari Mastery</span>
+                          <span className="text-stone-300">•</span>
+                          <span>Complimentary Fall & Pico Included</span>
+                        </div>
+                        <span className="text-stone-500 italic">Dispatched from Mysuru Flagship Guild</span>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
+            </li>
+
+            {/* 2. New Arrival */}
+            <li>
+              <Link
+                href="/products?filter=new"
+                className={`hover:text-[#7A1C30] transition-colors ${
+                  pathname === '/products' ? 'hover:text-[#7A1C30]' : ''
+                }`}
+              >
+                New Arrival
+              </Link>
+            </li>
+
+            {/* 3. Bridal */}
+            <li>
+              <Link
+                href="/products?occasion=Bridal+%26+Muhurtham"
+                className="text-[#7A1C30] hover:text-[#5B1021] transition-colors flex items-center gap-1 font-bold"
+              >
+                <span>Bridal</span>
+                <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
+              </Link>
+            </li>
+
+            {/* 4. Our Story */}
+            <li>
+              <Link
+                href="/our-story"
+                className={`transition-colors ${
+                  pathname === '/our-story'
+                    ? 'text-[#7A1C30] font-bold border-b-2 border-[#7A1C30] pb-0.5'
+                    : 'hover:text-[#7A1C30]'
+                }`}
+              >
+                Our Story
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* 4. MOBILE NAVIGATION DRAWER */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
@@ -656,95 +744,88 @@ export default function Header() {
               <div>
                 {/* Brand Header */}
                 <div className="flex items-center justify-between pb-5 border-b border-[#C87F4A]/20">
-                  <Link
-                    href="/"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5"
-                  >
-                    <div className="w-7 h-7 rounded-full p-0.5 bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B]">
-                      <img
-                        src="/logo.png"
-                        alt="Neelsareehouse"
-                        className="w-full h-full object-contain bg-[#FAF3E4] rounded-full p-0.5"
-                      />
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B] shadow-xs flex-shrink-0">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-[#FAF3E4] flex items-center justify-center p-0.5 border border-white/60">
+                        <img
+                          src="/logo.png"
+                          alt="NEELSAREEHOUSE Logo"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <h3 className="font-editorial text-sm font-bold text-[#1F1B16]">
-                        Neelsareehouse
+                      <h3 className="font-editorial text-base font-bold text-[#1F1B16] tracking-[0.06em] uppercase leading-none">
+                        NEELSAREEHOUSE
                       </h3>
-                      <span className="text-[8px] tracking-widest text-[#773D21] font-mono block">
-                        Mysuru • Estd. 2021
+                      <span className="text-[7.5px] tracking-[0.24em] text-[#C87F4A] font-sans font-bold block mt-1 leading-none">
+                        MYSURU • ESTD. 2021
                       </span>
                     </div>
-                  </Link>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-stone-700 hover:text-[#C87F4A] p-1"
+                    className="text-stone-700 hover:text-[#7A1C30] p-1"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Mobile Links */}
-                <div className="mt-6 space-y-3.5 text-xs uppercase tracking-widest font-semibold">
-                  <Link
-                    href="/our-story"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#C87F4A] font-bold block py-2 border-b border-[#C87F4A]/30"
-                  >
-                    ✦ Our Story (Loom Journey)
-                  </Link>
-
+                {/* Mobile Navigation Links */}
+                <div className="mt-5 space-y-3 text-xs uppercase tracking-wider font-semibold">
                   <Link
                     href="/products"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#1F1B16] hover:text-[#C87F4A] block py-2 border-b border-stone-200"
+                    className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
                   >
-                    Shop By Weave (All Categories)
+                    Shop by Category
                   </Link>
-
-                  <Link
-                    href="/products?occasion=Bridal+%26+Muhurtham"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#9E2A2B] font-bold block py-2 border-b border-stone-200"
-                  >
-                    Bridal & Muhurtham Trousseau
-                  </Link>
-
                   <Link
                     href="/products?filter=new"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#1F1B16] hover:text-[#C87F4A] block py-2 border-b border-stone-200"
+                    className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
                   >
-                    New Arrivals
+                    New Arrival
                   </Link>
-
+                  <Link
+                    href="/products?occasion=Bridal+%26+Muhurtham"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-[#7A1C30] font-bold block py-2 border-b border-stone-200"
+                  >
+                    Bridal & Muhurtham
+                  </Link>
+                  <Link
+                    href="/our-story"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
+                  >
+                    Our Story
+                  </Link>
                   <Link
                     href="/try-on"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#1F1B16] hover:text-[#C87F4A] block py-2 border-b border-stone-200"
+                    className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
                   >
-                    Virtual AI Drape Try-On
+                    Virtual AI Try-On Studio
                   </Link>
-
                   <Link
                     href="/account"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-[#1F1B16] hover:text-[#C87F4A] block py-2 border-b border-stone-200"
+                    className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
                   >
                     My Account & Orders
                   </Link>
                 </div>
               </div>
 
-              {/* Mobile Bottom Contact */}
+              {/* VIP WhatsApp Concierge */}
               <div className="pt-6 border-t border-[#C87F4A]/20">
                 <a
                   href="https://wa.me/918212423344"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 bg-[#C87F4A] text-white py-3 rounded-md text-xs font-bold uppercase tracking-wider shadow-md"
+                  className="w-full flex items-center justify-center gap-2 bg-[#7A1C30] text-white py-3 rounded-lg text-xs font-bold uppercase tracking-wider shadow-md hover:bg-[#5B1021] transition-colors"
                 >
                   <Phone className="w-4 h-4" />
                   <span>WhatsApp VIP Concierge</span>
@@ -754,6 +835,6 @@ export default function Header() {
           </div>
         )}
       </AnimatePresence>
-    </>
+    </header>
   );
 }

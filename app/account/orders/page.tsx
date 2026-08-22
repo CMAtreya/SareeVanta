@@ -152,7 +152,7 @@ export default function AccountOrdersPage() {
                           {item.product.title}
                         </span>
                         <span className="text-[10px] text-stone-500 font-sans block">
-                          Qty: {item.quantity} • {item.blouseOption || 'Unstitched'}
+                          Qty: {item.quantity} • Pure Silk
                         </span>
                       </div>
                     </div>

@@ -39,12 +39,10 @@ export async function GET(
       {
         product: products[0],
         quantity: 1,
-        blouseOption: 'Unstitched Standard (Free)',
       },
       {
         product: products[1],
         quantity: 1,
-        blouseOption: 'Custom Tailored Bespoke (+₹1,800)',
       },
     ],
     subtotalINR: 94300,

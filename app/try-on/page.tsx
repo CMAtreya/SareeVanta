@@ -175,7 +175,7 @@ function TryOnStudioContent() {
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    addToCart(selectedProduct, 1, 'Unstitched Standard (Free)', 0, e);
+    addToCart(selectedProduct, 1, undefined, 0, e);
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 1500);
   };
@@ -462,14 +462,14 @@ function TryOnStudioContent() {
                   <span className="font-semibold text-[#1F1B16]">{selectedProduct.weave}</span>
                 </div>
                 <div className="bg-white p-2 rounded-lg border border-stone-200">
-                  <span className="text-[9px] uppercase font-mono text-stone-400 block">Zari Grade</span>
-                  <span className="font-semibold text-[#1F1B16]">{selectedProduct.zariGrade}</span>
+                  <span className="text-[9px] uppercase font-mono text-stone-400 block">Fabric</span>
+                  <span className="font-semibold text-[#1F1B16]">{selectedProduct.fabric}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1 text-[11px] text-stone-600 font-sans">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                <span>Includes 0.8m unstitched matching blouse & complimentary fall/pico.</span>
+                <span>Includes complimentary ready-to-drape fall & pico finish.</span>
               </div>
             </div>
           </div>

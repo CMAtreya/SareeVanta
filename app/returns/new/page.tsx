@@ -228,7 +228,7 @@ function ReturnRequestContent() {
                     {returnedProduct.title}
                   </h3>
                   <span className="text-[11px] text-stone-500 font-sans block">
-                    Variant: Unstitched Standard • 24K Real Zari
+                    Variant: 5.5m Pure Silk Saree
                   </span>
                 </div>
               </div>

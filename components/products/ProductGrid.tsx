@@ -27,7 +27,7 @@ export interface SareeProduct {
   color: string;
   zari: string;
   dimensions: string;
-  blouseIncluded: boolean;
+  blouseIncluded?: boolean;
   description: string;
   artisanCluster: string;
 }
@@ -46,8 +46,7 @@ export const productsData: SareeProduct[] = [
     hoverImage: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
     color: 'Deep Royal Crimson & Antique Gold',
     zari: 'Tested Pure Gold & Silver Ribbon',
-    dimensions: '5.5m Saree + 0.8m Running Blouse Piece',
-    blouseIncluded: true,
+    dimensions: '5.5m Pure Silk Saree',
     description:
       'Woven from 100% Karnataka Mulberry Silk with twisted crepe yarn, featuring the authentic Mysore royal insignia border and rich woven pallu with Kasuti diamond motifs.',
     artisanCluster: 'Devaraja Loom Guild, Mysuru',
@@ -65,7 +64,6 @@ export const productsData: SareeProduct[] = [
     color: 'Vermilion Red & 24K Pure Zari',
     zari: '57% Silver / 0.6% 24-Karat Gold Electroplate',
     dimensions: '6.2m Comprehensive Bridal Length',
-    blouseIncluded: true,
     description:
       'A true generational heirloom crafted with the traditional three-shuttle Korvai interlocking technique. Adorned with Mayil (peacock) and Yanai (elephant) pure zari motifs.',
     artisanCluster: 'Kanchi Master Guild, Tamil Nadu',
@@ -83,8 +81,7 @@ export const productsData: SareeProduct[] = [
     hoverImage: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
     color: 'Forest Emerald & Warm Gold Zari',
     zari: 'Fine Antique Kadwa Micro-Zari',
-    dimensions: '5.5m Saree + 0.8m Brocade Blouse',
-    blouseIncluded: true,
+    dimensions: '5.5m Pure Silk Saree',
     description:
       'Hand-woven using the meticulous Kadwa technique where each floral vine is individually locked into the warp without reverse floats, ensuring extreme comfort.',
     artisanCluster: 'Mubarakpur Looms, Varanasi',
@@ -101,8 +98,7 @@ export const productsData: SareeProduct[] = [
     hoverImage: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=800&q=80',
     color: 'Champagne Ivory & Burnished Gold',
     zari: 'Full Warp Real Zari Ribbon',
-    dimensions: '5.5m Saree + 0.9m Contrast Blouse',
-    blouseIncluded: true,
+    dimensions: '5.5m Pure Silk Saree',
     description:
       'Combines the fluid drape of royal georgette with pure zari weft threads for a subtle luminous shine under ambient evening chandeliers.',
     artisanCluster: 'Nanjangud Loom Heritage, Mysuru',
@@ -120,7 +116,6 @@ export const productsData: SareeProduct[] = [
     color: 'Dhoop-Chhaon Royal Violet & Crimson',
     zari: 'Tested Pure Gold Tapestry Weft',
     dimensions: '6.0m Traditional Drape',
-    blouseIncluded: true,
     description:
       'Features the iconic tapestry-woven Asawali floral vines and vibrant peacocks on the grand pallu, woven entirely by hand without jacquard punchcards.',
     artisanCluster: 'Yeola Weavers, Maharashtra',
@@ -136,8 +131,7 @@ export const productsData: SareeProduct[] = [
     hoverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
     color: 'Warm Sandalwood & Antiqued Gold',
     zari: 'Fine Gold Wire Extra-Weft',
-    dimensions: '5.5m Saree + 0.8m Blouse',
-    blouseIncluded: true,
+    dimensions: '5.5m Pure Silk Saree',
     description:
       'A gossamer blend of wild raw Tussar and spun mulberry silk with delicate circular gold ashrafi bootas scattered across the body.',
     artisanCluster: 'Pranpur Heritage Village, Chanderi',
@@ -394,16 +388,16 @@ export default function ProductGrid() {
                   {/* Saree Spec Chips */}
                   <div className="space-y-2 text-xs bg-white p-4 rounded-lg border border-[#C87F4A]/20 mb-6">
                     <div className="flex justify-between">
-                      <span className="text-stone-500 font-mono text-[11px]">Zari Specification:</span>
-                      <span className="font-semibold">{quickViewProduct.zari}</span>
+                      <span className="text-stone-500 font-mono text-[11px]">Weave Guild:</span>
+                      <span className="font-semibold">{quickViewProduct.artisanCluster}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-stone-500 font-mono text-[11px]">Dimensions:</span>
                       <span className="font-semibold">{quickViewProduct.dimensions}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-stone-500 font-mono text-[11px]">Blouse Piece:</span>
-                      <span className="font-semibold text-emerald-800">Included (Unstitched / Custom option)</span>
+                      <span className="text-stone-500 font-mono text-[11px]">Silk Mark:</span>
+                      <span className="font-semibold text-emerald-800">100% Certified Pure Silk</span>
                     </div>
                   </div>
                 </div>

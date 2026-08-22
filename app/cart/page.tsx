@@ -198,12 +198,6 @@ export default function CartPage() {
                             {item.product.title}
                           </Link>
 
-                          {/* Blouse & Tailoring Option */}
-                          <div className="flex items-center gap-1.5 text-xs text-stone-600 font-sans">
-                            <Scissors className="w-3 h-3 text-[#C87F4A] flex-shrink-0" />
-                            <span className="truncate">{item.blouseOption || 'Unstitched Standard (Free)'}</span>
-                          </div>
-
                           {/* Complimentary Ready to Drape Assurance */}
                           <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-800">
                             <CheckCircle2 className="w-3 h-3" />

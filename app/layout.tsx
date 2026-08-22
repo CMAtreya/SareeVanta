@@ -36,11 +36,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Neelsareehouse | Heritage Silk Sarees of Mysuru',
+  title: 'NEELSAREEHOUSE | Heritage Silk Sarees of Mysuru',
   description:
     'Purveyors of heirloom pure silk sarees since 2021. Handwoven Kanchipuram, Royal Mysore Silk, Banarasi, and Paithani masterpieces from the royal looms of Mysuru.',
   keywords: [
-    'Neelsareehouse',
+    'NEELSAREEHOUSE',
+    'Neel Saree House',
     'Mysore Silk Saree',
     'Kanchipuram Silk Saree',
     'Banarasi Saree',
@@ -49,18 +50,24 @@ export const metadata: Metadata = {
     'Mysuru Heritage',
   ],
   openGraph: {
-    title: 'Neelsareehouse | Heritage Silk Sarees of Mysuru',
+    title: 'NEELSAREEHOUSE | Heritage Silk Sarees of Mysuru',
     description:
       'Where every drape tells a story. Discover royal Mysore silk, heirloom Kanchipuram, and pure zari weaves.',
     url: 'https://neelsareehouse.com',
-    siteName: 'Neelsareehouse Mysuru',
+    siteName: 'NEELSAREEHOUSE Mysuru',
     locale: 'en_IN',
     type: 'website',
+    images: [{ url: '/logo.png', width: 800, height: 800, alt: 'NEELSAREEHOUSE Logo' }],
   },
   icons: {
-    icon: '/logo.png',
-    shortcut: '/logo.png',
-    apple: '/logo.png',
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/logo.png', type: 'image/png' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
   },
 };
 

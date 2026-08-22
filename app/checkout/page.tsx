@@ -776,7 +776,7 @@ export default function CheckoutPage() {
                         {item.product.title}
                       </span>
                       <span className="text-[10px] text-stone-500 font-sans block">
-                        Qty: {item.quantity} • {item.blouseOption || 'Unstitched'}
+                        Qty: {item.quantity} • Pure Silk
                       </span>
                     </div>
                     <span className="font-mono text-xs font-bold text-[#1F1B16]">

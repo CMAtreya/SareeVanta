@@ -28,7 +28,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product, 1, 'Unstitched Standard (Free)', 0, e);
+    addToCart(product, 1, undefined, 0, e);
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 1500);
   };
@@ -41,6 +41,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const currentImage =
     isHovered && product.images.length > 1 ? product.images[1] : product.images[0];
+
+  const originalPrice = product.originalPriceINR && product.originalPriceINR > product.priceINR
+    ? product.originalPriceINR
+    : Math.round((product.priceINR * 1.25) / 100) * 100;
+
+  const discountPercent = Math.round(((originalPrice - product.priceINR) / originalPrice) * 100);
 
   return (
     <div
@@ -156,23 +162,29 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Price & Action Row */}
-        <div className="mt-auto pt-3 border-t border-stone-100 flex items-center justify-between">
-          <div className="flex items-baseline gap-2">
+        <div className="mt-auto pt-3 border-t border-stone-100 flex items-end justify-between">
+          <div className="flex flex-col">
+            {/* Scratched original price above discounted price with discount percentage beside it */}
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-xs text-stone-400 line-through font-sans">
+                {formatPrice(originalPrice)}
+              </span>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                {discountPercent}% OFF
+              </span>
+            </div>
+
+            {/* Discounted / Selling Price */}
             <span className="font-editorial text-lg sm:text-xl font-bold text-[#1F1B16]">
               {formatPrice(product.priceINR)}
             </span>
-            {product.originalPriceINR && (
-              <span className="text-xs text-stone-400 line-through">
-                {formatPrice(product.originalPriceINR)}
-              </span>
-            )}
           </div>
 
           {/* Mobile Always-Visible Add to Cart */}
           <button
             type="button"
             onClick={handleAddToCart}
-            className="lg:hidden p-2 rounded-full bg-[#FAF3E4] text-[#C87F4A] hover:bg-[#C87F4A] hover:text-white transition-colors"
+            className="lg:hidden p-2 rounded-full bg-[#FAF3E4] text-[#C87F4A] hover:bg-[#C87F4A] hover:text-white transition-colors mb-0.5"
             aria-label="Add to cart"
           >
             <ShoppingBag className="w-4 h-4" />
