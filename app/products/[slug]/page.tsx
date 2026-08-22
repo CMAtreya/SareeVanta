@@ -664,7 +664,7 @@ export default function ProductDetailPage() {
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              Dryclean
+                              Dry-clean
                             </span>
                           </div>
                         </div>

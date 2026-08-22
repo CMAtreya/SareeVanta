@@ -3,9 +3,7 @@ import { Cormorant_Garamond, Playfair_Display, Plus_Jakarta_Sans } from 'next/fo
 import './globals.css';
 import SmoothScrollProvider from '@/components/providers/SmoothScroll';
 import { CartProvider } from '@/components/providers/CartContext';
-import Header from '@/components/ecommerce/Header';
-import Footer from '@/components/ecommerce/Footer';
-import CartDrawer from '@/components/ecommerce/CartDrawer';
+import StorefrontLayout from '@/components/layout/StorefrontLayout';
 
 const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
@@ -84,10 +82,7 @@ export default function RootLayout({
       <body className="bg-[#FAF3E4] text-[#1F1B16] selection:bg-[#C87F4A] selection:text-white min-h-screen flex flex-col antialiased">
         <CartProvider>
           <SmoothScrollProvider>
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
-            <CartDrawer />
+            <StorefrontLayout>{children}</StorefrontLayout>
           </SmoothScrollProvider>
         </CartProvider>
         {/* Global Instagram oEmbed script loaded once asynchronously */}

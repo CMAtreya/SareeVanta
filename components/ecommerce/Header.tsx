@@ -57,22 +57,13 @@ const announcements = [
 ];
 
 const searchScrollPhrases = [
-  'Search for Kanchipuram sarees',
-  'Search for Paithani sarees',
-  'Search for Mysore silk sarees',
-  'Search for Banarasi katan silk',
-  'Search for Festive sarees',
-  'Search for Bridal pure zari silk',
-  'Search for Soft silk sarees',
-];
-
-const colorOptions = [
-  { name: 'Royal Crimson', hex: '#8B1E3F' },
-  { name: 'Vermilion Red', hex: '#C0392B' },
-  { name: 'Forest Emerald', hex: '#1E4D2B' },
-  { name: 'Royal Violet', hex: '#4A235A' },
-  { name: 'Champagne Gold', hex: '#D4AF37' },
-  { name: 'Mustard Sandalwood', hex: '#C87F4A' },
+  'Kanchipuram Sarees',
+  'Paithani Sarees',
+  'Mysore Silk Sarees',
+  'Banarasi Katan Silk',
+  'Tissue Georgette Sarees',
+  'Pure Zari Bridal Sarees',
+  'Organza Floral Sarees',
 ];
 
 const patternOptions = [
@@ -110,7 +101,7 @@ export default function Header() {
     return () => clearInterval(timer);
   }, []);
 
-  // Auto-rotate search placeholder phrases (scrolling search text)
+  // Auto-rotate search placeholder phrases (scrolling name only)
   useEffect(() => {
     const timer = setInterval(() => {
       setPhraseIndex((prev) => (prev + 1) % searchScrollPhrases.length);
@@ -169,7 +160,7 @@ export default function Header() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const query = searchQuery.trim() || searchScrollPhrases[phraseIndex].replace(/^Search for /i, '');
+    const query = searchQuery.trim() || searchScrollPhrases[phraseIndex];
     if (query) {
       setSearchFocused(false);
       router.push(`/search?q=${encodeURIComponent(query)}`);
@@ -263,7 +254,7 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Center: Long Rounded-Full Search Pill Bar with Animated Scrolling Placeholder */}
+          {/* Center: Long Rounded-Full Search Pill Bar with Static "Search for" + Animated Dynamic Saree Name */}
           <div className="flex-1 max-w-xl xl:max-w-2xl mx-2 sm:mx-6 relative">
             <form
               onSubmit={handleSearchSubmit}
@@ -271,9 +262,9 @@ export default function Header() {
             >
               <div
                 onClick={() => searchInputRef.current?.focus()}
-                className={`relative w-full h-10 sm:h-11 px-5 rounded-full bg-white/80 backdrop-blur-sm border transition-all duration-200 flex items-center justify-between cursor-text ${
+                className={`relative w-full h-10 sm:h-11 px-5 rounded-full bg-white/80 backdrop-blur-md border transition-all duration-200 flex items-center justify-between cursor-text ${
                   searchFocused
-                    ? 'border-[#7A1C30] ring-1 ring-[#7A1C30]/20 bg-white shadow-sm'
+                    ? 'border-[#7A1C30] ring-2 ring-[#7A1C30]/20 bg-white/95 shadow-md'
                     : 'border-[#D9A876]/70 hover:border-[#7A1C30]/70'
                 }`}
               >
@@ -288,21 +279,26 @@ export default function Header() {
                   className="w-full bg-transparent text-xs sm:text-sm text-[#1F1B16] focus:outline-none z-10 font-sans pr-12"
                 />
 
-                {/* Animated Scrolling Placeholder (When input is empty) */}
+                {/* Static "Search for" + Animated Dynamic Saree Name (When input is empty) */}
                 {!searchQuery && (
-                  <div className="absolute left-5 right-12 inset-y-0 flex items-center pointer-events-none overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={phraseIndex}
-                        initial={{ opacity: 0, y: 14 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -14 }}
-                        transition={{ duration: 0.32, ease: 'easeOut' }}
-                        className="text-xs sm:text-sm text-stone-500 font-sans truncate select-none"
-                      >
-                        {searchScrollPhrases[phraseIndex]}
-                      </motion.span>
-                    </AnimatePresence>
+                  <div className="absolute left-5 right-12 inset-y-0 flex items-center pointer-events-none overflow-hidden text-xs sm:text-sm text-stone-500 font-sans select-none">
+                    <span className="text-stone-600 font-medium mr-1.5 flex-shrink-0">
+                      Search for
+                    </span>
+                    <div className="overflow-hidden h-5 flex items-center flex-1">
+                      <AnimatePresence mode="wait">
+                        <motion.span
+                          key={phraseIndex}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.28, ease: 'easeOut' }}
+                          className="truncate text-[#7A1C30] font-sans font-medium"
+                        >
+                          {searchScrollPhrases[phraseIndex]}
+                        </motion.span>
+                      </AnimatePresence>
+                    </div>
                   </div>
                 )}
 
@@ -332,9 +328,9 @@ export default function Header() {
               </div>
             </form>
 
-            {/* Instant Search Suggestions & Products Dropdown */}
+            {/* Instant Search Suggestions & Products Dropdown with Enhanced Glassmorphism */}
             {searchFocused && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[#FAF3E4]/98 backdrop-blur-2xl rounded-2xl shadow-2xl border border-[#C87F4A]/30 p-4 z-50 animate-fade-in max-h-[480px] overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#FAF3E4]/85 backdrop-blur-2xl backdrop-saturate-150 rounded-2xl shadow-[0_20px_50px_rgba(31,27,22,0.18)] border border-white/80 ring-1 ring-[#C87F4A]/30 p-4 z-50 animate-fade-in max-h-[480px] overflow-y-auto">
                 {/* 1. Live Matching Products */}
                 {matchingProducts.length > 0 && (
                   <div className="mb-4">
@@ -347,7 +343,7 @@ export default function Header() {
                           key={prod.id}
                           type="button"
                           onMouseDown={() => router.push(`/products/${prod.slug}`)}
-                          className="w-full text-left p-2 rounded-xl hover:bg-white flex items-center gap-3 transition-colors border border-transparent hover:border-[#C87F4A]/20 group"
+                          className="w-full text-left p-2 rounded-xl bg-white/50 hover:bg-white/90 backdrop-blur-md flex items-center gap-3 transition-all border border-white/60 hover:border-[#C87F4A]/40 shadow-2xs group"
                         >
                           <div className="w-10 h-12 rounded-lg overflow-hidden bg-stone-100 flex-shrink-0 border border-stone-200">
                             <img
@@ -362,7 +358,7 @@ export default function Header() {
                                 {prod.weave}
                               </span>
                               {prod.silkMarkCertified && (
-                                <span className="text-[8.5px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded">
+                                <span className="text-[8.5px] font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
                                   Silk Mark
                                 </span>
                               )}
@@ -391,7 +387,7 @@ export default function Header() {
                         key={idx}
                         type="button"
                         onMouseDown={() => router.push(sug.url)}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white text-xs font-sans text-[#1F1B16] flex items-center justify-between transition-colors group"
+                        className="w-full text-left px-3 py-2 rounded-xl bg-white/40 hover:bg-white/90 backdrop-blur-md text-xs font-sans text-[#1F1B16] flex items-center justify-between transition-all border border-transparent hover:border-[#C87F4A]/30 group"
                       >
                         <span className="font-medium group-hover:text-[#7A1C30]">{sug.text}</span>
                         <span className="text-[10px] font-mono text-[#C87F4A] uppercase">
@@ -403,8 +399,8 @@ export default function Header() {
                 )}
 
                 {/* 3. Popular Searches Pills */}
-                <div className="space-y-2 pt-2 border-t border-[#C87F4A]/15">
-                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-500 block px-2">
+                <div className="space-y-2 pt-2.5 border-t border-[#C87F4A]/20">
+                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-600 block px-2">
                     Popular Searches
                   </span>
                   <div className="flex flex-wrap gap-1.5 px-1">
@@ -423,7 +419,7 @@ export default function Header() {
                           setSearchQuery(term);
                           router.push(`/search?q=${encodeURIComponent(term)}`);
                         }}
-                        className="text-[11px] bg-white hover:bg-[#7A1C30] hover:text-white px-2.5 py-1 rounded-full text-stone-700 transition-colors border border-[#C87F4A]/20 font-sans"
+                        className="text-[11px] bg-white/70 hover:bg-[#7A1C30] hover:text-white backdrop-blur-sm px-3 py-1 rounded-full text-stone-700 transition-all border border-[#C87F4A]/30 shadow-2xs font-sans"
                       >
                         {term}
                       </button>
@@ -490,7 +486,7 @@ export default function Header() {
       <nav className="hidden lg:block w-full bg-[#FAF3E4]/85 backdrop-blur-md border-b border-[#C87F4A]/15 py-2.5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ul className="flex items-center justify-center gap-10 xl:gap-14 text-xs font-sans font-semibold tracking-wide uppercase text-stone-800">
-            {/* 1. Shop by Category (Comprehensive Mega-Menu) */}
+            {/* 1. Shop by Category (Comprehensive Mega-Menu - 4 Columns: Weave, Fabric, Occasion, Pattern) */}
             <li
               className="relative py-1"
               onMouseEnter={() => handleMouseEnter('categories')}
@@ -516,7 +512,7 @@ export default function Header() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 6, scale: 0.98 }}
                       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                      className="w-[900px] bg-gradient-to-b from-[#FAF5EE]/95 via-white/90 to-[#FAF3E4]/95 backdrop-blur-2xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(122,28,48,0.18)] border border-white/80 ring-1 ring-[#C87F4A]/25 p-7 text-stone-900 overflow-hidden relative"
+                      className="w-[860px] bg-gradient-to-b from-[#FAF5EE]/95 via-white/90 to-[#FAF3E4]/95 backdrop-blur-2xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(122,28,48,0.18)] border border-white/80 ring-1 ring-[#C87F4A]/25 p-7 text-stone-900 overflow-hidden relative"
                     >
                       {/* Subtle Glass Shimmer / Radial Ambient Glow */}
                       <div className="absolute -top-24 -right-24 w-64 h-64 bg-gradient-to-br from-[#7A1C30]/10 via-[#C87F4A]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
@@ -540,22 +536,23 @@ export default function Header() {
                         </Link>
                       </div>
 
-                      <div className="relative grid grid-cols-5 gap-4">
+                      {/* 4-Column Layout (Color Removed) */}
+                      <div className="relative grid grid-cols-4 gap-4">
                         {/* 1. Shop by Weave */}
-                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                        <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
                           <div>
                             <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
                               Shop by Weave
                             </span>
                             <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
                           </div>
-                          <ul className="space-y-1 text-xs text-stone-700 font-sans font-normal normal-case">
+                          <ul className="space-y-1.5 text-xs text-stone-700 font-sans font-normal normal-case">
                             {weaveCategories.map((wc) => (
                               <li key={wc.id}>
                                 <Link
                                   href={`/products?weave=${encodeURIComponent(wc.name)}`}
                                   onClick={() => setActiveDropdown(null)}
-                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
+                                  className="px-2.5 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
                                 >
                                   {wc.name}
                                 </Link>
@@ -565,20 +562,20 @@ export default function Header() {
                         </div>
 
                         {/* 2. Shop by Fabric */}
-                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                        <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
                           <div>
                             <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
                               Shop by Fabric
                             </span>
                             <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
                           </div>
-                          <ul className="space-y-1 text-xs text-stone-700 font-sans font-normal normal-case">
+                          <ul className="space-y-1.5 text-xs text-stone-700 font-sans font-normal normal-case">
                             {fabricFilters.map((fabric, idx) => (
                               <li key={idx}>
                                 <Link
                                   href={`/products?fabric=${encodeURIComponent(fabric)}`}
                                   onClick={() => setActiveDropdown(null)}
-                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
+                                  className="px-2.5 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
                                 >
                                   {fabric}
                                 </Link>
@@ -588,20 +585,20 @@ export default function Header() {
                         </div>
 
                         {/* 3. Shop by Occasion */}
-                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                        <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
                           <div>
                             <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
                               Shop by Occasion
                             </span>
                             <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
                           </div>
-                          <ul className="space-y-1 text-xs text-stone-700 font-sans font-normal normal-case">
+                          <ul className="space-y-1.5 text-xs text-stone-700 font-sans font-normal normal-case">
                             {occasionFilters.map((occ, idx) => (
                               <li key={idx}>
                                 <Link
                                   href={`/products?occasion=${encodeURIComponent(occ)}`}
                                   onClick={() => setActiveDropdown(null)}
-                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
+                                  className="px-2.5 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block truncate font-medium"
                                 >
                                   {occ}
                                 </Link>
@@ -610,35 +607,8 @@ export default function Header() {
                           </ul>
                         </div>
 
-                        {/* 4. Shop by Color */}
-                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
-                          <div>
-                            <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
-                              Shop by Color
-                            </span>
-                            <div className="h-[1.5px] w-full bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-transparent mt-1" />
-                          </div>
-                          <ul className="space-y-1.5 text-xs text-stone-700 font-sans font-normal normal-case">
-                            {colorOptions.map((c, idx) => (
-                              <li key={idx}>
-                                <Link
-                                  href={`/products?color=${encodeURIComponent(c.name)}`}
-                                  onClick={() => setActiveDropdown(null)}
-                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all flex items-center gap-2 group"
-                                >
-                                  <span
-                                    className="w-3 h-3 rounded-full border border-stone-300 shadow-2xs group-hover:scale-110 transition-transform flex-shrink-0"
-                                    style={{ backgroundColor: c.hex }}
-                                  />
-                                  <span className="truncate font-medium">{c.name}</span>
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* 5. Shop by Pattern */}
-                        <div className="bg-white/60 backdrop-blur-md p-3.5 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
+                        {/* 4. Shop by Pattern */}
+                        <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl border border-white/80 shadow-2xs hover:border-[#C87F4A]/40 transition-colors space-y-3">
                           <div>
                             <span className="text-xs font-bold text-[#7A1C30] tracking-wider uppercase block font-editorial">
                               Shop by Pattern
@@ -651,7 +621,7 @@ export default function Header() {
                                 <Link
                                   href={`/products?search=${encodeURIComponent(p.name)}`}
                                   onClick={() => setActiveDropdown(null)}
-                                  className="px-2 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block group"
+                                  className="px-2.5 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block group"
                                 >
                                   <span className="block truncate font-medium text-xs leading-tight">{p.name}</span>
                                   <span className="block text-[9.5px] text-stone-400 font-mono tracking-tight leading-tight">{p.desc}</span>
