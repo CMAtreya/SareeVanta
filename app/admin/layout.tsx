@@ -369,9 +369,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
 
               <Link
-                href="/admin/orders"
-                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl text-slate-300 hover:bg-slate-800/80 hover:text-white transition-all"
-                title="BlueDart Shipments"
+                href="/admin/shipments"
+                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
+                  pathname.startsWith('/admin/shipments')
+                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                }`}
+                title="BlueDart & Delhivery Shipments"
               >
                 <Truck className="w-4 h-4 flex-shrink-0" />
                 {!isSidebarCollapsed && <span>Shipments</span>}
