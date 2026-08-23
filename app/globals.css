@@ -65,6 +65,38 @@ body {
   background: #944D26;
 }
 
+/* Dedicated Admin Sidebar Scrollbar */
+.admin-sidebar-scroll {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  scroll-behavior: smooth !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #475569 #0F172A !important;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-track {
+  background: #0F172A !important;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+  border-radius: 9999px !important;
+  border: 1px solid #1E293B !important;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #64748B !important;
+}
+
+.admin-sidebar-scroll::-webkit-scrollbar-thumb:active {
+  background: #3B82F6 !important;
+}
+
 /* Royal Zari Shimmer Utility */
 .zari-border {
   border-image: linear-gradient(to right, #C49746, #FAF3E4, #C49746) 1;

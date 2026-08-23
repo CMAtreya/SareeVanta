@@ -97,11 +97,20 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full p-0.5 bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B]">
-                <img
-                  src="/logo.png"
-                  alt="Neelsareehouse Logo"
-                  className="w-full h-full object-contain bg-[#FAF3E4] rounded-full p-0.5"
-                />
+                <picture>
+                  <source srcSet="/assets/logo.webp" type="image/webp" />
+                  <img
+                    src="/assets/logo.jpg"
+                    alt="Neelsareehouse Logo"
+                    className="w-full h-full object-cover bg-[#FAF3E4] rounded-full p-0.5"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('logo.webp')) {
+                        target.src = '/assets/logo.webp';
+                      }
+                    }}
+                  />
+                </picture>
               </div>
               <div>
                 <h3 className="font-editorial text-2xl font-bold tracking-tight text-white uppercase">

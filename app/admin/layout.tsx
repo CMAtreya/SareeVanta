@@ -219,11 +219,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {!isSidebarCollapsed ? (
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-lg p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 flex-shrink-0">
-                <img
-                  src="/logo.png"
-                  alt="NEELSAREEHOUSE"
-                  className="w-full h-full object-contain bg-[#0F172A] rounded-md p-0.5"
-                />
+                <picture>
+                  <source srcSet="/assets/logo.webp" type="image/webp" />
+                  <img
+                    src="/assets/logo.jpg"
+                    alt="NEELSAREEHOUSE"
+                    className="w-full h-full object-cover bg-[#0F172A] rounded-md"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('logo.webp')) {
+                        target.src = '/assets/logo.webp';
+                      }
+                    }}
+                  />
+                </picture>
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-xs text-white uppercase tracking-wider truncate">
@@ -243,11 +252,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           ) : (
             <div className="w-8 h-8 rounded-lg p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 mx-auto">
-              <img
-                src="/logo.png"
-                alt="NEELSAREEHOUSE"
-                className="w-full h-full object-contain bg-[#0F172A] rounded-md p-0.5"
-              />
+              <picture>
+                <source srcSet="/assets/logo.webp" type="image/webp" />
+                <img
+                  src="/assets/logo.jpg"
+                  alt="NEELSAREEHOUSE"
+                  className="w-full h-full object-cover bg-[#0F172A] rounded-md"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.src.includes('logo.webp')) {
+                      target.src = '/assets/logo.webp';
+                    }
+                  }}
+                />
+              </picture>
             </div>
           )}
 
@@ -306,7 +324,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* Smooth Scrollable Navigation Container */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain scroll-smooth px-3 py-2 space-y-4 text-xs font-sans [scrollbar-width:thin] [scrollbar-color:#334155_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-700/60 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-500/80">
+        <div
+          data-lenis-prevent
+          className="flex-1 min-h-0 admin-sidebar-scroll px-3 py-2 space-y-4 text-xs font-sans select-none"
+        >
           {/* Section 1: Commerce */}
           <div className="space-y-0.5">
               {!isSidebarCollapsed && (

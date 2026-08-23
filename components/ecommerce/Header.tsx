@@ -170,8 +170,8 @@ export default function Header() {
   return (
     <header className="w-full z-40 sticky top-0">
       {/* 1. TOP PROMOTIONAL ANNOUNCEMENT BAR (Deep Crimson / Maroon) */}
-      <div className="bg-[#7A1C30] text-white py-1.5 px-3 sm:px-6 relative z-50 text-[11px] sm:text-xs font-sans tracking-wide">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <div className="bg-[#7A1C30] text-white py-1.5 px-3 sm:px-6 relative z-50 text-[11px] sm:text-xs font-sans tracking-wide w-full">
+        <div className="w-full px-2 sm:px-6 md:px-8 lg:px-10 xl:px-12 flex items-center justify-between">
           <button
             type="button"
             onClick={prevAnnouncement}
@@ -215,7 +215,7 @@ export default function Header() {
             : 'bg-[#FAF3E4]/95 backdrop-blur-md border-b border-[#C87F4A]/20'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-3 sm:gap-6">
+        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 sm:py-3.5 flex items-center justify-between gap-4 sm:gap-8">
           {/* Mobile Menu Button (Small Screens) */}
           <div className="flex items-center lg:hidden">
             <button
@@ -236,11 +236,20 @@ export default function Header() {
             {/* Brand Emblem Logo with Gold Gradient Ring */}
             <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full p-[2px] bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B] shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
               <div className="w-full h-full rounded-full overflow-hidden bg-[#FAF3E4] flex items-center justify-center p-0.5 border border-white/60">
-                <img
-                  src="/logo.png"
-                  alt="NEELSAREEHOUSE Emblem"
-                  className="w-full h-full object-cover"
-                />
+                <picture>
+                  <source srcSet="/assets/logo.webp" type="image/webp" />
+                  <img
+                    src="/assets/logo.jpg"
+                    alt="NEELSAREEHOUSE Emblem"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('logo.webp')) {
+                        target.src = '/assets/logo.webp';
+                      }
+                    }}
+                  />
+                </picture>
               </div>
             </div>
 
@@ -255,7 +264,7 @@ export default function Header() {
           </Link>
 
           {/* Center: Long Rounded-Full Search Pill Bar with Static "Search for" + Animated Dynamic Saree Name */}
-          <div className="flex-1 max-w-xl xl:max-w-2xl mx-2 sm:mx-6 relative">
+          <div className="flex-1 max-w-4xl 2xl:max-w-6xl mx-3 sm:mx-6 xl:mx-10 relative">
             <form
               onSubmit={handleSearchSubmit}
               className="relative w-full"
@@ -484,7 +493,7 @@ export default function Header() {
 
       {/* 3. BOTTOM CATEGORY NAVIGATION BAR (Glassmorphic 4-Category Bar) */}
       <nav className="hidden lg:block w-full bg-[#FAF3E4]/85 backdrop-blur-md border-b border-[#C87F4A]/15 py-2.5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
           <ul className="flex items-center justify-center gap-10 xl:gap-14 text-xs font-sans font-semibold tracking-wide uppercase text-stone-800">
             {/* 1. Shop by Category (Comprehensive Mega-Menu - 4 Columns: Weave, Fabric, Occasion, Pattern) */}
             <li
