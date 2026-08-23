@@ -657,25 +657,25 @@ export default function AdminExecutiveDashboard() {
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-                  <BarChart2 className="w-4 h-4 text-blue-600" />
+                <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+                  <BarChart2 className="w-4 h-4 text-[#7A1C30]" />
                   <span>Sales & Order Velocity</span>
                 </h3>
-                <p className="text-[11px] font-mono text-slate-500">
+                <p className="text-[11px] font-mono text-stone-500">
                   {dateRange} Real-Time Revenue Trajectory
                 </p>
               </div>
 
               {/* Chart Controls */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-mono">
+                <div className="flex items-center bg-[#FAF3E4] border border-[#E8DCC9] p-0.5 rounded-lg text-xs font-mono">
                   <button
                     type="button"
                     onClick={() => setChartMetric('NET')}
                     className={`px-2.5 py-1 rounded-md transition-colors ${
                       chartMetric === 'NET'
-                        ? 'bg-white text-blue-600 font-bold shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-[#7A1C30] text-white font-bold shadow-2xs'
+                        : 'text-stone-600 hover:text-[#1F1B16]'
                     }`}
                   >
                     Net Sales
@@ -685,8 +685,8 @@ export default function AdminExecutiveDashboard() {
                     onClick={() => setChartMetric('GROSS')}
                     className={`px-2.5 py-1 rounded-md transition-colors ${
                       chartMetric === 'GROSS'
-                        ? 'bg-white text-blue-600 font-bold shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-[#7A1C30] text-white font-bold shadow-2xs'
+                        : 'text-stone-600 hover:text-[#1F1B16]'
                     }`}
                   >
                     Gross Revenue
@@ -697,7 +697,7 @@ export default function AdminExecutiveDashboard() {
 
             {/* Interactive Bar Chart Visualization */}
             <div className="pt-4 pb-2">
-              <div className="h-44 flex items-end justify-between gap-3 px-2 border-b border-slate-200">
+              <div className="h-44 flex items-end justify-between gap-3 px-2 border-b border-[#E8DCC9]">
                 {currentMetrics.hourlyVelocity.map((point, index) => {
                   const maxVal = Math.max(...currentMetrics.hourlyVelocity.map((p) => p.sales));
                   const heightPercent = Math.round((point.sales / maxVal) * 85) + 15;
@@ -712,11 +712,11 @@ export default function AdminExecutiveDashboard() {
                     >
                       {/* Floating Tooltip */}
                       {isHovered && (
-                        <div className="absolute -top-12 z-20 bg-slate-900 text-white px-2.5 py-1 rounded-lg text-[10px] font-mono shadow-xl whitespace-nowrap pointer-events-none animate-fade-in">
-                          <div className="font-bold text-amber-300">
+                        <div className="absolute -top-12 z-20 bg-[#1F1B16] text-[#FAF3E4] px-2.5 py-1 rounded-lg text-[10px] font-mono shadow-xl whitespace-nowrap pointer-events-none animate-fade-in border border-[#C87F4A]/30">
+                          <div className="font-bold text-[#E2CE9F]">
                             ₹{point.sales.toLocaleString('en-IN')}
                           </div>
-                          <div className="text-slate-300">{point.orders} orders placed</div>
+                          <div className="text-stone-300">{point.orders} orders placed</div>
                         </div>
                       )}
 
@@ -725,8 +725,8 @@ export default function AdminExecutiveDashboard() {
                         style={{ height: `${heightPercent}%` }}
                         className={`w-full max-w-[42px] rounded-t-lg transition-all duration-300 ${
                           isHovered
-                            ? 'bg-blue-600 shadow-md'
-                            : 'bg-gradient-to-t from-blue-600/80 to-blue-500/90 group-hover:from-blue-600 group-hover:to-blue-400'
+                            ? 'bg-[#7A1C30] shadow-md'
+                            : 'bg-gradient-to-t from-[#7A1C30]/90 to-[#A33B45] group-hover:from-[#5F1424] group-hover:to-[#7A1C30]'
                         }`}
                       />
                       <span className="text-[10px] font-mono text-slate-500 mt-2 font-medium">

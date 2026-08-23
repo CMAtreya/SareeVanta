@@ -397,25 +397,25 @@ export default function BulkUploadEnginePage() {
       {/* ================================================== */}
       {/* 1. TOP HEADER & BREADCRUMBS                        */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/catalog"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-[#FAF3E4] transition-colors"
             title="Back to Catalog"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 text-[#7A1C30]" />
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
                 Excel / CSV Bulk Data Engine
               </h1>
-              <span className="bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
+              <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
                 Max 5,000 Rows
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-mono mt-0.5">
+            <p className="text-xs text-stone-500 font-mono mt-0.5">
               High-Throughput Handloom Ingestion with In-Browser Error Grid & Live SSE Feedback
             </p>
           </div>
@@ -426,16 +426,16 @@ export default function BulkUploadEnginePage() {
           <button
             type="button"
             onClick={handleDownloadStandardTemplate}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 text-blue-600" />
+            <Download className="w-3.5 h-3.5 text-[#7A1C30]" />
             <span>Import Template (.csv)</span>
           </button>
 
           <button
             type="button"
             onClick={handleDownloadCurrentInventory}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Export Current Snapshot</span>
@@ -446,16 +446,16 @@ export default function BulkUploadEnginePage() {
       {/* ================================================== */}
       {/* 2. DRAG AND DROP INGESTION ZONE                   */}
       {/* ================================================== */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center bg-slate-50/70 hover:bg-blue-50/20 hover:border-blue-500 transition-all cursor-pointer space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
+      <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+        <div className="border-2 border-dashed border-[#E8DCC9] rounded-2xl p-8 text-center bg-[#FAF6F0]/70 hover:bg-[#FAF3E4]/80 hover:border-[#7A1C30] transition-all cursor-pointer space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 flex items-center justify-center mx-auto shadow-xs">
             <Upload className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-slate-900 font-sans">
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans">
               Drag & Drop Master Saree Spreadsheet (.xlsx, .csv)
             </h3>
-            <p className="text-xs text-slate-500 font-mono mt-1">
+            <p className="text-xs text-stone-500 font-mono mt-1">
               Supports up to 5,000 rows with Silk Mark validation & HSN tax mapping
             </p>
           </div>
@@ -464,20 +464,20 @@ export default function BulkUploadEnginePage() {
             <button
               type="button"
               onClick={handleLoadDemoBatch}
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-mono text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white font-mono text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
               <span>Load Demo Indian Handloom Batch (Contains Errors to Fix)</span>
             </button>
           </div>
         </div>
 
         {fileName && (
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-between text-xs font-mono text-blue-900">
+          <div className="p-3 rounded-xl bg-[#FAF3E4] border border-[#C87F4A]/30 flex items-center justify-between text-xs font-mono text-[#7A1C30]">
             <div className="flex items-center gap-2">
-              <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+              <FileSpreadsheet className="w-4 h-4 text-[#7A1C30]" />
               <span className="font-bold">{fileName}</span>
-              <span className="text-slate-500">({rows.length} rows loaded)</span>
+              <span className="text-stone-500">({rows.length} rows loaded)</span>
             </div>
             <button
               type="button"
@@ -486,7 +486,7 @@ export default function BulkUploadEnginePage() {
                 setFileName(null);
                 setIsCompleted(false);
               }}
-              className="text-slate-400 hover:text-slate-700"
+              className="text-stone-400 hover:text-stone-700 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -503,10 +503,10 @@ export default function BulkUploadEnginePage() {
           <button
             type="button"
             onClick={() => setActiveFilter('ALL')}
-            className={`p-4 rounded-2xl border text-left transition-all ${
+            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
               activeFilter === 'ALL'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                : 'bg-white border-slate-200 text-slate-900 hover:bg-slate-50'
+                ? 'bg-[#7A1C30] text-white border-[#7A1C30] shadow-sm'
+                : 'bg-white border-[#E8DCC9] text-stone-900 hover:bg-[#FAF3E4]'
             }`}
           >
             <span className="text-[10px] font-mono uppercase tracking-wider block opacity-70">

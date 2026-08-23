@@ -135,14 +135,14 @@ export default function CommandPalette({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4 animate-fade-in select-none">
+    <div className="fixed inset-0 z-50 bg-[#18110E]/80 backdrop-blur-xs flex items-start justify-center pt-20 px-4 animate-fade-in select-none">
       <div
-        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900"
+        className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-[#E8DCC9] overflow-hidden text-[#1F1B16]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Header Bar */}
-        <div className="flex items-center px-4 border-b border-slate-200 bg-slate-50/70">
-          <Search className="w-5 h-5 text-slate-400 mr-3 flex-shrink-0" />
+        <div className="flex items-center px-4 border-b border-[#E8DCC9] bg-[#FAF6F0]">
+          <Search className="w-5 h-5 text-stone-400 mr-3 flex-shrink-0" />
           <input
             type="text"
             autoFocus
@@ -152,25 +152,25 @@ export default function CommandPalette({
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            className="w-full py-4 text-sm bg-transparent placeholder:text-slate-400 font-sans focus:outline-none text-slate-900"
+            className="w-full py-4 text-sm bg-transparent placeholder:text-stone-400 font-sans focus:outline-none text-[#1F1B16] font-medium"
           />
-          <div className="flex items-center gap-1 text-[10px] font-mono text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded-md flex-shrink-0 shadow-2xs">
+          <div className="flex items-center gap-1 text-[10px] font-mono text-stone-400 bg-white border border-[#E8DCC9] px-2 py-0.5 rounded-md flex-shrink-0 shadow-2xs">
             <Command className="w-3 h-3" />
             <span>K</span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="ml-3 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+            className="ml-3 p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-[#FAF3E4] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Results List */}
-        <div className="max-h-[380px] overflow-y-auto p-2 divide-y divide-slate-100">
+        <div className="max-h-[380px] overflow-y-auto p-2 divide-y divide-stone-100">
           {allItems.length === 0 ? (
-            <div className="p-8 text-center text-xs font-mono text-slate-400">
+            <div className="p-8 text-center text-xs font-mono text-stone-400">
               No matching commands or SKUs found for "{query}".
             </div>
           ) : (
@@ -188,24 +188,24 @@ export default function CommandPalette({
                         onClose();
                       }
                     }}
-                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-blue-50/70 cursor-pointer transition-colors group text-xs font-sans"
+                    className="flex items-center justify-between p-2.5 rounded-xl hover:bg-[#FAF3E4] cursor-pointer transition-colors group text-xs font-sans"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-colors flex-shrink-0">
+                      <div className="w-7 h-7 rounded-lg bg-[#FAF6F0] text-stone-600 border border-[#E8DCC9] group-hover:bg-[#7A1C30] group-hover:border-[#7A1C30] group-hover:text-white flex items-center justify-center transition-colors flex-shrink-0">
                         <IconComponent className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-slate-900 truncate group-hover:text-blue-600">
+                        <div className="font-semibold text-stone-900 truncate group-hover:text-[#7A1C30]">
                           {item.title}
                         </div>
-                        <div className="text-[10px] font-mono text-slate-400 flex items-center gap-2">
-                          <span className="uppercase text-slate-500 font-semibold">{item.category}</span>
+                        <div className="text-[10px] font-mono text-stone-400 flex items-center gap-2">
+                          <span className="uppercase text-[#C87F4A] font-bold">{item.category}</span>
                           {item.sku && <span>• {item.sku}</span>}
                           {item.price && <span className="text-emerald-700 font-bold">• {item.price}</span>}
                         </div>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors flex-shrink-0 ml-2" />
+                    <ArrowRight className="w-4 h-4 text-stone-300 group-hover:text-[#7A1C30] transition-colors flex-shrink-0 ml-2" />
                   </div>
                 );
               })}
@@ -214,13 +214,13 @@ export default function CommandPalette({
         </div>
 
         {/* Command Palette Footer */}
-        <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono text-slate-500">
+        <div className="px-4 py-2.5 bg-[#FAF6F0] border-t border-[#E8DCC9] flex items-center justify-between text-[11px] font-mono text-stone-500">
           <div className="flex items-center gap-3">
             <span>↑↓ Navigate</span>
             <span>↵ Select</span>
             <span>Esc Close</span>
           </div>
-          <span className="text-blue-600 font-semibold">NEELSAREEHOUSE Admin Console</span>
+          <span className="text-[#7A1C30] font-bold">NEELSAREEHOUSE Admin Console</span>
         </div>
       </div>
     </div>

@@ -209,10 +209,10 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
   };
 
   return (
-    <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in">
+    <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-8 right-8 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 text-xs font-sans animate-fade-in">
+        <div className="fixed bottom-8 right-8 z-50 bg-[#18110E] text-[#FAF3E4] px-5 py-3 rounded-2xl shadow-2xl border border-[#C87F4A]/30 flex items-center gap-2 text-xs font-sans animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -221,18 +221,18 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       {/* ================================================== */}
       {/* 1. TOP HEADER & TIMEFRAME CONTROLS                 */}
       {/* ================================================== */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Performance & Merchandising Intelligence
             </h1>
-            <span className="bg-blue-50 text-blue-900 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
-              <BarChart3 className="w-3 h-3 text-blue-600" />
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
+              <BarChart3 className="w-3 h-3 text-[#7A1C30]" />
               <span>Real-Time Bi-Directional BI</span>
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Unit Economics, Full Funnel Drop-off, Weave Margins, RTO Geographies & AI Lift
           </p>
         </div>
@@ -240,7 +240,7 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
         {/* Global Filter Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Date Range Selector */}
-          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs font-mono text-xs">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#E8DCC9] shadow-2xs font-mono text-xs">
             {[
               { key: 'TODAY', label: 'Today' },
               { key: 'LAST_7_DAYS', label: 'Last 7D' },
@@ -251,10 +251,10 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
                 key={d.key}
                 type="button"
                 onClick={() => setDateRange(d.key as any)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
                   dateRange === d.key
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    ? 'bg-[#7A1C30] text-white shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
                 }`}
               >
                 {d.label}
@@ -263,14 +263,14 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
           </div>
 
           {/* Comparison Toggle */}
-          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs font-mono text-xs">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#E8DCC9] shadow-2xs font-mono text-xs">
             <button
               type="button"
               onClick={() => setComparisonMode('PREV_PERIOD')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 comparisonMode === 'PREV_PERIOD'
-                  ? 'bg-blue-50 text-blue-800 font-bold border border-blue-200'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#FAF3E4] text-[#7A1C30] font-bold border border-[#C87F4A]/30'
+                  : 'text-stone-500 hover:text-stone-800'
               }`}
             >
               vs Prev Period
@@ -278,10 +278,10 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
             <button
               type="button"
               onClick={() => setComparisonMode('PREV_YEAR')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 comparisonMode === 'PREV_YEAR'
-                  ? 'bg-blue-50 text-blue-800 font-bold border border-blue-200'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-[#FAF3E4] text-[#7A1C30] font-bold border border-[#C87F4A]/30'
+                  : 'text-stone-500 hover:text-stone-800'
               }`}
             >
               vs 2025 YoY
@@ -292,9 +292,9 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
           <button
             type="button"
             onClick={handleExportReport}
-            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5 text-amber-200" />
             <span>Export BI Report</span>
           </button>
         </div>
@@ -305,13 +305,13 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       {/* ================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Gross Revenue */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Gross Revenue (GMV)</span>
-            <DollarSign className="w-4 h-4 text-blue-600" />
+            <DollarSign className="w-4 h-4 text-[#7A1C30]" />
           </div>
           <div className="flex items-baseline gap-2 font-mono">
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+            <span className="text-2xl font-bold text-stone-900 tracking-tight">
               ₹{(financialMetrics.grossRevenue / 100000).toFixed(2)}L
             </span>
             <span className="text-xs font-bold text-emerald-700 flex items-center">
@@ -385,19 +385,19 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       {/* ================================================== */}
       {/* 3. FULL CONVERSION FUNNEL VISUALIZATION            */}
       {/* ================================================== */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-stone-100">
           <div>
-            <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-              <Filter className="w-4 h-4 text-blue-600" />
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+              <Filter className="w-4 h-4 text-[#7A1C30]" />
               <span>Full Storefront Conversion Funnel</span>
             </h3>
-            <p className="text-xs text-slate-500 font-mono">
+            <p className="text-xs text-stone-500 font-mono">
               Stage-by-stage drop-off analytics from initial landing session to verified checkout order
             </p>
           </div>
           <div className="text-right font-mono">
-            <span className="text-[10px] text-slate-400 uppercase block font-bold">Overall Conversion</span>
+            <span className="text-[10px] text-stone-400 uppercase block font-bold">Overall Conversion</span>
             <span className="font-bold text-emerald-700 text-base">1.03% (1,280 Orders)</span>
           </div>
         </div>
@@ -410,15 +410,15 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
             return (
               <div key={stg.stage} className="space-y-1 text-xs font-sans">
                 <div className="flex items-center justify-between font-mono">
-                  <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                    <stg.icon className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="font-bold text-stone-800 flex items-center gap-1.5">
+                    <stg.icon className="w-3.5 h-3.5 text-stone-500" />
                     <span>{stg.stage}</span>
                   </span>
                   <div className="flex items-center gap-3">
-                    <span className="font-bold text-slate-900 text-xs">
+                    <span className="font-bold text-stone-900 text-xs">
                       {stg.count.toLocaleString('en-IN')}
                     </span>
-                    <span className="text-[11px] text-slate-500">
+                    <span className="text-[11px] text-stone-500">
                       ({stg.conversionFromTop} of visitors)
                     </span>
                     {stg.dropoff && (
@@ -430,9 +430,9 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
                 </div>
 
                 {/* Visual Bar */}
-                <div className="w-full bg-slate-100 rounded-xl h-4 overflow-hidden relative">
+                <div className="w-full bg-[#FAF6F0] rounded-xl h-4 overflow-hidden relative border border-[#E8DCC9]">
                   <div
-                    className="h-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500 flex items-center justify-end pr-2 text-[9px] font-mono font-bold text-white shadow-inner"
+                    className="h-full rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#C87F4A] transition-all duration-500 flex items-center justify-end pr-2 text-[9px] font-mono font-bold text-white shadow-inner"
                     style={{ width: `${widthPercent}%` }}
                   >
                     {widthPercent > 15 && `${Math.round(widthPercent)}%`}
@@ -449,14 +449,14 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       {/* ================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Weave & Fabric Breakdown (7 Cols) */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
             <div>
-              <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-500" />
+              <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#C87F4A]" />
                 <span>Weave Tradition & Fabric Revenue Share</span>
               </h3>
-              <p className="text-xs text-slate-500 font-mono">
+              <p className="text-xs text-stone-500 font-mono">
                 Gross sales contribution & average order value per handloom tradition
               </p>
             </div>
@@ -467,20 +467,20 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
               <div key={wp.weave} className="space-y-1.5 text-xs font-sans">
                 <div className="flex justify-between items-center font-mono">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900">{wp.weave}</span>
+                    <span className="font-bold text-stone-900">{wp.weave}</span>
                     <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
                       {wp.growth}
                     </span>
                   </div>
                   <div className="text-right">
-                    <strong className="text-slate-900">₹{(wp.revenue / 100000).toFixed(2)}L</strong>
-                    <span className="text-slate-400 text-[10px] ml-1.5">
+                    <strong className="text-stone-900">₹{(wp.revenue / 100000).toFixed(2)}L</strong>
+                    <span className="text-stone-400 text-[10px] ml-1.5">
                       ({wp.units} units • AOV: ₹{wp.aov.toLocaleString('en-IN')})
                     </span>
                   </div>
                 </div>
 
-                <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-[#FAF6F0] rounded-full h-2 overflow-hidden border border-[#E8DCC9]">
                   <div
                     className={`h-full rounded-full ${wp.barColor}`}
                     style={{ width: `${wp.share}%` }}
@@ -492,29 +492,29 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
         </div>
 
         {/* Interactive Video Engagement Impact (5 Cols) */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-gradient-to-br from-[#18110E] to-[#2D1A14] text-white p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between border border-[#C87F4A]/30">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-amber-300 font-mono text-xs font-bold">
-              <Sparkles className="w-4 h-4" />
+            <div className="flex items-center gap-2 text-[#E2CE9F] font-mono text-xs font-bold">
+              <Sparkles className="w-4 h-4 text-[#C87F4A]" />
               <span>STUDIO & REEL ENGAGEMENT ROI LIFT</span>
             </div>
             <h3 className="font-bold text-base font-sans text-white">
               Studio Photography & Video Impact
             </h3>
-            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+            <p className="text-xs text-stone-300 font-mono leading-relaxed">
               Comparison between visitors who engaged with high-res macro weave videos vs standard catalog browsing
             </p>
           </div>
 
           {/* Metric Comparison Grid */}
-          <div className="grid grid-cols-2 gap-3 font-mono text-xs pt-2 border-t border-slate-800">
+          <div className="grid grid-cols-2 gap-3 font-mono text-xs pt-2 border-t border-[#3D2319]">
             {/* Video Engaged Users */}
             <div className="p-3.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
-              <span className="text-[10px] uppercase text-amber-300 block font-bold">
+              <span className="text-[10px] uppercase text-[#E2CE9F] block font-bold">
                 ✓ With Studio Video
               </span>
               <div className="text-xl font-bold text-emerald-400">4.62%</div>
-              <div className="text-[10px] text-slate-300">Conv. Rate (AOV: ₹42.5k)</div>
+              <div className="text-[10px] text-stone-300">Conv. Rate (AOV: ₹42.5k)</div>
               <div className="text-[10px] text-emerald-300 font-bold pt-1">
                 Return Rate: 1.8% only
               </div>
@@ -522,11 +522,11 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
 
             {/* Standard Browsing Users */}
             <div className="p-3.5 bg-white/5 rounded-xl border border-white/5 space-y-1">
-              <span className="text-[10px] uppercase text-slate-400 block font-bold">
+              <span className="text-[10px] uppercase text-stone-400 block font-bold">
                 ✗ Standard Browsing
               </span>
-              <div className="text-xl font-bold text-slate-300">0.94%</div>
-              <div className="text-[10px] text-slate-400">Conv. Rate (AOV: ₹26.8k)</div>
+              <div className="text-xl font-bold text-stone-300">0.94%</div>
+              <div className="text-[10px] text-stone-400">Conv. Rate (AOV: ₹26.8k)</div>
               <div className="text-[10px] text-rose-400 font-bold pt-1">
                 Return Rate: 4.9%
               </div>
@@ -545,25 +545,25 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       {/* ================================================== */}
       {/* 5. RETURN & RTO GEOGRAPHIC ZONE ANALYTICS          */}
       {/* ================================================== */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-stone-100">
           <div>
-            <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-rose-600" />
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-[#7A1C30]" />
               <span>Geographic Return & RTO Logistics Intelligence</span>
             </h3>
-            <p className="text-xs text-slate-500 font-mono">
+            <p className="text-xs text-stone-500 font-mono">
               Pinpoints high-risk COD return regions vs safe prepaid delivery territories
             </p>
           </div>
-          <span className="text-xs font-mono bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg font-bold border border-blue-200">
+          <span className="text-xs font-mono bg-[#FAF3E4] text-[#7A1C30] px-2.5 py-1 rounded-lg font-bold border border-[#C87F4A]/30">
             Delhivery & BlueDart Telemetry
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+            <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[10px] uppercase">
               <tr>
                 <th className="p-3">State / Pincode Zone</th>
                 <th className="p-3 text-center">Total Dispatches</th>

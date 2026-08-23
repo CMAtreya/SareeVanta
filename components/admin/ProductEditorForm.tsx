@@ -228,43 +228,49 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   };
 
   return (
-    <div className="font-sans text-slate-900 select-none pb-28">
+    <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
       {/* ================================================== */}
-      {/* 1. STICKY TOP WORKSTATION HEADER                   */}
+      {/* 1. TOP ACTION & STATUS HEADER                      */}
       {/* ================================================== */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3 -mx-3 sm:-mx-5 md:-mx-6 lg:-mx-8 -mt-3 sm:-mt-5 md:-mt-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-        {/* Left: Breadcrumbs & Unsaved Warning */}
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8DCC9]">
+        {/* Left: Title, Back & Status */}
+        <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/admin/catalog"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-xl text-stone-500 hover:text-stone-900 hover:bg-[#FAF3E4] border border-[#E8DCC9] bg-white transition-colors flex-shrink-0 shadow-2xs"
             title="Back to Catalog"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 text-[#7A1C30]" />
           </Link>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-400">Catalog /</span>
-              <h2 className="font-bold text-sm text-slate-900 font-sans truncate max-w-[200px] sm:max-w-sm">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans truncate">
                 {mode === 'create' ? 'Register New Handloom Saree' : `Edit SKU (${sku})`}
-              </h2>
+              </h1>
+              <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
+                {mode === 'create' ? 'New Masterpiece' : 'Central Silk Board QC'}
+              </span>
             </div>
-            {isDirty && (
-              <div className="flex items-center gap-1.5 text-[11px] font-mono text-amber-600">
+            {isDirty ? (
+              <div className="flex items-center gap-1.5 text-[11px] font-mono text-amber-700 mt-0.5">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                 <span>Unsaved modifications detected</span>
               </div>
+            ) : (
+              <p className="text-xs text-stone-500 font-mono mt-0.5">
+                Handloom provenance, tested zari purity, inventory matrix & storefront lookbook assets
+              </p>
             )}
           </div>
         </div>
 
         {/* Right: Actions Cluster */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap flex-shrink-0">
           <button
             type="button"
             onClick={() => router.push('/admin/catalog')}
-            className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-100 transition-colors"
+            className="px-3.5 py-2 rounded-xl border border-[#E8DCC9] bg-white text-stone-700 text-xs font-semibold hover:bg-[#FAF6F0] transition-colors shadow-2xs cursor-pointer"
           >
             Discard
           </button>
@@ -273,7 +279,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             type="button"
             disabled={isSaving}
             onClick={() => handleSave('DRAFT')}
-            className="px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold transition-colors shadow-2xs"
+            className="px-3.5 py-2 rounded-xl border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-800 text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
           >
             Save Draft
           </button>
@@ -282,7 +288,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             type="button"
             disabled={isSaving}
             onClick={() => handleSave('ACTIVE')}
-            className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             {isSaving ? (
               <div className="flex items-center gap-1.5">
@@ -291,7 +297,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               </div>
             ) : (
               <>
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-3.5 h-3.5 text-amber-200" />
                 <span>{mode === 'create' ? 'Publish to Store' : 'Update Live Saree'}</span>
               </>
             )}
@@ -301,7 +307,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
       {/* Success Toast */}
       {saveToast && (
-        <div className="fixed bottom-8 right-8 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 text-xs font-sans animate-fade-in">
+        <div className="fixed bottom-8 right-8 z-50 bg-[#18110E] text-[#FAF3E4] px-5 py-3 rounded-2xl shadow-2xl border border-[#C87F4A]/30 flex items-center gap-2 text-xs font-sans animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>Handloom Masterpiece SKU successfully published to live storefront.</span>
         </div>
@@ -316,15 +322,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
         {/* ============================================== */}
         <div className="lg:col-span-8 space-y-6">
           {/* SECTION 1: MASTERPIECE NOMENCLATURE & HERITAGE STORY */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
-            <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2 pb-2 border-b border-slate-100">
+          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-5">
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2 pb-2 border-b border-stone-100">
               <FileText className="w-4 h-4 text-blue-600" />
               <span>1. Masterpiece Nomenclature & Heritage Story</span>
             </h3>
 
             {/* Saree Title */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Saree Title / Masterpiece Name *
               </label>
               <input
@@ -333,7 +339,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="e.g. Royal Mysuru Vintage Gold Zari Crepe Silk"
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 font-semibold"
+                className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-sm font-sans focus:outline-none focus:border-[#7A1C30] text-stone-900 font-semibold"
               />
             </div>
 
@@ -342,7 +348,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               {/* LEFT COLUMN: Subtitle on top + Detailed Saree Narrative & Loom Specs directly under it */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
                     Subtitle / Heritage Tagline
                   </label>
                   <input
@@ -353,22 +359,22 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     placeholder="e.g. Royal Heritage Wodeyar Collection"
-                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-900"
+                    className="w-full px-3.5 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans focus:outline-none focus:border-[#7A1C30] text-stone-900"
                   />
                 </div>
 
                 {/* Detailed Saree Narrative & Loom Specs (Same width under Subtitle) */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-slate-700">
+                    <label className="block text-xs font-semibold text-stone-700">
                       Detailed Saree Narrative & Loom Specs
                     </label>
                     <button
                       type="button"
                       onClick={handleInsertFabricCareSnippet}
-                      className="text-[11px] font-mono font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors cursor-pointer"
+                      className="text-[11px] font-mono font-semibold text-[#7A1C30] hover:text-[#5F1424] flex items-center gap-1 transition-colors cursor-pointer"
                     >
-                      <Sparkles className="w-3 h-3" />
+                      <Sparkles className="w-3 h-3 text-[#C87F4A]" />
                       <span>+ Care Snippet</span>
                     </button>
                   </div>
@@ -380,14 +386,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     placeholder="Describe the weaving technique, zari purity, occasion relevance, and sensory drape quality..."
-                    className="w-full p-3.5 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 leading-relaxed"
+                    className="w-full p-3.5 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans focus:outline-none focus:border-[#7A1C30] text-stone-800 leading-relaxed"
                   />
                 </div>
               </div>
 
               {/* RIGHT COLUMN: Generate QR Code Button & Square QR Output */}
               <div className="space-y-3">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-stone-700">
                   Product QR
                 </label>
 
@@ -422,18 +428,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   disabled={isQrGenerated}
                   className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
                     isQrGenerated
-                      ? 'bg-slate-100 text-slate-400 border border-slate-300 cursor-not-allowed'
+                      ? 'bg-stone-100 text-stone-400 border border-[#E8DCC9] cursor-not-allowed'
                       : 'bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white shadow-md cursor-pointer transform hover:-translate-y-0.5'
                   }`}
                 >
-                  <QrCode className="w-4 h-4" />
+                  <QrCode className="w-4 h-4 text-amber-200" />
                   <span>{isQrGenerated ? '✓ QR Code Generated (Locked)' : 'Generate QR Code'}</span>
                 </button>
 
                 {/* Square QR Code Display Below Button */}
                 {qrDataUrl && (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in zoom-in-95 duration-200 shadow-inner">
-                    <div className="p-2.5 bg-white rounded-xl shadow-xs border border-slate-200 aspect-square flex items-center justify-center">
+                  <div className="p-4 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in zoom-in-95 duration-200 shadow-inner">
+                    <div className="p-2.5 bg-white rounded-xl shadow-xs border border-[#E8DCC9] aspect-square flex items-center justify-center">
                       <img
                         src={qrDataUrl}
                         alt="Storefront Product QR Code"
@@ -444,7 +450,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       <span className="inline-block text-[9px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] bg-[#FAF3E4] px-2.5 py-0.5 rounded-full border border-[#C87F4A]/30">
                         Square QR Ready
                       </span>
-                      <div className="text-[11px] font-mono text-slate-600 truncate max-w-xs block">
+                      <div className="text-[11px] font-mono text-stone-600 truncate max-w-xs block">
                         https://neelsareehouse.com/products/{slug || 'mysore-royal-crimson'}
                       </div>
                       <p className="text-[10px] text-stone-500 font-sans">
@@ -461,9 +467,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         link.click();
                         document.body.removeChild(link);
                       }}
-                      className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7A1C30] hover:text-[#5F1424] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs hover:bg-[#FAF3E4] transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+                      className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7A1C30] hover:text-[#5F1424] bg-white px-3.5 py-2 rounded-xl border border-[#E8DCC9] shadow-2xs hover:bg-[#FAF3E4] transition-all cursor-pointer transform hover:scale-105 active:scale-95"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3.5 h-3.5 text-[#C87F4A]" />
                       <span>Download QR PNG (.png)</span>
                     </button>
                   </div>
@@ -473,15 +479,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           </div>
 
           {/* SECTION 2: TECHNICAL ETHNIC TAXONOMY */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2 pb-2 border-b border-slate-100">
-              <ShieldCheck className="w-4 h-4 text-amber-600" />
+          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2 pb-2 border-b border-stone-100">
+              <ShieldCheck className="w-4 h-4 text-[#C87F4A]" />
               <span>2. Technical Ethnic Taxonomy (Silk House Specs)</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Weave Tradition *
                 </label>
                 <select
@@ -490,7 +496,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setWeave(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium bg-white text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 >
                   <option value="Mysore Silk">Mysore Silk</option>
                   <option value="Kanchipuram">Kanchipuram</option>
@@ -505,7 +511,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Fabric Composition *
                 </label>
                 <select
@@ -514,7 +520,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setFabric(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium bg-white text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 >
                   <option value="100% Pure Mulberry Silk">100% Pure Mulberry Silk</option>
                   <option value="Pure Kanchipuram Raw Silk">Pure Kanchipuram Raw Silk</option>
@@ -528,7 +534,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Zari Specification *
                 </label>
                 <select
@@ -537,7 +543,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setZariType(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium bg-white text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 >
                   <option value="24K Tested Pure Zari">24K Tested Pure Gold Zari</option>
                   <option value="Sacred 3-Shuttle Pure Gold Zari">Sacred 3-Shuttle Pure Gold Zari</option>
@@ -548,7 +554,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Loom Construction Type
                 </label>
                 <select
@@ -557,7 +563,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setLoomType(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium bg-white text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 >
                   <option value="Traditional Jacquard Handloom">Traditional Jacquard Handloom</option>
                   <option value="Authentic Pitloom Handloom">Authentic Pitloom Handloom</option>
@@ -569,7 +575,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Motif / Design Pattern
                 </label>
                 <input
@@ -580,12 +586,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setIsDirty(true);
                   }}
                   placeholder="e.g. Mayil (Peacock), Rudraksha Butta, Temple Border"
-                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-sans text-slate-900"
+                  className="w-full px-3.5 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Pallu & Border Styling
                 </label>
                 <input
@@ -596,17 +602,17 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setIsDirty(true);
                   }}
                   placeholder="e.g. Contrast Korvai Temple Border with Rich Brocade Pallu"
-                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-sans text-slate-900"
+                  className="w-full px-3.5 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
             </div>
 
             {/* Blouse Piece & Silk Mark Toggles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
               {/* Blouse Piece */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="p-3.5 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">Blouse Piece Included</span>
+                  <span className="text-xs font-bold text-stone-900">Blouse Piece Included</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -614,7 +620,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     className={`w-9 h-5 rounded-full transition-colors relative inline-flex items-center p-0.5 ${
-                      hasBlousePiece ? 'bg-blue-600' : 'bg-slate-300'
+                      hasBlousePiece ? 'bg-[#7A1C30]' : 'bg-stone-300'
                     }`}
                   >
                     <span
@@ -633,15 +639,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     placeholder="Blouse color & length (e.g. Contrast 80cm)"
-                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 font-sans"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#E8DCC9] rounded-lg text-stone-800 font-sans focus:outline-none focus:border-[#7A1C30]"
                   />
                 )}
               </div>
 
               {/* Silk Mark Certificate */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="p-3.5 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">
+                  <span className="text-xs font-bold text-stone-900">
                     Central Silk Board Certified
                   </span>
                   <button
@@ -651,7 +657,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     className={`w-9 h-5 rounded-full transition-colors relative inline-flex items-center p-0.5 ${
-                      isSilkMarkCertified ? 'bg-emerald-600' : 'bg-slate-300'
+                      isSilkMarkCertified ? 'bg-emerald-600' : 'bg-stone-300'
                     }`}
                   >
                     <span
@@ -670,7 +676,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     placeholder="Silk Mark Tag # (e.g. CSB-2026-MYS-8942)"
-                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-800 font-mono"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#E8DCC9] rounded-lg text-stone-800 font-mono focus:outline-none focus:border-[#7A1C30]"
                   />
                 )}
               </div>
@@ -678,13 +684,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           </div>
 
           {/* SECTION 3: MEDIA ASSET STUDIO */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-purple-600" />
+          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+              <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-[#C87F4A]" />
                 <span>3. Media Asset Studio & Role Tagger</span>
               </h3>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-[11px] font-mono text-stone-500">
                 {mediaImages.length} High-Res Frames
               </span>
             </div>
@@ -694,22 +700,22 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               {mediaImages.map((img, idx) => (
                 <div
                   key={img.id}
-                  className="group relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 p-2 space-y-2 shadow-2xs"
+                  className="group relative rounded-xl border border-[#E8DCC9] overflow-hidden bg-[#FAF6F0] p-2 space-y-2 shadow-2xs"
                 >
-                  <div className="h-44 rounded-lg overflow-hidden relative bg-slate-200">
+                  <div className="h-44 rounded-lg overflow-hidden relative bg-stone-200">
                     <img
                       src={img.url}
                       alt={`Saree View ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-2 left-2 bg-slate-900/80 text-white font-mono text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-bold">
+                    <div className="absolute top-2 left-2 bg-[#18110E]/80 text-[#FAF3E4] font-mono text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-bold">
                       #{idx + 1}
                     </div>
                   </div>
 
                   {/* Role Selector */}
                   <div>
-                    <label className="block text-[10px] font-mono uppercase text-slate-500 mb-0.5">
+                    <label className="block text-[10px] font-mono uppercase text-stone-500 mb-0.5">
                       Asset Role Tag
                     </label>
                     <select
@@ -720,7 +726,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         setMediaImages(newImgs);
                         setIsDirty(true);
                       }}
-                      className="w-full p-1.5 border border-slate-300 rounded-lg text-xs bg-white text-slate-800 font-medium"
+                      className="w-full p-1.5 border border-[#E8DCC9] rounded-lg text-xs bg-white text-stone-800 font-medium focus:outline-none focus:border-[#7A1C30]"
                     >
                       <option value="Primary Drape">Primary Drape</option>
                       <option value="Pallu Close-up">Pallu Close-up</option>
@@ -734,22 +740,22 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             </div>
 
             {/* Drag and Drop Ingestion Box */}
-            <div className="border-2 border-dashed border-slate-300 rounded-xl p-5 text-center bg-slate-50 hover:border-blue-500 transition-colors cursor-pointer space-y-1">
-              <Upload className="w-6 h-6 text-blue-600 mx-auto" />
-              <p className="font-semibold text-xs text-slate-800">
+            <div className="border-2 border-dashed border-[#E8DCC9] rounded-xl p-5 text-center bg-[#FAF6F0] hover:border-[#7A1C30] transition-colors cursor-pointer space-y-1">
+              <Upload className="w-6 h-6 text-[#7A1C30] mx-auto" />
+              <p className="font-semibold text-xs text-stone-800">
                 Drag and drop high-resolution saree photos (Up to 50MB)
               </p>
-              <p className="text-[10px] text-slate-500 font-mono">
+              <p className="text-[10px] text-stone-500 font-mono">
                 Recommended: 2000x2600 px studio drape lighting
               </p>
             </div>
 
             {/* Video Asset Uploader */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <div className="p-4 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Video className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-bold text-slate-900">
+                  <Video className="w-4 h-4 text-[#7A1C30]" />
+                  <span className="text-xs font-bold text-stone-900">
                     10-Second Real-Drape 4K Video Clip
                   </span>
                 </div>
@@ -765,21 +771,21 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   setIsDirty(true);
                 }}
                 placeholder="Video CDN URL (e.g. https://...)"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-mono bg-white text-slate-800"
+                className="w-full px-3 py-2 border border-[#E8DCC9] rounded-lg text-xs font-mono bg-white text-stone-800 focus:outline-none focus:border-[#7A1C30]"
               />
             </div>
           </div>
 
           {/* SECTION 4: SINGLE-PIECE & BATCH INVENTORY */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-            <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2 pb-2 border-b border-slate-100">
+          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2 pb-2 border-b border-stone-100">
               <Package className="w-4 h-4 text-emerald-600" />
               <span>4. Single-Piece & Financials Matrix</span>
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Master SKU *</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Master SKU *</label>
                 <input
                   type="text"
                   required
@@ -788,12 +794,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setSku(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Loom Tag ID</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">Loom Tag ID</label>
                 <input
                   type="text"
                   value={loomTag}
@@ -801,12 +807,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setLoomTag(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono text-slate-800"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">HSN Code</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">HSN Code</label>
                 <input
                   type="text"
                   value={hsnCode}
@@ -814,19 +820,19 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setHsnCode(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono text-slate-800"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">GST Rate</label>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">GST Rate</label>
                 <select
                   value={gstRate}
                   onChange={(e) => {
                     setGstRate(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono bg-white text-slate-800"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
                 >
                   <option value="5%">5% Handloom Silk GST</option>
                   <option value="12%">12% High-Value GST</option>
@@ -836,7 +842,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Cost Price (₹ Internal)
                 </label>
                 <input
@@ -846,12 +852,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setCostPrice(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono text-slate-800"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Selling Price (₹) *
                 </label>
                 <input
@@ -862,12 +868,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setPriceINR(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Compare-at MRP (₹)
                 </label>
                 <input
@@ -877,12 +883,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setOriginalPriceINR(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono text-slate-800"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
                   Stock Qty (Loom)
                 </label>
                 <input
@@ -892,7 +898,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setStock(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900"
+                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
             </div>
@@ -911,13 +917,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
         {/* ============================================== */}
         <div className="lg:col-span-4 space-y-6">
           {/* 1. STATUS & CHANNELS */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-            <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider">
+          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider">
               Status & Channels
             </h4>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 mb-1">
                 Storefront State
               </label>
               <select
@@ -926,7 +932,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   setStatus(e.target.value as any);
                   setIsDirty(true);
                 }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-900"
+                className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
               >
                 <option value="ACTIVE">Active (Live on Website)</option>
                 <option value="DRAFT">Draft (Internal Staging)</option>
@@ -934,14 +940,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               </select>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-slate-100 text-xs font-sans">
-              <label className="block font-semibold text-slate-700">Sales Channels</label>
+            <div className="space-y-2 pt-2 border-t border-stone-100 text-xs font-sans">
+              <label className="block font-semibold text-stone-700">Sales Channels</label>
               {[
                 { key: 'onlineStore', label: 'Online Storefront' },
                 { key: 'whatsAppCatalog', label: 'WhatsApp VIP Catalog' },
                 { key: 'liveShopping', label: 'Live Video Shopping Studio' },
               ].map((c) => (
-                <label key={c.key} className="flex items-center gap-2 cursor-pointer text-slate-700">
+                <label key={c.key} className="flex items-center gap-2 cursor-pointer text-stone-700">
                   <input
                     type="checkbox"
                     checked={(channels as any)[c.key]}
@@ -949,7 +955,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setChannels({ ...channels, [c.key]: e.target.checked });
                       setIsDirty(true);
                     }}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded text-[#7A1C30] focus:ring-[#7A1C30]"
                   />
                   <span>{c.label}</span>
                 </label>
@@ -958,9 +964,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           </div>
 
           {/* 2. OCCASION & COLLECTIONS */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-            <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-blue-600" />
+          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
+            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-[#C87F4A]" />
               <span>Occasion Tags</span>
             </h4>
 
@@ -986,10 +992,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       );
                       setIsDirty(true);
                     }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-600 text-white shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-[#7A1C30] text-white shadow-2xs'
+                        : 'bg-[#FAF6F0] text-stone-600 hover:bg-[#FAF3E4] border border-[#E8DCC9]'
                     }`}
                   >
                     {occ}
@@ -1000,13 +1006,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           </div>
 
           {/* 3. SPECIAL TAGS (Under Occasion Tags) */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3.5">
+          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3.5">
             <div className="flex items-center justify-between">
-              <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
                 <span>Special Tags</span>
               </h4>
-              <span className="text-[10px] font-mono text-slate-400">
+              <span className="text-[10px] font-mono text-stone-400">
                 {specialTags.length} Selected
               </span>
             </div>
@@ -1034,7 +1040,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                           : tag.toLowerCase().includes('new arrival')
                           ? 'bg-emerald-600 text-white shadow-2xs'
                           : 'bg-[#7A1C30] text-white shadow-2xs'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        : 'bg-[#FAF6F0] text-stone-600 hover:bg-[#FAF3E4] border border-[#E8DCC9]'
                     }`}
                   >
                     {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
@@ -1045,8 +1051,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             </div>
 
             {/* Admin Add New Special Tag Option */}
-            <div className="pt-2.5 border-t border-slate-100">
-              <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
+            <div className="pt-2.5 border-t border-stone-100">
+              <label className="block text-[11px] font-semibold text-stone-700 mb-1.5">
                 + Add New Special Tag:
               </label>
               <div className="flex items-center gap-1.5">
@@ -1061,13 +1067,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     }
                   }}
                   placeholder="e.g. Celebrity Pick, Royal Vault"
-                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900 bg-slate-50/50"
+                  className="flex-1 px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl text-xs font-sans focus:outline-none focus:border-[#7A1C30] text-stone-900"
                 />
                 <button
                   type="button"
                   onClick={() => handleAddCustomSpecialTag()}
                   disabled={!newSpecialTagInput.trim()}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 bg-[#7A1C30] hover:bg-[#5F1424] disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Tag</span>
@@ -1077,15 +1083,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           </div>
 
           {/* 4. SHIPPING & DIMENSIONS */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-            <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
+          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
+            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Shipping & Weight</span>
             </h4>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-stone-700 mb-1">
                   Weight (Grams) *
                 </label>
                 <div className="flex items-center">
@@ -1096,19 +1102,19 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setWeightGrams(e.target.value);
                       setIsDirty(true);
                     }}
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-l-xl font-mono text-slate-900"
+                    className="w-full px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-l-xl font-mono text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                   />
-                  <span className="px-3 py-1.5 bg-slate-100 border border-l-0 border-slate-300 rounded-r-xl text-slate-500 font-mono">
+                  <span className="px-3 py-1.5 bg-[#FAF3E4] border border-l-0 border-[#E8DCC9] rounded-r-xl text-stone-600 font-mono">
                     g
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                <p className="text-[10px] text-stone-400 font-mono mt-0.5">
                   Used for real-time BlueDart air parcel billing
                 </p>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
+                <label className="block font-semibold text-stone-700 mb-1">
                   Folded Dimensions (LxWxH)
                 </label>
                 <input
@@ -1118,24 +1124,24 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setDimensions(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-xl font-mono text-slate-900 text-xs"
+                  className="w-full px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl font-mono text-stone-900 text-xs focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
             </div>
           </div>
 
-          {/* 4. SEO & SOCIAL GRAPH */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-            <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-purple-600" />
+          {/* 5. SEO & SOCIAL GRAPH */}
+          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
+            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-[#C87F4A]" />
               <span>SEO & Social Preview</span>
             </h4>
 
             <div className="space-y-3 text-xs">
               <div>
-                <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                <div className="flex justify-between font-semibold text-stone-700 mb-1">
                   <span>Meta Title</span>
-                  <span className="text-[10px] font-mono text-slate-400">{metaTitle.length}/70</span>
+                  <span className="text-[10px] font-mono text-stone-400">{metaTitle.length}/70</span>
                 </div>
                 <input
                   type="text"
@@ -1144,14 +1150,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setMetaTitle(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-xl text-xs text-slate-900"
+                  className="w-full px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-semibold text-slate-700 mb-1">
+                <div className="flex justify-between font-semibold text-stone-700 mb-1">
                   <span>Meta Description</span>
-                  <span className="text-[10px] font-mono text-slate-400">
+                  <span className="text-[10px] font-mono text-stone-400">
                     {metaDescription.length}/160
                   </span>
                 </div>
@@ -1162,19 +1168,19 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setMetaDescription(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-800 leading-relaxed"
+                  className="w-full p-2.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl text-xs text-stone-800 leading-relaxed focus:outline-none focus:border-[#7A1C30]"
                 />
               </div>
 
               {/* Google Search Card Snippet Preview */}
-              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-1">
+              <div className="p-3 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] text-left space-y-1">
                 <div className="text-[11px] text-emerald-700 font-mono truncate">
                   https://neelsareehouse.com/products/{slug}
                 </div>
-                <div className="text-xs font-semibold text-blue-700 hover:underline cursor-pointer truncate">
+                <div className="text-xs font-semibold text-[#7A1C30] hover:underline cursor-pointer truncate">
                   {metaTitle || title || 'Product Title Preview'}
                 </div>
-                <div className="text-[11px] text-slate-600 line-clamp-2">
+                <div className="text-[11px] text-stone-600 line-clamp-2">
                   {metaDescription || description.slice(0, 140) || 'Product meta description snippet preview...'}
                 </div>
               </div>

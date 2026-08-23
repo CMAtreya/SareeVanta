@@ -235,18 +235,18 @@ export default function CollectionsTaxonomyPage() {
       {/* ================================================== */}
       {/* 1. TOP HEADER & WORKSPACE SWITCHER                 */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
-              Collections & Heritage Taxonomy Studio
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
+              Collections & Taxonomy Architect
             </h1>
-            <span className="bg-amber-50 text-amber-950 border border-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
-              <Award className="w-3 h-3 text-amber-600" />
-              <span>GI Certified Silk Taxonomy</span>
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-[#C87F4A]" />
+              <span>Silk Mark Certified Taxonomies</span>
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Curated Saree Collections, Weave Geographical Indication Registry & Ethnic Fabric Taxonomy
           </p>
         </div>
@@ -267,18 +267,18 @@ export default function CollectionsTaxonomyPage() {
                 setColFeatured(true);
                 setIsCollectionModalOpen(true);
               }}
-              className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-amber-200" />
               <span>+ Create Curated Collection</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={() => setIsTaxonomyModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-amber-200" />
               <span>+ Add Taxonomy Term</span>
             </button>
           )}
@@ -286,11 +286,11 @@ export default function CollectionsTaxonomyPage() {
           <Link
             href="/products"
             target="_blank"
-            className="px-3.5 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-xl border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5 text-slate-500" />
+            <Eye className="w-3.5 h-3.5 text-stone-500" />
             <span>Storefront View</span>
-            <ExternalLink className="w-3 h-3 ml-0.5" />
+            <ExternalLink className="w-3 h-3 ml-0.5 text-[#7A1C30]" />
           </Link>
         </div>
       </div>
@@ -299,12 +299,12 @@ export default function CollectionsTaxonomyPage() {
       {/* 2. KPI METRIC SUMMARY                              */}
       {/* ================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1.5">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-1.5">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Curated Collections</span>
-            <FolderOpen className="w-4 h-4 text-blue-600" />
+            <FolderOpen className="w-4 h-4 text-[#7A1C30]" />
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-stone-900 tracking-tight">
             {summary.activeCollections} Active
           </div>
           <div className="text-[11px] font-mono text-emerald-700">
@@ -312,41 +312,41 @@ export default function CollectionsTaxonomyPage() {
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1.5">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-1.5">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>GI Certified Weaves</span>
             <Award className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-bold font-mono text-amber-600 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-amber-800 tracking-tight">
             {summary.giWeavesCount} Traditions
           </div>
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="text-[11px] font-mono text-stone-500">
             Kanchipuram, Mysore, Varanasi, Paithani, Patola
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1.5">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-1.5">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Master Taxonomy Terms</span>
-            <Tag className="w-4 h-4 text-purple-600" />
+            <Tag className="w-4 h-4 text-[#C87F4A]" />
           </div>
-          <div className="text-2xl font-bold font-mono text-purple-700 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-[#C87F4A] tracking-tight">
             {summary.totalTerms} Terms
           </div>
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="text-[11px] font-mono text-stone-500">
             Weaves, Pure Silks, Bullion Zari & Pit Looms
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-1.5">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-1.5">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Mapped Saree SKUs</span>
             <Layers className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-bold font-mono text-emerald-700 tracking-tight">
             {summary.totalAssignedSkus} Curated Links
           </div>
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="text-[11px] font-mono text-stone-500">
             Across bridal & festive lookbooks
           </div>
         </div>
@@ -355,27 +355,27 @@ export default function CollectionsTaxonomyPage() {
       {/* ================================================== */}
       {/* 3. MAIN WORKSPACE TABS                             */}
       {/* ================================================== */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto font-sans text-xs">
+      <div className="flex items-center gap-2 border-b border-[#E8DCC9] pb-2 overflow-x-auto font-sans text-xs">
         <button
           type="button"
           onClick={() => setActiveMainTab('COLLECTIONS')}
-          className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-2xs whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-2xs whitespace-nowrap cursor-pointer ${
             activeMainTab === 'COLLECTIONS'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              ? 'bg-[#7A1C30] text-white shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
           }`}
         >
-          <FolderOpen className="w-4 h-4 text-amber-400" />
+          <FolderOpen className="w-4 h-4 text-amber-200" />
           <span>Curated Collections Studio ({collections.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveMainTab('TAXONOMY')}
-          className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-2xs whitespace-nowrap ${
+          className={`px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-all shadow-2xs whitespace-nowrap cursor-pointer ${
             activeMainTab === 'TAXONOMY'
-              ? 'bg-slate-900 text-white'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              ? 'bg-[#7A1C30] text-white shadow-xs'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
           }`}
         >
           <Tag className="w-4 h-4 text-purple-400" />

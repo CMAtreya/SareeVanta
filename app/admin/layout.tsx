@@ -212,36 +212,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen text-slate-900 font-sans flex select-none relative overflow-x-hidden">
+    <div className="bg-[#FAF6F0] min-h-screen text-[#1F1B16] font-sans flex select-none relative overflow-x-hidden">
       {/* Mobile Drawer Backdrop Overlay */}
       {isMobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-[#18110E]/80 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
 
       {/* ================================================== */}
-      {/* 1. COLLAPSIBLE LEFT NAVIGATION (#0F172A)           */}
+      {/* 1. COLLAPSIBLE LEFT NAVIGATION (#18110E)           */}
       {/* ================================================== */}
       <aside
-        className={`bg-[#0F172A] text-slate-300 border-r border-slate-800 flex flex-col flex-shrink-0 h-screen fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:z-30 transition-all duration-300 overflow-hidden ${
+        className={`bg-[#18110E] text-[#DBCBBF] border-r border-[#2C1D17] flex flex-col flex-shrink-0 h-screen fixed inset-y-0 left-0 z-40 transition-all duration-300 overflow-hidden ${
           isMobileSidebarOpen
             ? 'translate-x-0 w-72 shadow-2xl'
             : '-translate-x-full lg:translate-x-0'
         } ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
       >
         {/* Brand Header & Environment Badge */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/80 flex-shrink-0 bg-[#0F172A] z-10">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-[#2C1D17] flex-shrink-0 bg-[#18110E] z-10">
           {!isSidebarCollapsed || isMobileSidebarOpen ? (
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-lg p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 flex-shrink-0 shadow-xs">
                 <picture>
                   <source srcSet="/assets/logo.webp" type="image/webp" />
                   <img
                     src="/assets/logo.jpg"
                     alt="NEELSAREEHOUSE"
-                    className="w-full h-full object-cover bg-[#0F172A] rounded-md"
+                    className="w-full h-full object-cover bg-[#18110E] rounded-md"
                     onError={(e) => {
                       const target = e.currentTarget;
                       if (!target.src.includes('logo.webp')) {
@@ -252,7 +252,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </picture>
               </div>
               <div className="min-w-0">
-                <div className="font-bold text-xs text-white uppercase tracking-wider truncate">
+                <div className="font-bold text-xs text-[#FAF3E4] uppercase tracking-wider truncate">
                   NEEL SAREE HOUSE
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -261,20 +261,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       environment === 'LIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                     }`}
                   />
-                  <span className="text-[9px] font-mono uppercase tracking-widest text-amber-400 font-bold">
+                  <span className="text-[9px] font-mono uppercase tracking-widest text-[#E2CE9F] font-bold">
                     {environment} Console
                   </span>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-lg p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 mx-auto">
+            <div className="w-8 h-8 rounded-lg p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 mx-auto shadow-xs">
               <picture>
                 <source srcSet="/assets/logo.webp" type="image/webp" />
                 <img
                   src="/assets/logo.jpg"
                   alt="NEELSAREEHOUSE"
-                  className="w-full h-full object-cover bg-[#0F172A] rounded-md"
+                  className="w-full h-full object-cover bg-[#18110E] rounded-md"
                   onError={(e) => {
                     const target = e.currentTarget;
                     if (!target.src.includes('logo.webp')) {
@@ -291,7 +291,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden lg:flex p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="hidden lg:flex p-1 rounded-lg text-stone-400 hover:text-white hover:bg-[#281A14] transition-colors"
               title={isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
             >
               {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -301,7 +301,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(false)}
-              className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-1.5 rounded-lg text-stone-400 hover:text-white hover:bg-[#281A14] transition-colors"
               title="Close Navigation"
             >
               <X className="w-5 h-5" />
@@ -311,21 +311,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Store Switcher Dropdown */}
         {(!isSidebarCollapsed || isMobileSidebarOpen) && (
-          <div className="px-3 pt-3 pb-1 flex-shrink-0 bg-[#0F172A] relative z-10">
+          <div className="px-3 pt-3 pb-1 flex-shrink-0 bg-[#18110E] relative z-10">
             <button
               type="button"
               onClick={() => setIsStoreSwitcherOpen(!isStoreSwitcherOpen)}
-              className="w-full px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800/90 text-left border border-slate-800 rounded-xl text-xs flex items-center justify-between transition-colors shadow-2xs group"
+              className="w-full px-2.5 py-1.5 bg-[#241712] hover:bg-[#2F1F17] text-left border border-[#38231B] rounded-xl text-xs flex items-center justify-between transition-colors shadow-2xs group"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <Store className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="truncate text-[11px] font-medium text-slate-200">{currentStore}</span>
+                <Store className="w-3.5 h-3.5 text-[#C87F4A] flex-shrink-0" />
+                <span className="truncate text-[11px] font-medium text-[#FAF3E4]">{currentStore}</span>
               </div>
-              <ChevronDown className="w-3 h-3 text-slate-500 group-hover:text-slate-300 flex-shrink-0" />
+              <ChevronDown className="w-3 h-3 text-stone-500 group-hover:text-stone-300 flex-shrink-0" />
             </button>
 
             {isStoreSwitcherOpen && (
-              <div className="absolute left-3 right-3 top-full mt-1 bg-slate-900 border border-slate-700 rounded-xl p-1.5 shadow-2xl z-40 space-y-1 text-xs">
+              <div className="absolute left-3 right-3 top-full mt-1 bg-[#1F140F] border border-[#38231B] rounded-xl p-1.5 shadow-2xl z-40 space-y-1 text-xs">
                 {[
                   'Mysuru Sayyaji Rao Flagship',
                   'Bengaluru Showcase Salon',
@@ -340,12 +340,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     }}
                     className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] transition-colors flex items-center justify-between ${
                       currentStore === store
-                        ? 'bg-blue-600 text-white font-bold'
-                        : 'text-slate-300 hover:bg-slate-800'
+                        ? 'bg-[#7A1C30] text-white font-bold'
+                        : 'text-[#DBCBBF] hover:bg-[#2A1C16]'
                     }`}
                   >
                     <span>{store}</span>
-                    {currentStore === store && <CheckCircle2 className="w-3 h-3" />}
+                    {currentStore === store && <CheckCircle2 className="w-3 h-3 text-[#E2CE9F]" />}
                   </button>
                 ))}
               </div>
@@ -361,7 +361,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Section 1: Commerce */}
           <div className="space-y-0.5">
               {!isSidebarCollapsed && (
-                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
+                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
                   Commerce
                 </div>
               )}
@@ -369,12 +369,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Dashboard Overview"
               >
-                <LayoutDashboard className="w-4 h-4 flex-shrink-0" />
+                <LayoutDashboard className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Dashboard</span>}
               </Link>
 
@@ -382,17 +382,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/orders"
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/orders'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Live Orders"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <ShoppingCart className="w-4 h-4 flex-shrink-0" />
+                  <ShoppingCart className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                   {!isSidebarCollapsed && <span>Orders</span>}
                 </div>
                 {!isSidebarCollapsed && (
-                  <span className="text-[10px] font-mono bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-bold border border-amber-500/30">
+                  <span className="text-[10px] font-mono bg-[#7A1C30]/40 text-[#E2CE9F] px-1.5 py-0.2 rounded font-bold border border-[#C87F4A]/40">
                     14
                   </span>
                 )}
@@ -402,12 +402,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/shipments"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/shipments')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="BlueDart & Delhivery Shipments"
               >
-                <Truck className="w-4 h-4 flex-shrink-0" />
+                <Truck className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Shipments</span>}
               </Link>
 
@@ -415,12 +415,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/returns"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/returns')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Returns & Exchanges"
               >
-                <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                <RotateCcw className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Returns & Exchanges</span>}
               </Link>
             </div>
@@ -428,7 +428,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Section 2: Merchandising */}
             <div className="space-y-0.5">
               {!isSidebarCollapsed && (
-                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
+                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
                   Merchandising
                 </div>
               )}
@@ -436,12 +436,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/catalog"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/catalog'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Catalog & Products"
               >
-                <Package className="w-4 h-4 flex-shrink-0" />
+                <Package className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Catalog / Products</span>}
               </Link>
 
@@ -449,12 +449,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/inventory"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/inventory'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Silk Mark Inventory Matrix"
               >
-                <Layers className="w-4 h-4 flex-shrink-0" />
+                <Layers className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Inventory Matrix</span>}
               </Link>
 
@@ -462,12 +462,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/catalog/collections"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.includes('/collections')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Curated Collections & Heritage Taxonomy"
               >
-                <FolderOpen className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                <FolderOpen className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Collections & Taxonomy</span>}
               </Link>
             </div>
@@ -475,7 +475,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Section 3: Growth & Studio */}
             <div className="space-y-0.5">
               {!isSidebarCollapsed && (
-                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
+                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
                   Growth & Studio
                 </div>
               )}
@@ -483,13 +483,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/marketing/instagram-reels"
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/marketing/instagram-reels'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Live Shopping & Reels Manager"
               >
                 <div className="flex items-center gap-2.5">
-                  <Film className="w-4 h-4 flex-shrink-0" />
+                  <Film className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                   {!isSidebarCollapsed && <span>Live Shopping Manager</span>}
                 </div>
                 {!isSidebarCollapsed && (
@@ -501,12 +501,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/marketing/coupons"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/marketing/coupons')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Marketing & Discounts"
               >
-                <Tag className="w-4 h-4 flex-shrink-0" />
+                <Tag className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Marketing & Discounts</span>}
               </Link>
 
@@ -514,27 +514,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/marketing/banners"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/marketing/banners')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Banners & Marquee"
               >
-                <Megaphone className="w-4 h-4 flex-shrink-0" />
+                <Megaphone className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Banners & Marquee</span>}
               </Link>
-
-
 
               <Link
                 href="/admin/customerreviews"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/customerreviews')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Review Moderation & UGC Hub"
               >
-                <Star className="w-4 h-4 flex-shrink-0 text-amber-400" />
+                <Star className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Customer Reviews & UGC</span>}
               </Link>
             </div>
@@ -542,7 +540,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Section 4: Operations */}
             <div className="space-y-0.5">
               {!isSidebarCollapsed && (
-                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-slate-500 font-bold">
+                <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
                   Operations
                 </div>
               )}
@@ -550,12 +548,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/customers"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/customers')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Customers & CRM"
               >
-                <Users className="w-4 h-4 flex-shrink-0" />
+                <Users className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Customers & CRM</span>}
               </Link>
 
@@ -563,12 +561,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/analytics"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/analytics')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Performance Analytics & Reports"
               >
-                <BarChart3 className="w-4 h-4 flex-shrink-0" />
+                <BarChart3 className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Analytics & Reports</span>}
               </Link>
 
@@ -576,12 +574,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/settings/staff"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/settings/staff')
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Staff & Roles (RBAC)"
               >
-                <UserCog className="w-4 h-4 flex-shrink-0" />
+                <UserCog className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Staff & Roles</span>}
               </Link>
 
@@ -589,28 +587,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/admin/settings"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/settings' || (pathname.startsWith('/admin/settings') && !pathname.startsWith('/admin/settings/staff'))
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
                 title="Master Store Configuration"
               >
-                <Settings className="w-4 h-4 flex-shrink-0" />
+                <Settings className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Store Settings</span>}
               </Link>
             </div>
           </div>
 
         {/* Bottom Profile Chip */}
-        <div className="p-3 border-t border-slate-800/80 flex-shrink-0 bg-slate-950/60">
+        <div className="p-3 border-t border-[#2C1D17] flex-shrink-0 bg-[#120D0A]">
           {!isSidebarCollapsed ? (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold text-xs border border-blue-500/40 flex-shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-[#7A1C30]/40 text-[#E2CE9F] flex items-center justify-center font-bold text-xs border border-[#C87F4A]/40 flex-shrink-0">
                   SC
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-white truncate">{adminUser}</div>
-                  <div className="text-[10px] font-mono text-amber-400 truncate">{adminRole}</div>
+                  <div className="text-xs font-bold text-[#FAF3E4] truncate">{adminUser}</div>
+                  <div className="text-[10px] font-mono text-[#C87F4A] truncate">{adminRole}</div>
                 </div>
               </div>
 
@@ -618,7 +616,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition-colors"
+                  className="p-1.5 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-[#281A14] transition-colors"
                   title="Sign Out of Admin Console"
                 >
                   <LogOut className="w-4 h-4" />
@@ -629,7 +627,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 flex items-center justify-center transition-colors"
+              className="w-full p-2 rounded-lg text-stone-400 hover:text-rose-400 hover:bg-[#281A14] flex items-center justify-center transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -641,15 +639,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* ================================================== */}
       {/* 2. MAIN CONTENT AREA & TOP WORKSPACE BAR           */}
       {/* ================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
+      <div
+        className={`flex-1 flex flex-col min-w-0 bg-[#FAF6F0] transition-all duration-300 ${
+          isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
+        }`}
+      >
         {/* Top Workspace Bar */}
-        <header className="h-16 bg-white border-b border-[#E2E8F0] px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
+        <header className="h-16 bg-white/95 backdrop-blur-md border-b border-[#E8DCC9] px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
           <div className="flex items-center gap-2 flex-1 max-w-lg mr-2 sm:mr-4 min-w-0">
             {/* Mobile Hamburger Drawer Button */}
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex-shrink-0"
+              className="lg:hidden p-2 rounded-xl text-stone-600 hover:text-[#1F1B16] hover:bg-[#FAF3E4] flex-shrink-0 transition-colors"
               title="Open Navigation Menu"
             >
               <Menu className="w-5 h-5" />
@@ -659,14 +661,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="w-full px-2.5 sm:px-3.5 py-2 bg-slate-50 hover:bg-slate-100/80 text-slate-500 hover:text-slate-800 border border-slate-200 rounded-xl text-xs flex items-center justify-between transition-all shadow-2xs group min-w-0"
+              className="w-full px-2.5 sm:px-3.5 py-2 bg-[#FAF6F0] hover:bg-white text-stone-600 hover:text-stone-900 border border-[#E8DCC9] hover:border-[#C87F4A]/40 rounded-xl text-xs flex items-center justify-between transition-all shadow-2xs group min-w-0"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <Search className="w-4 h-4 text-slate-400 group-hover:text-blue-600 flex-shrink-0" />
+                <Search className="w-4 h-4 text-stone-400 group-hover:text-[#7A1C30] flex-shrink-0 transition-colors" />
                 <span className="font-sans truncate hidden sm:inline">Search orders, patrons, SKUs, weavers...</span>
                 <span className="font-sans truncate sm:hidden">Search...</span>
               </div>
-              <div className="hidden sm:flex items-center gap-0.5 text-[10px] font-mono bg-white border border-slate-300 px-2 py-0.5 rounded text-slate-600 shadow-2xs flex-shrink-0">
+              <div className="hidden sm:flex items-center gap-0.5 text-[10px] font-mono bg-white border border-[#E8DCC9] px-2 py-0.5 rounded text-stone-600 shadow-2xs flex-shrink-0">
                 <Command className="w-3 h-3" />
                 <span>K</span>
               </div>
@@ -679,9 +681,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               href="/"
               target="_blank"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FAF3E4] hover:bg-[#F3E8D0] text-[#7A1C30] text-xs font-semibold border border-[#C87F4A]/25 transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              <ExternalLink className="w-3.5 h-3.5 text-[#C87F4A]" />
               <span>Live Site</span>
             </Link>
 
@@ -690,12 +692,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <button
                 type="button"
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                className="relative p-2 rounded-lg bg-[#FAF3E4] hover:bg-[#F3E8D0] text-stone-700 border border-[#E8DCC9] transition-colors"
                 title="System Notifications"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-4 h-4 text-stone-600" />
                 {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 bg-[#7A1C30] text-white text-[9px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
                     {unreadNotifCount}
                   </span>
                 )}
@@ -703,44 +705,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               {/* Notifications Slide-Over Tray */}
               {isNotificationsOpen && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-40 space-y-3 animate-fade-in text-slate-900">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="absolute right-0 mt-2 w-72 sm:w-96 bg-white rounded-2xl shadow-2xl border border-[#E8DCC9] p-4 z-40 space-y-3 animate-fade-in text-[#1F1B16]">
+                  <div className="flex items-center justify-between pb-2 border-b border-stone-100">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-xs font-sans">System Alerts</span>
-                      <span className="px-1.5 py-0.2 text-[10px] font-mono bg-blue-50 text-blue-700 rounded font-bold">
+                      <span className="px-1.5 py-0.2 text-[10px] font-mono bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 rounded font-bold">
                         {unreadNotifCount} New
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsNotificationsOpen(false)}
-                      className="text-slate-400 hover:text-slate-600"
+                      className="text-stone-400 hover:text-stone-600"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+                  <div className="divide-y divide-stone-100 max-h-72 overflow-y-auto font-sans">
                     {notifications.map((notif) => (
                       <div key={notif.id} className="py-2.5 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-slate-900">{notif.title}</span>
-                          <span className="text-[10px] font-mono text-slate-400">{notif.time}</span>
+                          <span className="font-semibold text-xs text-stone-900">{notif.title}</span>
+                          <span className="text-[10px] font-mono text-stone-400">{notif.time}</span>
                         </div>
-                        <p className="text-[11px] text-slate-600 font-sans">{notif.desc}</p>
+                        <p className="text-[11px] text-stone-600 font-sans">{notif.desc}</p>
                       </div>
                     ))}
                   </div>
 
-                  <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-[11px] font-mono">
+                  <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-[11px] font-mono">
                     <button
                       type="button"
                       onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))}
-                      className="text-blue-600 hover:underline"
+                      className="text-[#7A1C30] font-bold hover:underline"
                     >
                       Mark all as read
                     </button>
-                    <span className="text-slate-400">Mysuru Node</span>
+                    <span className="text-stone-400">Mysuru Node</span>
                   </div>
                 </div>
               )}
@@ -750,9 +752,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <button
               type="button"
               onClick={() => setIsNewProductModalOpen(true)}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#2563EB] hover:bg-blue-700 active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5 flex-shrink-0" />
+              <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-amber-200" />
               <span className="hidden sm:inline">New Saree SKU</span>
               <span className="sm:hidden">New SKU</span>
             </button>
@@ -760,13 +762,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Dynamic Breadcrumbs & Context Sync Bar */}
-        <div className="h-10 bg-slate-50/80 border-b border-[#E2E8F0] px-3 sm:px-6 lg:px-8 flex items-center justify-between text-xs font-mono text-slate-500 overflow-x-auto scrollbar-none">
+        <div className="h-10 bg-[#FAF3E4]/70 border-b border-[#E8DCC9] px-3 sm:px-6 lg:px-8 flex items-center justify-between text-xs font-mono text-stone-600 overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-2 truncate mr-2">
-            <Link href="/admin" className="hover:text-blue-600 transition-colors flex-shrink-0">
+            <Link href="/admin" className="hover:text-[#7A1C30] transition-colors flex-shrink-0 font-medium">
               Console
             </Link>
             <span>/</span>
-            <span className="font-semibold text-slate-800 truncate">
+            <span className="font-semibold text-stone-900 truncate">
               {pathname === '/admin'
                 ? 'Commerce & Orders'
                 : pathname.replace('/admin/', '').replace('-', ' ').toUpperCase()}
@@ -775,16 +777,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <div className="hidden sm:flex items-center gap-1.5 text-[11px]">
-              <Clock className="w-3 h-3 text-slate-400" />
+              <Clock className="w-3 h-3 text-[#C87F4A]" />
               <span>Loom sync: {lastSyncTime}</span>
             </div>
             <button
               type="button"
               onClick={handleTriggerSync}
-              className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-200/60 rounded transition-colors"
+              className="p-1 text-stone-400 hover:text-[#7A1C30] hover:bg-[#FAF3E4] rounded transition-colors"
               title="Trigger Immediate Sync"
             >
-              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-blue-600' : ''}`} />
+              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-[#7A1C30]' : ''}`} />
             </button>
           </div>
         </div>

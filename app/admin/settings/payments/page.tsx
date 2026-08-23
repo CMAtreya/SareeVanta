@@ -88,17 +88,17 @@ export default function PaymentSettingsPage() {
       {/* ================================================== */}
       {/* SUB-NAV SETTINGS HEADER                            */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Payment Gateways & Webhook Health
             </h1>
-            <span className="bg-purple-50 text-purple-900 border border-purple-200 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
               Razorpay & Cashfree Active
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Production API Keys, Real-Time Webhook Diagnostics & Cash-on-Delivery Risk Controls
           </p>
         </div>
@@ -106,9 +106,9 @@ export default function PaymentSettingsPage() {
         <button
           type="button"
           onClick={handleSavePaymentConfig}
-          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
-          <Save className="w-3.5 h-3.5" />
+          <Save className="w-3.5 h-3.5 text-amber-200" />
           <span>Save Payment Config</span>
         </button>
       </div>
@@ -116,33 +116,33 @@ export default function PaymentSettingsPage() {
       {/* ================================================== */}
       {/* SUB-NAV TABS                                       */}
       {/* ================================================== */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto font-sans text-xs">
+      <div className="flex items-center gap-2 border-b border-[#E8DCC9] pb-2 overflow-x-auto font-sans text-xs">
         <Link
           href="/admin/settings/staff"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Users className="w-4 h-4 text-slate-400" />
+          <Users className="w-4 h-4 text-stone-400" />
           <span>Staff & RBAC Access</span>
         </Link>
         <Link
           href="/admin/settings/taxes"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Receipt className="w-4 h-4 text-slate-400" />
+          <Receipt className="w-4 h-4 text-stone-400" />
           <span>Tax, Legal & GST</span>
         </Link>
         <Link
           href="/admin/settings/shipping"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Truck className="w-4 h-4 text-slate-400" />
+          <Truck className="w-4 h-4 text-stone-400" />
           <span>Logistics & Warehouses</span>
         </Link>
         <Link
           href="/admin/settings/payments"
-          className="px-3.5 py-2 rounded-xl bg-slate-900 text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl bg-[#7A1C30] text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap cursor-pointer"
         >
-          <CreditCard className="w-4 h-4 text-purple-400" />
+          <CreditCard className="w-4 h-4 text-amber-200" />
           <span>Payment Gateways & Webhooks</span>
         </Link>
       </div>

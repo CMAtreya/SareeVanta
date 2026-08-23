@@ -203,17 +203,17 @@ export default function StaffSettingsPage() {
       {/* ================================================== */}
       {/* SUB-NAV SETTINGS HEADER                            */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Master Configuration & Governance Center
             </h1>
-            <span className="bg-slate-100 text-slate-800 border border-slate-300 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
               Settings & RBAC
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Role-Based Access Control, GST Taxes, Shipping API Credentials & Payment Gateways
           </p>
         </div>
@@ -221,9 +221,9 @@ export default function StaffSettingsPage() {
         <button
           type="button"
           onClick={() => setIsInviteModalOpen(true)}
-          className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
-          <UserPlus className="w-3.5 h-3.5" />
+          <UserPlus className="w-3.5 h-3.5 text-amber-200" />
           <span>+ Invite New Staff Member</span>
         </button>
       </div>
@@ -231,33 +231,33 @@ export default function StaffSettingsPage() {
       {/* ================================================== */}
       {/* SUB-NAV TABS                                       */}
       {/* ================================================== */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto font-sans text-xs">
+      <div className="flex items-center gap-2 border-b border-[#E8DCC9] pb-2 overflow-x-auto font-sans text-xs">
         <Link
           href="/admin/settings/staff"
-          className="px-3.5 py-2 rounded-xl bg-slate-900 text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl bg-[#7A1C30] text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap cursor-pointer"
         >
-          <Users className="w-4 h-4 text-amber-400" />
+          <Users className="w-4 h-4 text-amber-200" />
           <span>Staff & RBAC Access</span>
         </Link>
         <Link
           href="/admin/settings/taxes"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Receipt className="w-4 h-4 text-slate-400" />
+          <Receipt className="w-4 h-4 text-stone-400" />
           <span>Tax, Legal & GST</span>
         </Link>
         <Link
           href="/admin/settings/shipping"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Truck className="w-4 h-4 text-slate-400" />
+          <Truck className="w-4 h-4 text-stone-400" />
           <span>Logistics & Warehouses</span>
         </Link>
         <Link
           href="/admin/settings/payments"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <CreditCard className="w-4 h-4 text-slate-400" />
+          <CreditCard className="w-4 h-4 text-stone-400" />
           <span>Payment Gateways & Webhooks</span>
         </Link>
       </div>
@@ -265,11 +265,11 @@ export default function StaffSettingsPage() {
       {/* ================================================== */}
       {/* 1. STAFF DIRECTORY TABLE                           */}
       {/* ================================================== */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
+        <div className="p-4 border-b border-stone-100 flex items-center justify-between">
           <div>
-            <h3 className="font-bold text-sm text-slate-900">Active Staff & Team Members</h3>
-            <p className="text-xs text-slate-500 font-mono">
+            <h3 className="font-bold text-sm text-[#1F1B16]">Active Staff & Team Members</h3>
+            <p className="text-xs text-stone-500 font-mono">
               {staffList.length} authenticated personnel with access to Neel Saree House administrative consoles
             </p>
           </div>
@@ -277,7 +277,7 @@ export default function StaffSettingsPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+            <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[10px] uppercase">
               <tr>
                 <th className="p-3.5">Staff Member</th>
                 <th className="p-3.5">Assigned RBAC Role</th>

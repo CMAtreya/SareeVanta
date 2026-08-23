@@ -174,41 +174,37 @@ export default function SingleOrderProcessingPage({
       )}
 
       {/* ================================================== */}
-      {/* 1. TOP ACTION HEADER                               */}
+      {/* 1. TOP BREADCRUMBS & STATUS HEADER                 */}
       {/* ================================================== */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-3.5 -mx-6 lg:-mx-8 -mt-6 mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-2xs">
-        {/* Left: Breadcrumbs & Status Pills */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div className="flex items-center gap-3">
           <Link
             href="/admin/orders"
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 hover:bg-[#FAF3E4] transition-colors"
             title="Back to Orders Hub"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-4 h-4 text-[#7A1C30]" />
           </Link>
-
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-slate-400">Orders /</span>
-              <h2 className="font-bold text-sm sm:text-base text-slate-900 font-sans">
-                #{orderId}
-              </h2>
-
-              {/* Financial Status Pill */}
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
+                Order #{params.id || 'NSH-ORD-8942'}
+              </h1>
+              {/* Payment Status Pill */}
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                 <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                 <span>PAID (Razorpay UPI)</span>
               </span>
 
               {/* Fulfillment Status Pill */}
               {fulfillmentState === 'TO_PACK' ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300 animate-pulse">
-                  <Clock className="w-3 h-3 text-amber-600" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 animate-pulse">
+                  <Clock className="w-3 h-3 text-[#7A1C30]" />
                   <span>Unfulfilled / To Pack</span>
                 </span>
               ) : fulfillmentState === 'READY_TO_SHIP' ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-50 text-blue-800 border border-blue-300">
-                  <Package className="w-3 h-3 text-blue-600" />
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                  <Package className="w-3 h-3 text-amber-600" />
                   <span>Ready to Ship</span>
                 </span>
               ) : fulfillmentState === 'IN_TRANSIT' ? (
@@ -223,7 +219,7 @@ export default function SingleOrderProcessingPage({
                 </span>
               )}
             </div>
-            <p className="text-[11px] font-mono text-slate-500 mt-0.5">
+            <p className="text-[11px] font-mono text-stone-500 mt-0.5">
               Placed on 22 Aug 2026, 06:15 PM • Central Silk Board Verified
             </p>
           </div>
@@ -234,25 +230,25 @@ export default function SingleOrderProcessingPage({
           <button
             type="button"
             onClick={() => setIsInvoiceModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            <FileText className="w-3.5 h-3.5 text-slate-500" />
+            <FileText className="w-3.5 h-3.5 text-[#7A1C30]" />
             <span>Print GST Invoice</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsLabelModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
-            <Printer className="w-3.5 h-3.5 text-blue-600" />
+            <Printer className="w-3.5 h-3.5 text-[#C87F4A]" />
             <span>Thermal Label (4x6)</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsWhatsAppModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer"
           >
             <Send className="w-3.5 h-3.5 text-emerald-600" />
             <span>Send WhatsApp Update</span>
@@ -261,7 +257,7 @@ export default function SingleOrderProcessingPage({
           <button
             type="button"
             onClick={() => setIsCancelModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 text-xs font-medium hover:bg-rose-50 transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-rose-200 text-rose-700 text-xs font-medium hover:bg-rose-50 transition-colors cursor-pointer"
           >
             Cancel / Refund
           </button>

@@ -122,21 +122,21 @@ export default function CustomerDirectoryPage() {
   return (
     <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in">
       {/* ================================================== */}
-      {/* 1. TOP HEADER & BREADCRUMBS                        */}
+      {/* 1. TOP HEADER & STATS                              */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Client Management & Bridal CRM
             </h1>
-            <span className="bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
-              <Crown className="w-3 h-3 text-amber-600" />
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
+              <Crown className="w-3 h-3 text-[#C87F4A]" />
               <span>{counts.VIP} VIP Patrons (&gt;₹50k Spend)</span>
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
-            Bridal Trousseau Consultations, 1-on-1 Video drape logs & Patron 360° Profiles
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
+            Bridal Trousseau Consultations & Patron 360° Profiles
           </p>
         </div>
 
@@ -145,9 +145,9 @@ export default function CustomerDirectoryPage() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5 text-blue-600" />
+            <Download className="w-3.5 h-3.5 text-[#7A1C30]" />
             <span>Export Patrons CSV</span>
           </button>
         </div>
@@ -156,21 +156,21 @@ export default function CustomerDirectoryPage() {
       {/* ================================================== */}
       {/* 2. SEARCH & SMART SEGMENTATION TABS                */}
       {/* ================================================== */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+      <div className="bg-white p-4 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by Patron Name, Phone, Email, City, or Wedding Month..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 rounded-xl text-xs text-slate-900 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white focus:border-[#7A1C30] rounded-xl text-xs text-stone-900 focus:outline-none"
             />
           </div>
 
-          <div className="text-xs font-mono text-slate-500">
-            Showing <strong className="text-slate-900">{filteredCustomers.length}</strong> of{' '}
+          <div className="text-xs font-mono text-stone-500">
+            Showing <strong className="text-stone-900">{filteredCustomers.length}</strong> of{' '}
             {customers.length} Patrons
           </div>
         </div>
@@ -193,10 +193,10 @@ export default function CustomerDirectoryPage() {
               key={seg.key}
               type="button"
               onClick={() => setActiveSegment(seg.key as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 activeSegment === seg.key
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-[#7A1C30] text-white shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
               }`}
             >
               {seg.icon && <seg.icon className="w-3.5 h-3.5" />}
@@ -204,8 +204,8 @@ export default function CustomerDirectoryPage() {
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
                   activeSegment === seg.key
-                    ? 'bg-slate-800 text-amber-300'
-                    : 'bg-slate-200 text-slate-700'
+                    ? 'bg-[#5F1424] text-[#E2CE9F]'
+                    : 'bg-stone-100 text-stone-700'
                 }`}
               >
                 {seg.count}
@@ -218,10 +218,10 @@ export default function CustomerDirectoryPage() {
       {/* ================================================== */}
       {/* 3. CUSTOMER DIRECTORY DATA TABLE                   */}
       {/* ================================================== */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+            <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[10px] uppercase">
               <tr>
                 <th className="p-3.5">Patron & Tier</th>
                 <th className="p-3.5">Contact Details</th>

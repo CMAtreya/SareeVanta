@@ -72,7 +72,7 @@ body {
   overscroll-behavior: contain !important;
   scroll-behavior: smooth !important;
   scrollbar-width: thin !important;
-  scrollbar-color: #475569 #0F172A !important;
+  scrollbar-color: #38231B #18110E !important;
 }
 
 .admin-sidebar-scroll::-webkit-scrollbar {
@@ -80,21 +80,21 @@ body {
 }
 
 .admin-sidebar-scroll::-webkit-scrollbar-track {
-  background: #0F172A !important;
+  background: #18110E !important;
 }
 
 .admin-sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #334155 !important;
+  background: #38231B !important;
   border-radius: 9999px !important;
-  border: 1px solid #1E293B !important;
+  border: 1px solid #241712 !important;
 }
 
 .admin-sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #64748B !important;
+  background: #7A1C30 !important;
 }
 
 .admin-sidebar-scroll::-webkit-scrollbar-thumb:active {
-  background: #3B82F6 !important;
+  background: #A33B45 !important;
 }
 
 /* Royal Zari Shimmer Utility */

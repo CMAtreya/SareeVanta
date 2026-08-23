@@ -577,9 +577,9 @@ export default function RedesignedAdminOrdersPage() {
       </div>
 
       {/* 3. SEARCH, STATUS TABS & GATEWAY FILTER */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
+      <div className="bg-white p-5 rounded-3xl border border-[#E8DCC9] shadow-2xs space-y-4">
         {/* Status Tab Switcher */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-100">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-stone-100">
           {[
             { id: 'ALL', label: 'All Orders', count: metrics.count },
             { id: 'TO_PACK', label: 'To Pack (Muslin Seal)', count: metrics.toPackCount },
@@ -601,13 +601,13 @@ export default function RedesignedAdminOrdersPage() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
                   isActive
                     ? 'bg-[#7A1C30] text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    : 'bg-[#FAF3E4] hover:bg-[#F3E8D0] text-stone-700'
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
+                    isActive ? 'bg-[#5F1424] text-[#E2CE9F]' : 'bg-[#E8DCC9] text-stone-700'
                   }`}
                 >
                   {tab.count}
@@ -620,19 +620,19 @@ export default function RedesignedAdminOrdersPage() {
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by Order ID, patron name, phone, email, city, AWB, or SKU..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 bg-slate-50/50"
+              className="w-full pl-10 pr-4 py-2 border border-[#E8DCC9] rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#7A1C30]/20 focus:border-[#7A1C30] text-stone-900 bg-[#FAF6F0]"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -643,7 +643,7 @@ export default function RedesignedAdminOrdersPage() {
             <select
               value={selectedPaymentFilter}
               onChange={(e) => setSelectedPaymentFilter(e.target.value)}
-              className="px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="px-3.5 py-2 border border-[#E8DCC9] rounded-xl text-xs font-semibold bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#7A1C30]"
             >
               <option value="ALL">All Payment Gateways</option>
               <option value="Razorpay UPI">Razorpay UPI</option>
@@ -656,11 +656,11 @@ export default function RedesignedAdminOrdersPage() {
       </div>
 
       {/* 4. REDESIGNED LUXURY ORDERS TABLE */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-3xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase tracking-wider text-[11px]">
+              <tr className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 font-semibold">Order ID & Date</th>
                 <th className="py-3.5 px-4 font-semibold">Patron Details</th>
                 <th className="py-3.5 px-4 font-semibold">Saree Items & Zari Specs</th>

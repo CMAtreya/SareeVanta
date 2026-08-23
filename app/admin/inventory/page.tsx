@@ -379,10 +379,10 @@ export default function InventoryMatrixPage() {
   };
 
   return (
-    <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in">
+    <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-8 right-8 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 text-xs font-sans animate-fade-in">
+        <div className="fixed bottom-8 right-8 z-50 bg-[#18110E] text-[#FAF3E4] px-5 py-3 rounded-2xl shadow-2xl border border-[#C87F4A]/30 flex items-center gap-2 text-xs font-sans animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -391,18 +391,18 @@ export default function InventoryMatrixPage() {
       {/* ================================================== */}
       {/* 1. TOP HEADER & BREADCRUMBS                        */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Inventory Control Matrix
             </h1>
-            <span className="bg-blue-50 text-blue-800 border border-blue-200 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 text-blue-600" />
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-[#7A1C30]" />
               <span>Silk Mark Central Vault</span>
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Physical Warehouse Bins, Loom Batches & Real-Time Stock Ledger
           </p>
         </div>
@@ -412,17 +412,17 @@ export default function InventoryMatrixPage() {
           <button
             type="button"
             onClick={handleExportStockLedger}
-            className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
           >
-            <Download className="w-3.5 h-3.5 text-blue-600" />
+            <Download className="w-3.5 h-3.5 text-[#7A1C30]" />
             <span>Export Stock Ledger (CSV)</span>
           </button>
 
           <Link
             href="/admin/catalog/new"
-            className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-amber-200" />
             <span>Register New Saree</span>
           </Link>
         </div>
@@ -433,16 +433,16 @@ export default function InventoryMatrixPage() {
       {/* ================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Units on Hand */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Total Units on Hand</span>
-            <Package className="w-4 h-4 text-blue-600" />
+            <Package className="w-4 h-4 text-[#7A1C30]" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+            <span className="text-2xl font-bold font-mono text-stone-900 tracking-tight">
               {kpis.totalPhysicalUnits}
             </span>
-            <span className="text-[11px] font-mono text-slate-500">Physical Units</span>
+            <span className="text-[11px] font-mono text-stone-500">Physical Units</span>
           </div>
           <div className="text-[11px] font-mono text-amber-700 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -451,33 +451,33 @@ export default function InventoryMatrixPage() {
         </div>
 
         {/* KPI 2: Inventory Valuation */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Inventory Valuation</span>
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+            <span className="text-2xl font-bold font-mono text-stone-900 tracking-tight">
               ₹{(kpis.valuationRetail / 100000).toFixed(1)}L
             </span>
-            <span className="text-[11px] font-mono text-slate-500">at Retail</span>
+            <span className="text-[11px] font-mono text-stone-500">at Retail</span>
           </div>
-          <div className="text-[11px] font-mono text-slate-500">
-            Cost Valuation: <strong className="text-slate-800">₹{(kpis.valuationCost / 100000).toFixed(1)}L</strong>
+          <div className="text-[11px] font-mono text-stone-500">
+            Cost Valuation: <strong className="text-stone-800">₹{(kpis.valuationCost / 100000).toFixed(1)}L</strong>
           </div>
         </div>
 
         {/* KPI 3: Low Stock SKUs */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-amber-200/80 bg-amber-50/40 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-amber-700 text-xs font-mono">
             <span>Low Stock Alert</span>
             <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-amber-600 tracking-tight">
+            <span className="text-2xl font-bold font-mono text-amber-800 tracking-tight">
               {kpis.lowStockCount}
             </span>
-            <span className="text-[11px] font-mono text-slate-500">SKUs ≤ Reorder Point</span>
+            <span className="text-[11px] font-mono text-stone-500">SKUs ≤ Reorder Point</span>
           </div>
           <div className="text-[11px] font-mono text-amber-700">
             Loom re-order trigger activated
@@ -485,18 +485,18 @@ export default function InventoryMatrixPage() {
         </div>
 
         {/* KPI 4: Out of Stock SKUs */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-rose-200/80 bg-rose-50/40 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-rose-700 text-xs font-mono">
             <span>Out of Stock</span>
             <AlertCircle className="w-4 h-4 text-rose-500" />
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-rose-600 tracking-tight">
+            <span className="text-2xl font-bold font-mono text-rose-800 tracking-tight">
               {kpis.outOfStockCount}
             </span>
-            <span className="text-[11px] font-mono text-slate-500">Loom SKUs at 0</span>
+            <span className="text-[11px] font-mono text-stone-500">Loom SKUs at 0</span>
           </div>
-          <div className="text-[11px] font-mono text-slate-400">
+          <div className="text-[11px] font-mono text-rose-700">
             Archived to Vault / In Re-Weave
           </div>
         </div>
@@ -505,15 +505,15 @@ export default function InventoryMatrixPage() {
       {/* ================================================== */}
       {/* 3. TABS (MATRIX vs AUDIT LOGS)                     */}
       {/* ================================================== */}
-      <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+      <div className="flex items-center justify-between border-b border-[#E8DCC9] pb-1">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveTab('MATRIX')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'MATRIX'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#7A1C30] text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -523,10 +523,10 @@ export default function InventoryMatrixPage() {
           <button
             type="button"
             onClick={() => setActiveTab('LOGS')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'LOGS'
-                ? 'bg-slate-900 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                ? 'bg-[#7A1C30] text-white shadow-xs'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
             }`}
           >
             <History className="w-4 h-4" />
@@ -541,27 +541,27 @@ export default function InventoryMatrixPage() {
       {activeTab === 'MATRIX' && (
         <div className="space-y-4">
           {/* Filters Bar */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+          <div className="bg-white p-4 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="relative flex-1 max-w-md">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search SKU, Saree Title, Bin #, Loom Batch, or Silk Mark..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 rounded-xl text-xs text-slate-900 focus:outline-none"
+                  className="w-full pl-9 pr-4 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white focus:border-[#7A1C30] rounded-xl text-xs text-stone-900 focus:outline-none"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono uppercase text-slate-500 font-bold">
+                <span className="text-[10px] font-mono uppercase text-stone-500 font-bold">
                   Weave:
                 </span>
                 <select
                   value={weaveFilter}
                   onChange={(e) => setWeaveFilter(e.target.value)}
-                  className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none"
+                  className="px-2.5 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-lg text-xs font-medium text-stone-800 focus:outline-none focus:border-[#7A1C30]"
                 >
                   <option value="ALL">All Weave Traditions</option>
                   <option value="Mysore Silk">Mysore Silk</option>
@@ -590,16 +590,16 @@ export default function InventoryMatrixPage() {
                   key={seg.key}
                   type="button"
                   onClick={() => setFilterSegment(seg.key as any)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                     filterSegment === seg.key
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      ? 'bg-[#7A1C30] text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
                   }`}
                 >
                   <span>{seg.label}</span>
                   <span
                     className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
-                      filterSegment === seg.key ? 'bg-slate-800 text-amber-300' : 'bg-slate-200 text-slate-700'
+                      filterSegment === seg.key ? 'bg-[#5F1424] text-[#E2CE9F]' : 'bg-stone-100 text-stone-700'
                     }`}
                   >
                     {seg.count}
@@ -610,10 +610,10 @@ export default function InventoryMatrixPage() {
           </div>
 
           {/* Stock Table */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+          <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[10px] uppercase">
+                <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[10px] uppercase">
                   <tr>
                     <th className="p-3.5">Saree SKU & Masterpiece</th>
                     <th className="p-3.5">Bin Location</th>

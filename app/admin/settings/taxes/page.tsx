@@ -72,9 +72,9 @@ export default function TaxesSettingsPage() {
         <button
           type="button"
           onClick={handleSaveTaxConfig}
-          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto"
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
         >
-          <Save className="w-3.5 h-3.5" />
+          <Save className="w-3.5 h-3.5 text-amber-200" />
           <span>Save GST Configuration</span>
         </button>
       </div>
@@ -82,33 +82,33 @@ export default function TaxesSettingsPage() {
       {/* ================================================== */}
       {/* SUB-NAV TABS                                       */}
       {/* ================================================== */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto font-sans text-xs">
+      <div className="flex items-center gap-2 border-b border-[#E8DCC9] pb-2 overflow-x-auto font-sans text-xs">
         <Link
           href="/admin/settings/staff"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Users className="w-4 h-4 text-slate-400" />
+          <Users className="w-4 h-4 text-stone-400" />
           <span>Staff & RBAC Access</span>
         </Link>
         <Link
           href="/admin/settings/taxes"
-          className="px-3.5 py-2 rounded-xl bg-slate-900 text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl bg-[#7A1C30] text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap cursor-pointer"
         >
-          <Receipt className="w-4 h-4 text-emerald-400" />
+          <Receipt className="w-4 h-4 text-amber-200" />
           <span>Tax, Legal & GST</span>
         </Link>
         <Link
           href="/admin/settings/shipping"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Truck className="w-4 h-4 text-slate-400" />
+          <Truck className="w-4 h-4 text-stone-400" />
           <span>Logistics & Warehouses</span>
         </Link>
         <Link
           href="/admin/settings/payments"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <CreditCard className="w-4 h-4 text-slate-400" />
+          <CreditCard className="w-4 h-4 text-stone-400" />
           <span>Payment Gateways & Webhooks</span>
         </Link>
       </div>
@@ -117,25 +117,25 @@ export default function TaxesSettingsPage() {
       {/* 1. LEGAL ENTITY & GSTIN DOSSIER                    */}
       {/* ================================================== */}
       <form onSubmit={handleSaveTaxConfig} className="space-y-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-stone-100">
             <div>
-              <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-blue-600" />
+              <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-[#7A1C30]" />
                 <span>Registered Legal Entity & GSTIN Credentials</span>
               </h3>
-              <p className="text-xs text-slate-500 font-mono">
+              <p className="text-xs text-stone-500 font-mono">
                 Printed on formal tax invoices, thermal labels, and dispatched packing manifests
               </p>
             </div>
-            <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] font-mono bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2 py-0.5 rounded-full font-bold">
               ✓ GSTIN Active & Verified
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">
+              <label className="block font-semibold text-stone-700 mb-1">
                 Registered Business Legal Name *
               </label>
               <input

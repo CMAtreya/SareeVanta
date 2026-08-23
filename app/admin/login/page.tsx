@@ -290,32 +290,32 @@ function AdminLoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F172A] text-slate-100 flex flex-col justify-between items-center px-4 py-8 sm:py-12 select-none relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#18110E] text-[#FAF3E4] flex flex-col justify-between items-center px-4 py-8 sm:py-12 select-none relative overflow-hidden font-sans">
       {/* Subtle Ambient Radial Glows */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-[#7A1C30]/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-[#C87F4A]/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Utility Bar */}
-      <div className="w-full max-w-md flex items-center justify-between text-xs font-mono text-slate-400 z-10">
+      <div className="w-full max-w-md flex items-center justify-between text-xs font-mono text-stone-400 z-10">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors py-1 px-2.5 rounded-lg hover:bg-slate-800/80 border border-slate-800"
+          className="inline-flex items-center gap-1.5 text-stone-300 hover:text-white transition-colors py-1 px-2.5 rounded-lg hover:bg-[#2C1D17] border border-[#3D2319]"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="w-3.5 h-3.5 text-[#C87F4A]" />
           <span>Live Storefront</span>
         </Link>
-        <span className="flex items-center gap-1.5 text-slate-300 bg-slate-900/90 px-3 py-1 rounded-lg border border-slate-800 text-[11px]">
-          <Shield className="w-3.5 h-3.5 text-emerald-400" />
+        <span className="flex items-center gap-1.5 text-amber-200 bg-[#1F1B16]/90 px-3 py-1 rounded-lg border border-[#C87F4A]/30 text-[11px]">
+          <Shield className="w-3.5 h-3.5 text-[#C87F4A]" />
           <span>Google OAuth 2FA Protected</span>
         </span>
       </div>
 
       {/* Centered Glassmorphism Card */}
-      <div className="w-full max-w-md bg-slate-900/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] z-10">
+      <div className="w-full max-w-md bg-[#1F1B16]/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 border border-[#C87F4A]/30 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] z-10">
         {/* Brand Header */}
-        <div className="text-center pb-5 border-b border-slate-800/90">
-          <div className="mx-auto w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-amber-700 shadow-lg mb-3 flex items-center justify-center">
-            <div className="w-full h-full rounded-[14px] bg-[#0F172A] p-1 flex items-center justify-center border border-slate-800">
+        <div className="text-center pb-5 border-b border-[#3D2319]">
+          <div className="mx-auto w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-br from-amber-300 via-amber-500 to-[#C87F4A] shadow-lg mb-3 flex items-center justify-center">
+            <div className="w-full h-full rounded-[14px] bg-[#18110E] p-1 flex items-center justify-center border border-[#3D2319]">
               <picture>
                 <source srcSet="/assets/logo.webp" type="image/webp" />
                 <img
@@ -336,7 +336,7 @@ function AdminLoginContent() {
           <h1 className="font-bold text-xl tracking-wide text-white uppercase font-sans">
             NEEL SAREE HOUSE
           </h1>
-          <p className="text-[10px] uppercase font-mono tracking-[0.25em] text-amber-400 font-bold mt-1">
+          <p className="text-[10px] uppercase font-mono tracking-[0.25em] text-[#C87F4A] font-bold mt-1">
             Enterprise Management Console
           </p>
         </div>
@@ -368,7 +368,7 @@ function AdminLoginContent() {
                 type="button"
                 onClick={() => setIsGoogleModalOpen(true)}
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-800 font-semibold rounded-xl text-xs flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.99] border border-slate-200"
+                className="w-full py-2.5 px-4 bg-white hover:bg-stone-100 text-stone-900 font-semibold rounded-xl text-xs flex items-center justify-center gap-3 transition-all shadow-md active:scale-[0.99] border border-stone-200 cursor-pointer"
               >
                 {/* Official Google G Logo SVG */}
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -391,15 +391,15 @@ function AdminLoginContent() {
                 </svg>
                 <span>Sign in with Google Workspace</span>
               </button>
-              <div className="text-center text-[10px] font-mono text-slate-500 mt-1.5">
+              <div className="text-center text-[10px] font-mono text-stone-400 mt-1.5">
                 Restricted to @neelsareehouse.com authorized domain
               </div>
             </div>
 
             {/* Divider */}
             <div className="relative flex items-center justify-center py-2">
-              <div className="border-t border-slate-800 w-full" />
-              <span className="bg-slate-900 px-3 text-[10px] font-mono text-slate-500 uppercase tracking-wider">
+              <div className="border-t border-[#3D2319] w-full" />
+              <span className="bg-[#1F1B16] px-3 text-[10px] font-mono text-stone-400 uppercase tracking-wider">
                 Or Staff Credentials
               </span>
             </div>
@@ -409,12 +409,12 @@ function AdminLoginContent() {
               <div className="space-y-1.5">
                 <label
                   htmlFor="admin-identifier"
-                  className="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider"
+                  className="block text-xs font-mono font-semibold text-stone-300 uppercase tracking-wider"
                 >
                   Staff Email or Employee ID
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-500">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -424,7 +424,7 @@ function AdminLoginContent() {
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     placeholder="e.g. admin@neelsareehouse.com"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#120B09] border border-[#3D2319] rounded-xl text-xs text-white placeholder-stone-600 focus:outline-none focus:border-[#C87F4A] focus:ring-1 focus:ring-[#C87F4A] transition-all font-mono"
                   />
                 </div>
                 {formErrors.identifier && (
@@ -437,16 +437,16 @@ function AdminLoginContent() {
                 <div className="flex items-center justify-between">
                   <label
                     htmlFor="admin-password"
-                    className="block text-xs font-mono font-semibold text-slate-300 uppercase tracking-wider"
+                    className="block text-xs font-mono font-semibold text-stone-300 uppercase tracking-wider"
                   >
                     Master Password
                   </label>
-                  <span className="text-[10px] font-mono text-slate-500">
+                  <span className="text-[10px] font-mono text-stone-400">
                     256-Bit Vault Enforced
                   </span>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-500">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -456,14 +456,14 @@ function AdminLoginContent() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-mono"
+                    className="w-full pl-10 pr-10 py-2.5 bg-[#120B09] border border-[#3D2319] rounded-xl text-xs text-white placeholder-stone-600 focus:outline-none focus:border-[#C87F4A] focus:ring-1 focus:ring-[#C87F4A] transition-all font-mono"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-500 hover:text-stone-300"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-stone-400" />}
                   </button>
                 </div>
                 {formErrors.password && (
@@ -478,9 +478,9 @@ function AdminLoginContent() {
                     type="checkbox"
                     checked={rememberWorkstation}
                     onChange={(e) => setRememberWorkstation(e.target.checked)}
-                    className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+                    className="w-4 h-4 rounded bg-[#120B09] border-[#3D2319] text-[#7A1C30] focus:ring-[#7A1C30]"
                   />
-                  <span className="text-xs text-slate-400 font-sans">
+                  <span className="text-xs text-stone-400 font-sans">
                     Trust this workstation (30 days)
                   </span>
                 </label>
@@ -490,14 +490,14 @@ function AdminLoginContent() {
               <button
                 type="submit"
                 disabled={isLoading || isSuccess}
-                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/30 disabled:opacity-50"
+                className="w-full py-2.5 px-4 bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg border border-[#C87F4A]/30 disabled:opacity-50 cursor-pointer"
               >
                 {isLoading ? (
                   <span className="inline-block animate-spin">⟳</span>
                 ) : (
                   <>
                     <span>Authenticate & Proceed to 2FA</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 text-amber-200" />
                   </>
                 )}
               </button>
@@ -511,16 +511,16 @@ function AdminLoginContent() {
         {step === 'TWO_FACTOR' && (
           <div className="mt-6 space-y-5 animate-fade-in">
             {/* Authenticated Persona Banner */}
-            <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+            <div className="p-3 bg-[#120B09] border border-[#3D2319] rounded-2xl flex items-center justify-between text-xs">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/40 text-blue-300 font-bold flex items-center justify-center font-mono text-xs flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[#7A1C30]/40 border border-[#C87F4A]/40 text-[#E2CE9F] font-bold flex items-center justify-center font-mono text-xs flex-shrink-0">
                   G
                 </div>
                 <div className="min-w-0">
                   <div className="font-bold text-white text-xs truncate">
                     {selectedGoogleAccount?.name || 'SuperAdmin Director'}
                   </div>
-                  <div className="text-[10px] font-mono text-amber-400 truncate">
+                  <div className="text-[10px] font-mono text-[#C87F4A] truncate">
                     {selectedGoogleAccount?.email || identifier}
                   </div>
                 </div>
@@ -531,21 +531,21 @@ function AdminLoginContent() {
                   setStep('CREDENTIALS');
                   setOtpDigits(['', '', '', '', '', '']);
                 }}
-                className="text-[10px] font-mono text-slate-400 hover:text-white underline ml-2"
+                className="text-[10px] font-mono text-stone-400 hover:text-white underline ml-2"
               >
                 Change
               </button>
             </div>
 
             {/* 2FA Method Selector Tabs */}
-            <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-[10px] font-mono">
+            <div className="grid grid-cols-3 gap-1 bg-[#120B09] p-1 rounded-xl border border-[#3D2319] text-[10px] font-mono">
               <button
                 type="button"
                 onClick={() => setTwoFactorType('GOOGLE_AUTHENTICATOR')}
-                className={`py-1.5 rounded-lg font-bold transition-all flex flex-col items-center gap-1 ${
+                className={`py-1.5 rounded-lg font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
                   twoFactorType === 'GOOGLE_AUTHENTICATOR'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[#7A1C30] text-white shadow-xs'
+                    : 'text-stone-400 hover:text-stone-200'
                 }`}
               >
                 <Smartphone className="w-3.5 h-3.5" />
@@ -555,10 +555,10 @@ function AdminLoginContent() {
               <button
                 type="button"
                 onClick={() => setTwoFactorType('GOOGLE_PROMPT')}
-                className={`py-1.5 rounded-lg font-bold transition-all flex flex-col items-center gap-1 ${
+                className={`py-1.5 rounded-lg font-bold transition-all flex flex-col items-center gap-1 cursor-pointer ${
                   twoFactorType === 'GOOGLE_PROMPT'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-[#7A1C30] text-white shadow-xs'
+                    : 'text-stone-400 hover:text-stone-200'
                 }`}
               >
                 <Bell className="w-3.5 h-3.5" />

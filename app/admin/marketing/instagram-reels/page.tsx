@@ -251,9 +251,9 @@ export default function AdminInstagramReelsPage() {
           <button
             type="button"
             onClick={() => setIsFormOpen(!isFormOpen)}
-            className="px-5 py-3 bg-[#C87F4A] hover:bg-[#B36737] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:-translate-y-0.5"
+            className="px-5 py-2.5 bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md hover:-translate-y-0.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 text-amber-200" />
             <span>{isFormOpen ? 'Close Form' : 'Add Reel'}</span>
           </button>
         </div>

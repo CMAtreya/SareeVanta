@@ -435,25 +435,25 @@ export default function AdminCatalogPage() {
 
             <Link
               href="/admin/catalog/new"
-              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 text-amber-200" />
               <span>+ Add New Saree</span>
             </Link>
           </div>
         </div>
 
         {/* Search Bar & Quick Filter Segment Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-[#E8DCC9] shadow-2xs">
           {/* Quick Search */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by Title, Master SKU, Loom ID, HSN, or Silk Mark #..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 rounded-xl text-xs text-slate-900 focus:outline-none transition-colors"
+              className="w-full pl-9 pr-4 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white focus:border-[#7A1C30] rounded-xl text-xs text-stone-900 focus:outline-none transition-colors font-medium"
             />
           </div>
 
@@ -473,16 +473,16 @@ export default function AdminCatalogPage() {
                 onClick={() => setActiveTab(tab.key as any)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
                   activeTab === tab.key
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'bg-[#7A1C30] text-white shadow-2xs'
+                    : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
                     activeTab === tab.key
-                      ? 'bg-slate-800 text-amber-300'
-                      : 'bg-slate-200 text-slate-700'
+                      ? 'bg-[#5F1424] text-[#E2CE9F]'
+                      : 'bg-stone-100 text-stone-700'
                   }`}
                 >
                   {tab.count}
@@ -496,10 +496,10 @@ export default function AdminCatalogPage() {
       {/* ================================================== */}
       {/* 2. DENSE DATA TABLE (Magento-Class Grid)           */}
       {/* ================================================== */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs font-sans">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-mono text-[11px] uppercase">
+            <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[11px] uppercase">
               <tr>
                 <th className="p-3 w-10 text-center">
                   <input

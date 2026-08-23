@@ -572,18 +572,18 @@ export default function AdminShipmentsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20 text-slate-900 font-sans">
+    <div className="space-y-6 pb-20 text-[#1F1B16] font-sans">
       {/* 1. TOP HEADER & LOGISTICS ACTIONS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-[#E8DCC9] shadow-2xs">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-[#7A1C30] mb-1">
             <Truck className="w-4 h-4 text-[#7A1C30]" />
             <span>Air Express & Surface Dispatch Center</span>
           </div>
-          <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-slate-900">
+          <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-[#1F1B16]">
             Shipments & Courier Logistics
           </h1>
-          <p className="text-xs text-slate-500 font-sans mt-0.5">
+          <p className="text-xs text-stone-500 font-sans mt-0.5">
             Real-time Blue Dart Air & Delhivery AWB synchronization for authentic handloom silk deliveries
           </p>
         </div>
@@ -601,9 +601,9 @@ export default function AdminShipmentsPage() {
           <button
             type="button"
             onClick={() => setIsManifestModalOpen(true)}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-xl transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-white hover:bg-[#FAF6F0] border border-[#E8DCC9] text-stone-800 text-xs font-semibold rounded-xl transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <FileText className="w-3.5 h-3.5 text-blue-600" />
+            <FileText className="w-3.5 h-3.5 text-[#7A1C30]" />
             <span>Daily Dispatch Manifest</span>
           </button>
         </div>
@@ -630,16 +630,16 @@ export default function AdminShipmentsPage() {
 
       {/* 2. STATS OVERVIEW CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500">
+        <div className="bg-white p-4 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-stone-500">
             <span className="text-[11px] font-semibold">Total Active</span>
-            <Boxes className="w-4 h-4 text-slate-400" />
+            <Boxes className="w-4 h-4 text-stone-400" />
           </div>
-          <div className="text-2xl font-bold font-editorial text-slate-900">{stats.total}</div>
-          <div className="text-[10px] font-mono text-slate-400">All Registered AWBs</div>
+          <div className="text-2xl font-bold font-editorial text-stone-900">{stats.total}</div>
+          <div className="text-[10px] font-mono text-stone-400">All Registered AWBs</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div className="bg-white p-4 rounded-2xl border border-amber-200/80 bg-amber-50/40 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-amber-700">
             <span className="text-[11px] font-semibold">Ready for Pickup</span>
             <Clock className="w-4 h-4 text-amber-600" />
@@ -648,16 +648,16 @@ export default function AdminShipmentsPage() {
           <div className="text-[10px] font-mono text-amber-600">Manifest Sealed</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-blue-700">
+        <div className="bg-white p-4 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-stone-700">
             <span className="text-[11px] font-semibold">In Air Transit</span>
-            <Compass className="w-4 h-4 text-blue-600" />
+            <Compass className="w-4 h-4 text-[#C87F4A]" />
           </div>
-          <div className="text-2xl font-bold font-editorial text-blue-900">{stats.inTransit}</div>
-          <div className="text-[10px] font-mono text-blue-600">Flight & Cargo Hubs</div>
+          <div className="text-2xl font-bold font-editorial text-stone-900">{stats.inTransit}</div>
+          <div className="text-[10px] font-mono text-[#C87F4A]">Flight & Cargo Hubs</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div className="bg-white p-4 rounded-2xl border border-indigo-200/80 bg-indigo-50/40 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-indigo-700">
             <span className="text-[11px] font-semibold">Out for Delivery</span>
             <Truck className="w-4 h-4 text-indigo-600" />
@@ -666,16 +666,16 @@ export default function AdminShipmentsPage() {
           <div className="text-[10px] font-mono text-indigo-600">OTP Dispatches Today</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
+        <div className="bg-white p-4 rounded-2xl border border-emerald-200/80 bg-emerald-50/40 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-emerald-700">
             <span className="text-[11px] font-semibold">Delivered</span>
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-bold font-editorial text-emerald-900">{stats.delivered}</div>
-          <div className="text-[10px] font-mono text-emerald-600">Patron Verified</div>
+          <div className="text-[10px] font-mono text-emerald-600">Patron Signed (Proof of Delivery)</div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-rose-200 bg-rose-50/40 shadow-2xs space-y-1">
+        <div className="bg-white p-4 rounded-2xl border border-rose-200/80 bg-rose-50/40 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-rose-700">
             <span className="text-[11px] font-semibold">Exceptions / NDR</span>
             <AlertTriangle className="w-4 h-4 text-rose-600" />
@@ -686,9 +686,9 @@ export default function AdminShipmentsPage() {
       </div>
 
       {/* 3. CONTROLS, SEARCH, AND FILTERS */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
+      <div className="bg-white p-5 rounded-3xl border border-[#E8DCC9] shadow-2xs space-y-4">
         {/* Status Tab Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-100">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-stone-100">
           {[
             { id: 'ALL', label: 'All Shipments', count: stats.total },
             { id: 'SCHEDULED', label: 'Ready for Pickup', count: stats.readyPickup },
@@ -706,17 +706,17 @@ export default function AdminShipmentsPage() {
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 flex-shrink-0 cursor-pointer ${
                   isActive
                     ? 'bg-[#7A1C30] text-white shadow-xs'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                    : 'bg-[#FAF3E4] hover:bg-[#F3E8D0] text-stone-700'
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
                     isActive
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-[#5F1424] text-[#E2CE9F]'
                       : tab.isWarning && tab.count > 0
                       ? 'bg-rose-100 text-rose-700 font-bold'
-                      : 'bg-slate-200 text-slate-600'
+                      : 'bg-[#E8DCC9] text-stone-700'
                   }`}
                 >
                   {tab.count}
@@ -729,19 +729,19 @@ export default function AdminShipmentsPage() {
         {/* Search and Carrier Selector */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by AWB tracking number, Order ID, patron name, destination city, or PIN code..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 bg-slate-50/50"
+              className="w-full pl-10 pr-4 py-2 border border-[#E8DCC9] rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#7A1C30]/20 focus:border-[#7A1C30] text-stone-900 bg-[#FAF6F0]"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -752,7 +752,7 @@ export default function AdminShipmentsPage() {
             <select
               value={selectedCarrier}
               onChange={(e) => setSelectedCarrier(e.target.value)}
-              className="px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="px-3.5 py-2 border border-[#E8DCC9] rounded-xl text-xs font-semibold bg-white text-stone-800 focus:outline-none focus:ring-1 focus:ring-[#7A1C30]"
             >
               <option value="ALL">All Logistics Carriers</option>
               <option value="Blue Dart Air Express">Blue Dart Air Express</option>
@@ -764,11 +764,11 @@ export default function AdminShipmentsPage() {
       </div>
 
       {/* 4. SHIPMENTS DATA TABLE */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-3xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-mono uppercase tracking-wider text-[11px]">
+              <tr className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 font-semibold">AWB & Carrier</th>
                 <th className="py-3.5 px-4 font-semibold">Order & Patron</th>
                 <th className="py-3.5 px-4 font-semibold">Saree Item & SKU</th>

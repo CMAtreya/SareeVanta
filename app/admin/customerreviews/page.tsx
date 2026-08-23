@@ -274,10 +274,10 @@ export default function CustomerReviewsAdminPage() {
   };
 
   return (
-    <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in">
+    <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-8 right-8 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-2 text-xs font-sans animate-fade-in">
+        <div className="fixed bottom-8 right-8 z-50 bg-[#18110E] text-[#FAF3E4] px-5 py-3 rounded-2xl shadow-2xl border border-[#C87F4A]/30 flex items-center gap-2 text-xs font-sans animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -286,10 +286,10 @@ export default function CustomerReviewsAdminPage() {
       {/* ================================================== */}
       {/* 1. TOP ACTION HEADER & CONTROLS                    */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Review Moderation & UGC Content Hub
             </h1>
             {summary.pendingCount > 0 && (
@@ -299,7 +299,7 @@ export default function CustomerReviewsAdminPage() {
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Customer Reviews, Verified Drape Photo UGC Lightboxes, Sentiment Analytics & Brand Responses
           </p>
         </div>
@@ -309,18 +309,18 @@ export default function CustomerReviewsAdminPage() {
           <button
             type="button"
             onClick={() => setIsSettingsOpen(true)}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-xl border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            <Settings className="w-3.5 h-3.5 text-stone-500" />
             <span>Moderation & WhatsApp Rules</span>
           </button>
 
           <Link
             href="/products"
             target="_blank"
-            className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Eye className="w-3.5 h-3.5 text-amber-400" />
+            <Eye className="w-3.5 h-3.5 text-amber-200" />
             <span>View Live PDPs</span>
             <ExternalLink className="w-3 h-3 ml-0.5" />
           </Link>
@@ -332,16 +332,16 @@ export default function CustomerReviewsAdminPage() {
       {/* ================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Average Rating Card */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Average Store Rating</span>
             <Star className="w-4 h-4 text-amber-500 fill-amber-400" />
           </div>
           <div className="flex items-baseline gap-2 font-mono">
-            <span className="text-2xl font-bold text-slate-900 tracking-tight">
+            <span className="text-2xl font-bold text-stone-900 tracking-tight">
               {summary.avgRating}
             </span>
-            <span className="text-xs text-slate-400">/ 5.0</span>
+            <span className="text-xs text-stone-400">/ 5.0</span>
           </div>
           <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-700 font-bold">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -350,26 +350,26 @@ export default function CustomerReviewsAdminPage() {
         </div>
 
         {/* Total Published */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Published Reviews</span>
-            <MessageSquare className="w-4 h-4 text-blue-600" />
+            <MessageSquare className="w-4 h-4 text-[#7A1C30]" />
           </div>
-          <div className="text-2xl font-bold font-mono text-slate-900 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-stone-900 tracking-tight">
             {summary.totalPublished} Reviews
           </div>
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="text-[11px] font-mono text-stone-500">
             Live across catalog PDP pages
           </div>
         </div>
 
         {/* Pending Moderation Queue */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-amber-200/80 bg-amber-50/40 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-amber-700 text-xs font-mono">
             <span>Pending Moderation</span>
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="text-2xl font-bold font-mono text-amber-600 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-amber-800 tracking-tight">
             {summary.pendingCount} Reviews
           </div>
           <div className="text-[11px] font-mono text-amber-800">
@@ -378,29 +378,29 @@ export default function CustomerReviewsAdminPage() {
         </div>
 
         {/* Verified Buyer % */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 bg-emerald-50/40 shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-emerald-700 text-xs font-mono">
             <span>Verified Buyer Rate</span>
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold font-mono text-emerald-700 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-emerald-800 tracking-tight">
             {summary.verifiedPercent}%
           </div>
-          <div className="text-[11px] font-mono text-slate-500">
+          <div className="text-[11px] font-mono text-stone-500">
             Tied to delivered order IDs
           </div>
         </div>
 
         {/* UGC Media Attached */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500 text-xs font-mono">
+        <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-2">
+          <div className="flex items-center justify-between text-stone-500 text-xs font-mono">
             <span>Customer UGC Media</span>
-            <Camera className="w-4 h-4 text-purple-600" />
+            <Camera className="w-4 h-4 text-[#C87F4A]" />
           </div>
-          <div className="text-2xl font-bold font-mono text-purple-700 tracking-tight">
+          <div className="text-2xl font-bold font-mono text-stone-900 tracking-tight">
             {summary.totalUgcMedia} Drape Photos
           </div>
-          <div className="text-[11px] font-mono text-purple-900">
+          <div className="text-[11px] font-mono text-[#C87F4A] font-bold">
             Real life drape visual proof
           </div>
         </div>
@@ -409,34 +409,34 @@ export default function CustomerReviewsAdminPage() {
       {/* ================================================== */}
       {/* 3. FILTER BAR & QUEUE TABS                         */}
       {/* ================================================== */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+      <div className="bg-white p-4 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search by Customer, Order #, SKU, Headline, or keywords..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 rounded-xl text-xs text-slate-900 focus:outline-none"
+              className="w-full pl-9 pr-4 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white focus:border-[#7A1C30] rounded-xl text-xs text-stone-900 focus:outline-none"
             />
           </div>
 
           {/* Quick Filter Toggles */}
           <div className="flex items-center gap-2 flex-wrap text-xs font-sans">
             {/* Rating Selector */}
-            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200 font-mono text-[11px]">
-              <span className="text-slate-400 px-1 font-bold">Rating:</span>
+            <div className="flex items-center gap-1 bg-[#FAF6F0] p-1 rounded-xl border border-[#E8DCC9] font-mono text-[11px]">
+              <span className="text-stone-400 px-1 font-bold">Rating:</span>
               {(['ALL', 5, 4, 3, 2, 1] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRatingFilter(r)}
-                  className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                  className={`px-2 py-0.5 rounded-lg font-bold transition-all cursor-pointer ${
                     ratingFilter === r
-                      ? 'bg-slate-900 text-white shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-[#7A1C30] text-white shadow-2xs'
+                      : 'text-stone-600 hover:text-stone-900'
                   }`}
                 >
                   {r === 'ALL' ? 'All' : `${r}★`}
@@ -448,13 +448,13 @@ export default function CustomerReviewsAdminPage() {
             <button
               type="button"
               onClick={() => setHasMediaOnly(!hasMediaOnly)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 hasMediaOnly
-                  ? 'border-purple-300 bg-purple-50 text-purple-950 font-bold'
-                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  ? 'border-[#C87F4A] bg-[#FAF3E4] text-[#7A1C30] font-bold'
+                  : 'border-[#E8DCC9] bg-[#FAF6F0] text-stone-600 hover:bg-[#FAF3E4]'
               }`}
             >
-              <Camera className="w-3.5 h-3.5 text-purple-600" />
+              <Camera className="w-3.5 h-3.5 text-[#C87F4A]" />
               <span>With Photo UGC</span>
             </button>
 
@@ -462,10 +462,10 @@ export default function CustomerReviewsAdminPage() {
             <button
               type="button"
               onClick={() => setVerifiedBuyerOnly(!verifiedBuyerOnly)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 verifiedBuyerOnly
                   ? 'border-emerald-300 bg-emerald-50 text-emerald-950 font-bold'
-                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  : 'border-[#E8DCC9] bg-[#FAF6F0] text-stone-600 hover:bg-[#FAF3E4]'
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -475,7 +475,7 @@ export default function CustomerReviewsAdminPage() {
         </div>
 
         {/* Queue Status Segment Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-slate-100">
+        <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-stone-100">
           {[
             {
               key: 'PENDING',
@@ -492,20 +492,20 @@ export default function CustomerReviewsAdminPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveQueueTab(tab.key as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
                 activeQueueTab === tab.key
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'bg-[#7A1C30] text-white shadow-2xs'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4]'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
                   activeQueueTab === tab.key
-                    ? 'bg-slate-800 text-amber-300'
+                    ? 'bg-[#5F1424] text-[#E2CE9F]'
                     : tab.urgent
-                    ? 'bg-amber-100 text-amber-900'
-                    : 'bg-slate-200 text-slate-700'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-stone-100 text-stone-700'
                 }`}
               >
                 {tab.count}

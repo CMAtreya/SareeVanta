@@ -62,21 +62,21 @@ export default function MasterSettingsHubPage() {
   ];
 
   return (
-    <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in">
+    <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
       {/* ================================================== */}
       {/* 1. TOP HEADER                                      */}
       {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
               Master Configuration & Governance Center
             </h1>
-            <span className="bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
+            <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
               Production Admin Hub
             </span>
           </div>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
+          <p className="text-xs text-stone-500 font-mono mt-0.5">
             Role-Based Access Control, GST Legal Entity, Carrier Logistics & Payment Gateway Webhooks
           </p>
         </div>
@@ -85,33 +85,33 @@ export default function MasterSettingsHubPage() {
       {/* ================================================== */}
       {/* 2. SUB-NAV TABS                                    */}
       {/* ================================================== */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto font-sans text-xs">
+      <div className="flex items-center gap-2 border-b border-[#E8DCC9] pb-2 overflow-x-auto font-sans text-xs">
         <Link
           href="/admin/settings/staff"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Users className="w-4 h-4 text-slate-400" />
+          <Users className="w-4 h-4 text-stone-400" />
           <span>Staff & RBAC Access</span>
         </Link>
         <Link
           href="/admin/settings/taxes"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Receipt className="w-4 h-4 text-slate-400" />
+          <Receipt className="w-4 h-4 text-stone-400" />
           <span>Tax, Legal & GST</span>
         </Link>
         <Link
           href="/admin/settings/shipping"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <Truck className="w-4 h-4 text-slate-400" />
+          <Truck className="w-4 h-4 text-stone-400" />
           <span>Logistics & Warehouses</span>
         </Link>
         <Link
           href="/admin/settings/payments"
-          className="px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
+          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
         >
-          <CreditCard className="w-4 h-4 text-slate-400" />
+          <CreditCard className="w-4 h-4 text-stone-400" />
           <span>Payment Gateways & Webhooks</span>
         </Link>
       </div>
@@ -124,11 +124,11 @@ export default function MasterSettingsHubPage() {
           <Link
             key={sec.title}
             href={sec.href}
-            className="group bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all flex flex-col justify-between space-y-4"
+            className="group bg-white p-6 rounded-3xl border border-[#E8DCC9] shadow-2xs hover:shadow-md hover:border-[#7A1C30]/40 transition-all flex flex-col justify-between space-y-4"
           >
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700 group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                <div className="w-10 h-10 rounded-2xl bg-[#FAF6F0] border border-[#E8DCC9] flex items-center justify-center text-[#7A1C30] group-hover:bg-[#7A1C30] group-hover:text-white transition-colors">
                   <sec.icon className="w-5 h-5" />
                 </div>
                 <span
@@ -138,19 +138,19 @@ export default function MasterSettingsHubPage() {
                 </span>
               </div>
 
-              <h3 className="font-bold text-base text-slate-900 group-hover:text-blue-600 transition-colors font-sans flex items-center justify-between">
+              <h3 className="font-bold text-base text-[#1F1B16] group-hover:text-[#7A1C30] transition-colors font-sans flex items-center justify-between">
                 <span>{sec.title}</span>
-                <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="w-4 h-4 text-stone-400 group-hover:translate-x-1 transition-transform group-hover:text-[#7A1C30]" />
               </h3>
 
-              <p className="text-xs text-slate-600 leading-relaxed font-sans">
+              <p className="text-xs text-stone-600 leading-relaxed font-sans">
                 {sec.description}
               </p>
             </div>
 
-            <div className="space-y-1.5 pt-3 border-t border-slate-100">
+            <div className="space-y-1.5 pt-3 border-t border-stone-100">
               {sec.highlights.map((h, i) => (
-                <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500">
+                <div key={i} className="flex items-center gap-1.5 text-[11px] font-mono text-stone-500">
                   <span className="text-emerald-600 font-bold">✓</span>
                   <span>{h}</span>
                 </div>
