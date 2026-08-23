@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Calendar, Sparkles, Video, CheckCircle2 } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, Calendar, Sparkles, CheckCircle2 } from 'lucide-react';
 
 export default function VisitUsPage() {
   const [booked, setBooked] = useState(false);
-  const [appointmentType, setAppointmentType] = useState('in-person');
 
   const handleBook = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,10 +20,10 @@ export default function VisitUsPage() {
             <span>Heritage Flagship Destination</span>
           </div>
           <h1 className="font-editorial text-3xl sm:text-5xl font-normal text-[#1F1B16]">
-            Visit Our Mysuru Salon & Video Concierge
+            Visit Our Mysuru Heritage Salon
           </h1>
           <p className="text-xs sm:text-sm text-stone-600 font-sans mt-2">
-            Experience our 1984 salon on Sayyaji Rao Road or connect live over high-definition 4K video consultation with master drapers.
+            Experience our 1984 flagship boutique on Sayyaji Rao Road with personalized master draper appointments.
           </p>
         </div>
 
@@ -66,8 +65,8 @@ export default function VisitUsPage() {
 
             <div className="p-4 bg-[#FAF3E4] rounded-2xl border border-[#C87F4A]/25 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-[#1F1B16] block">Need Immediate WhatsApp Video View?</span>
-                <span className="text-[10px] text-stone-500 font-sans">Our drapers can show you any saree right now.</span>
+                <span className="text-xs font-bold text-[#1F1B16] block">Need Assistance or Directions?</span>
+                <span className="text-[10px] text-stone-500 font-sans">Our Mysuru salon concierge is here to help.</span>
               </div>
               <a
                 href="https://wa.me/918212423344"
@@ -75,7 +74,7 @@ export default function VisitUsPage() {
                 rel="noopener noreferrer"
                 className="bg-[#C87F4A] text-white text-xs px-4 py-2 rounded-lg font-bold uppercase tracking-wider"
               >
-                Chat Now
+                WhatsApp Us
               </a>
             </div>
           </div>
@@ -83,47 +82,24 @@ export default function VisitUsPage() {
           {/* Appointment Booking Form */}
           <div className="lg:col-span-6 bg-white p-8 rounded-3xl border border-[#C87F4A]/25 shadow-silk-lg space-y-6">
             <h2 className="font-editorial text-2xl font-bold text-[#1F1B16] pb-3 border-b border-stone-100">
-              Schedule a VIP Consultation
+              Schedule an In-Salon Boutique Visit
             </h2>
 
             {booked ? (
               <div className="py-8 text-center space-y-3">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
                 <h3 className="font-editorial text-2xl font-bold text-[#1F1B16]">
-                  Consultation Confirmed
+                  Salon Visit Confirmed
                 </h3>
                 <p className="text-xs text-stone-600 font-sans max-w-sm mx-auto">
-                  A master sari draper has been reserved for your session. You will receive a calendar invitation and WhatsApp reminder.
+                  A dedicated master sari draper has been reserved for your flagship visit. You will receive an SMS and WhatsApp confirmation.
                 </p>
               </div>
             ) : (
               <form onSubmit={handleBook} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setAppointmentType('in-person')}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      appointmentType === 'in-person'
-                        ? 'border-[#C87F4A] bg-[#FAF3E4] font-bold text-[#1F1B16]'
-                        : 'border-stone-200 text-stone-600'
-                    }`}
-                  >
-                    <span className="text-xs block">In-Salon Visit</span>
-                    <span className="text-[10px] text-stone-400 font-normal">Mysuru Flagship</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setAppointmentType('video')}
-                    className={`p-3 rounded-xl border text-center transition-all ${
-                      appointmentType === 'video'
-                        ? 'border-[#C87F4A] bg-[#FAF3E4] font-bold text-[#1F1B16]'
-                        : 'border-stone-200 text-stone-600'
-                    }`}
-                  >
-                    <span className="text-xs block">Virtual Video Call</span>
-                    <span className="text-[10px] text-stone-400 font-normal">Worldwide Zoom/WhatsApp</span>
-                  </button>
+                <div className="p-3 rounded-xl border border-[#C87F4A] bg-[#FAF3E4] text-center">
+                  <span className="text-xs block font-bold text-[#1F1B16]">In-Salon Flagship Boutique Visit</span>
+                  <span className="text-[10px] text-stone-500 font-normal">Sayyaji Rao Road, Opp. Royal Palace, Mysuru</span>
                 </div>
 
                 <div>

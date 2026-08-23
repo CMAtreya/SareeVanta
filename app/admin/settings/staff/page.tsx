@@ -133,10 +133,10 @@ const ROLES_INFO: Record<
   CUSTOMER_CARE: {
     label: 'Customer Care & Bridal Concierge',
     badgeColor: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-    description: 'Access restricted to Patron CRM 360°, order tracking, 1-on-1 video drape scheduling, and WhatsApp messages.',
+    description: 'Access restricted to Patron CRM 360°, order tracking, in-salon VIP drape styling, and WhatsApp messages.',
     permissions: [
       'View Customer 360° Profiles & Order History',
-      'Book & Log 1-on-1 Video Drape Appointments',
+      'Book & Log In-Salon VIP Styling Appointments',
       'Issue Instant Store Credit Vouchers',
       'Send WhatsApp Order & Shipping Updates',
       'No Inventory Write Access or System Settings',

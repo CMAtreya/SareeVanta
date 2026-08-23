@@ -69,7 +69,7 @@ export default function Footer() {
                 className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-3 px-5 rounded-xl text-center text-xs font-medium uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
               >
                 <Phone className="w-3.5 h-3.5 text-[#C87F4A]" />
-                <span>Video Concierge</span>
+                <span>Salon Concierge</span>
               </a>
             </div>
           </div>

@@ -266,40 +266,6 @@ const INVENTORY_WATCHLIST = [
   },
 ];
 
-// VIP Customer Inquiries & Live Calls
-const LIVE_INQUIRIES = [
-  {
-    id: 'inq-1',
-    patron: 'Dr. Ananya Rao',
-    city: 'Bengaluru',
-    topic: 'Bridal Crepe Silk Pallu Drape Preview',
-    type: 'WHATSAPP_CALL',
-    scheduledTime: '11:30 AM Today',
-    status: 'UPCOMING',
-    phone: '+91 98450 12345',
-  },
-  {
-    id: 'inq-2',
-    patron: 'Smt. Gayatri Iyer',
-    city: 'Chennai',
-    topic: 'Zari Purity Certificate Verification',
-    type: 'INQUIRY_CHAT',
-    scheduledTime: '12:15 PM Today',
-    status: 'READY',
-    phone: '+91 98400 66778',
-  },
-  {
-    id: 'inq-3',
-    patron: 'Ritu Singhal',
-    city: 'Jaipur',
-    topic: 'Custom Blouse Piece Length Query',
-    type: 'WHATSAPP_CALL',
-    scheduledTime: '02:00 PM Today',
-    status: 'CONFIRMED',
-    phone: '+91 97110 55443',
-  },
-];
-
 export default function AdminExecutiveDashboard() {
   const [dateRange, setDateRange] = useState<'TODAY' | 'YESTERDAY' | 'THIS_WEEK' | 'MTD'>('TODAY');
   const [chartView, setChartView] = useState<'HOURLY' | 'DAILY'>('HOURLY');
@@ -963,57 +929,6 @@ export default function AdminExecutiveDashboard() {
 
                   <div className="text-[10px] text-blue-600 font-mono flex items-center gap-1 pt-0.5">
                     <span>🔥 {item.activeCarts} patrons currently have this in cart</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 3. Customer Inquiries & WhatsApp Live Call Requests */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Video className="w-4 h-4 text-emerald-600" />
-                <h3 className="font-bold text-sm text-slate-900 font-sans">
-                  VIP Live Video Consultations
-                </h3>
-              </div>
-              <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-bold">
-                Today
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {LIVE_INQUIRIES.map((inq) => (
-                <div
-                  key={inq.id}
-                  className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-slate-900">{inq.patron}</div>
-                      <div className="text-[10px] font-mono text-slate-500">{inq.city}</div>
-                    </div>
-                    <span className="text-[10px] font-mono font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200">
-                      {inq.scheduledTime}
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-slate-700 font-sans">{inq.topic}</p>
-
-                  <div className="flex items-center justify-between pt-1 border-t border-slate-200">
-                    <span className="text-[10px] font-mono text-slate-500">{inq.phone}</span>
-                    <a
-                      href={`https://wa.me/919845012345?text=Hello%20${encodeURIComponent(
-                        inq.patron
-                      )},%20greeting%20from%20Neel%20Saree%20House.%20Your%20VIP%20drape%20consultation%20is%20ready.`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1"
-                    >
-                      <Phone className="w-2.5 h-2.5" />
-                      <span>Start Video Call</span>
-                    </a>
                   </div>
                 </div>
               ))}

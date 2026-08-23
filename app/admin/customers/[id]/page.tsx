@@ -399,7 +399,7 @@ export default function Customer360ProfilePage({
             {[
               { key: 'ORDERS', label: 'Order History (4)', icon: ShoppingBag },
               { key: 'BAG_WISHLIST', label: 'Bag & Wishlist (3 Items)', icon: Heart },
-              { key: 'VIDEO_CALLS', label: 'Video Drape Logs (2)', icon: Video },
+              { key: 'VIDEO_CALLS', label: 'Salon Styling Logs (2)', icon: Sparkles },
               { key: 'ADDRESSES', label: 'Saved Addresses', icon: MapPin },
             ].map((tab) => (
               <button
@@ -615,26 +615,26 @@ export default function Customer360ProfilePage({
           )}
 
           {/* ============================================ */}
-          {/* TAB 3: VIDEO SHOPPING LOGS                   */}
+          {/* TAB 3: SALON STYLING & CONSULTATION LOGS     */}
           {/* ============================================ */}
           {activeTab === 'VIDEO_CALLS' && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div>
                   <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider">
-                    1-on-1 Video Consultation Logs
+                    VIP Salon Consultation & Styling Logs
                   </h4>
                   <p className="text-[11px] font-mono text-slate-500">
-                    Live HD drape sessions with Mysuru salon master stylists
+                    Boutique drape and styling sessions with Mysuru master drapers
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setIsVideoModalOpen(true)}
-                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1"
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Schedule Video Session</span>
+                  <span>Log Salon Consultation</span>
                 </button>
               </div>
 

@@ -204,7 +204,7 @@ export default function Footer() {
               </li>
               <li>
                 <a href="https://wa.me/918212423344" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  WhatsApp Video Shopping
+                  WhatsApp Salon Desk
                 </a>
               </li>
             </ul>
