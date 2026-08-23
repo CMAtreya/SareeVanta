@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -21,6 +21,8 @@ import {
   CheckCircle2,
   ChevronRight,
   Heart,
+  Gift,
+  Award,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 
@@ -39,12 +41,68 @@ export default function CartPage() {
     currency,
   } = useCart();
 
+  const [selectedIds, setSelectedIds] = useState<string[]>(() => cart.map((i) => i.product.id));
+  const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
+  const [includeSilkMarkCertificate, setIncludeSilkMarkCertificate] = useState(true);
+  const [includeFallPico, setIncludeFallPico] = useState(true);
+
+  // Sync selected IDs when cart items change
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const currentCartIds = cart.map((i) => i.product.id);
+      if (prev.length === 0 && currentCartIds.length > 0) return currentCartIds;
+      const validPrev = prev.filter((id) => currentCartIds.includes(id));
+      const newlyAdded = currentCartIds.filter((id) => !prev.includes(id));
+      return [...validPrev, ...newlyAdded];
+    });
+  }, [cart]);
+
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponFeedback, setCouponFeedback] = useState<{
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === cart.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(cart.map((i) => i.product.id));
+    }
+  };
+
+  const toggleItemSelect = (productId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
+    );
+  };
+
+  const removeSelectedItems = () => {
+    selectedIds.forEach((id) => removeFromCart(id));
+    setSelectedIds([]);
+  };
+
+  const isAllSelected = cart.length > 0 && selectedIds.length === cart.length;
+  const isPartiallySelected = selectedIds.length > 0 && selectedIds.length < cart.length;
+
+  const selectedCartItems = cart.filter((item) => selectedIds.includes(item.product.id));
+  const selectedCount = selectedCartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const selectedSubtotalINR = selectedCartItems.reduce(
+    (total, item) => total + (item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity,
+    0
+  );
+
+  const giftPackagingINR = includeGiftWrap && selectedCount > 0 ? 249 : 0;
+
+  const discountINR = appliedCoupon
+    ? appliedCoupon.discountPercent
+      ? Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100)
+      : appliedCoupon.discountFixedINR || 0
+    : 0;
+
+  const finalTotalINR = Math.max(0, selectedSubtotalINR + giftPackagingINR - discountINR);
 
   const formatPrice = (inr: number) => {
     if (currency === 'USD') return `$${(inr / 83).toFixed(0)}`;
@@ -163,30 +221,96 @@ export default function CartPage() {
             {/* LEFT: CART LINE ITEMS (COL-span-7 or 8)              */}
             {/* ==================================================== */}
             <div className="lg:col-span-8 space-y-4">
+              {/* Select All / Batch Control Bar */}
+              <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#C87F4A]/25 shadow-xs flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                      isAllSelected
+                        ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-xs'
+                        : isPartiallySelected
+                        ? 'bg-[#7A1C30]/20 border-[#7A1C30] text-[#7A1C30]'
+                        : 'border-stone-300 hover:border-[#C87F4A] bg-white'
+                    }`}
+                    aria-label="Select or deselect all items"
+                  >
+                    {isAllSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                    {isPartiallySelected && <Minus className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs sm:text-sm font-sans font-bold text-[#1F1B16]">
+                      Select All ({cart.length} {cart.length === 1 ? 'Item' : 'Items'})
+                    </span>
+                    <span className="text-[11px] font-mono font-semibold bg-[#FAF3E4] text-[#773D21] border border-[#C87F4A]/30 px-2 py-0.5 rounded-full">
+                      {selectedCount} of {cartCount} selected
+                    </span>
+                  </div>
+                </div>
+
+                {selectedIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={removeSelectedItems}
+                    className="text-xs font-sans text-stone-500 hover:text-red-600 transition-colors flex items-center gap-1.5 p-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Remove Selected</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Items Card List */}
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C87F4A]/25 shadow-silk divide-y divide-[#C87F4A]/15">
                 {cart.map((item, idx) => {
+                  const isSelected = selectedIds.includes(item.product.id);
                   const itemPrice = item.product.priceINR + (item.tailoringExtraINR || 0);
                   const lineTotal = itemPrice * item.quantity;
 
                   return (
                     <div
                       key={`${item.product.id}-${item.blouseOption}-${idx}`}
-                      className="py-6 first:pt-0 last:pb-0 flex flex-col sm:flex-row gap-5 items-start sm:items-center justify-between"
+                      className={`py-6 first:pt-0 last:pb-0 flex flex-col sm:flex-row gap-5 items-start sm:items-center justify-between transition-opacity ${
+                        isSelected ? 'opacity-100' : 'opacity-60 bg-stone-50/50 -mx-2 px-2 rounded-xl'
+                      }`}
                     >
-                      {/* Product Thumbnail & Details */}
-                      <div className="flex gap-4 items-start sm:items-center flex-1">
+                      {/* Left: Checkbox + Product Thumbnail & Details */}
+                      <div className="flex gap-3 sm:gap-4 items-start sm:items-center flex-1 min-w-0">
+                        {/* Checkbox Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleItemSelect(item.product.id)}
+                          className={`w-5 h-5 mt-1 sm:mt-0 rounded-md border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-xs'
+                              : 'border-stone-300 hover:border-[#C87F4A] bg-white'
+                          }`}
+                          aria-label={isSelected ? `Deselect ${item.product.title}` : `Select ${item.product.title}`}
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                        </button>
+
                         <Link
                           href={`/products/${item.product.slug}`}
-                          className="w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden bg-[#FAF3E4] border border-[#C87F4A]/25 flex-shrink-0 group shadow-xs"
+                          className="w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden bg-[#FAF3E4] border border-[#C87F4A]/25 flex-shrink-0 group shadow-xs relative"
                         >
                           <img
                             src={item.product.images[0]}
                             alt={item.product.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
+                          {!isSelected && (
+                            <div className="absolute inset-0 bg-stone-900/20 backdrop-grayscale flex items-center justify-center">
+                              <span className="text-[9px] font-mono font-bold bg-black/70 text-white px-1.5 py-0.5 rounded">
+                                Unselected
+                              </span>
+                            </div>
+                          )}
                         </Link>
 
-                        <div className="space-y-1 truncate flex-1">
+                        <div className="space-y-1 truncate flex-1 min-w-0">
                           <span className="text-[10px] font-mono uppercase tracking-widest text-[#C87F4A] font-semibold block">
                             {item.product.weave} • {item.product.fabric}
                           </span>
@@ -207,10 +331,14 @@ export default function CartPage() {
                       </div>
 
                       {/* Quantity Stepper & Price Column */}
-                      <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100">
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-stone-100 flex-shrink-0">
                         {/* Unit Price */}
                         <div className="text-right">
-                          <span className="font-editorial text-lg sm:text-xl font-bold text-[#1F1B16] block">
+                          <span
+                            className={`font-editorial text-lg sm:text-xl font-bold block ${
+                              isSelected ? 'text-[#1F1B16]' : 'text-stone-400 line-through'
+                            }`}
+                          >
                             {formatPrice(lineTotal)}
                           </span>
                           {item.quantity > 1 && (
@@ -260,6 +388,91 @@ export default function CartPage() {
                 })}
               </div>
 
+              {/* Luxury Services & Complimentary Options Checkbox Panel */}
+              <div className="bg-white rounded-3xl p-6 border border-[#C87F4A]/25 shadow-xs space-y-3.5">
+                <h4 className="font-editorial text-base font-bold text-[#1F1B16] flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#C87F4A]" />
+                  <span>Curated Heritage Services & Packaging</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Service 1: Ready to drape Fall & Pico Checkbox */}
+                  <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF3E4]/60 border border-[#C87F4A]/20 cursor-pointer hover:bg-[#FAF3E4] transition-colors select-none">
+                    <button
+                      type="button"
+                      onClick={() => setIncludeFallPico(!includeFallPico)}
+                      className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                        includeFallPico
+                          ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
+                          : 'border-stone-300 bg-white'
+                      }`}
+                    >
+                      {includeFallPico && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    </button>
+                    <div className="text-xs">
+                      <div className="font-semibold text-[#1F1B16] flex items-center gap-1.5">
+                        <Scissors className="w-3 h-3 text-[#C87F4A]" />
+                        <span>Ready-to-Drape Fall & Pico</span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5">Complimentary hand-hemming</p>
+                      <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase mt-1 block">
+                        Included (FREE)
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Service 2: Royal Mysore Gift Box Checkbox */}
+                  <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF3E4]/60 border border-[#C87F4A]/20 cursor-pointer hover:bg-[#FAF3E4] transition-colors select-none">
+                    <button
+                      type="button"
+                      onClick={() => setIncludeGiftWrap(!includeGiftWrap)}
+                      className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                        includeGiftWrap
+                          ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
+                          : 'border-stone-300 bg-white'
+                      }`}
+                    >
+                      {includeGiftWrap && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    </button>
+                    <div className="text-xs">
+                      <div className="font-semibold text-[#1F1B16] flex items-center gap-1.5">
+                        <Gift className="w-3 h-3 text-[#C87F4A]" />
+                        <span>Royal Mysore Velvet Gift Box</span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5">Includes Gold Calligraphy Note</p>
+                      <span className="text-[10px] font-mono text-[#7A1C30] font-bold uppercase mt-1 block">
+                        +₹249 (Premium Box)
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Service 3: Silk Mark Authenticity Seal Checkbox */}
+                  <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF3E4]/60 border border-[#C87F4A]/20 cursor-pointer hover:bg-[#FAF3E4] transition-colors select-none">
+                    <button
+                      type="button"
+                      onClick={() => setIncludeSilkMarkCertificate(!includeSilkMarkCertificate)}
+                      className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
+                        includeSilkMarkCertificate
+                          ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
+                          : 'border-stone-300 bg-white'
+                      }`}
+                    >
+                      {includeSilkMarkCertificate && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    </button>
+                    <div className="text-xs">
+                      <div className="font-semibold text-[#1F1B16] flex items-center gap-1.5">
+                        <Award className="w-3 h-3 text-amber-600" />
+                        <span>Govt. Silk Mark Guarantee</span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 mt-0.5">Physical QR Authenticity Seal</p>
+                      <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase mt-1 block">
+                        Included (FREE)
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               {/* Complimentary Gift Packaging & Silk Mark Assurance Band */}
               <div className="bg-white/80 rounded-2xl p-4 border border-[#C87F4A]/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-700">
                 <div className="flex items-center gap-2">
@@ -286,11 +499,24 @@ export default function CartPage() {
                 {/* Subtotal / Discount / Shipping Breakdown */}
                 <div className="space-y-3 text-xs font-sans">
                   <div className="flex items-center justify-between text-stone-600">
-                    <span>Subtotal ({cartCount} Items)</span>
+                    <span>Subtotal ({selectedCount} Selected {selectedCount === 1 ? 'Item' : 'Items'})</span>
                     <span className="font-mono text-sm font-semibold text-[#1F1B16]">
-                      {formatPrice(cartSubtotalINR)}
+                      {formatPrice(selectedSubtotalINR)}
                     </span>
                   </div>
+
+                  {/* Gift Wrap Packaging Line Item */}
+                  {includeGiftWrap && selectedCount > 0 && (
+                    <div className="flex items-center justify-between text-stone-700 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <Gift className="w-3.5 h-3.5 text-[#C87F4A]" />
+                        <span>Royal Velvet Gift Box</span>
+                      </span>
+                      <span className="font-mono text-sm font-semibold text-[#1F1B16]">
+                        +{formatPrice(giftPackagingINR)}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Applied Coupon Discount */}
                   {appliedCoupon && (
@@ -305,7 +531,7 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">-{formatPrice(couponDiscountINR)}</span>
+                        <span className="font-mono font-bold">-{formatPrice(discountINR)}</span>
                         <button
                           type="button"
                           onClick={removeCoupon}
@@ -347,18 +573,28 @@ export default function CartPage() {
                     </span>
                   </div>
                   <span className="font-editorial text-2xl sm:text-3xl font-bold text-[#1F1B16]">
-                    {formatPrice(cartTotalINR)}
+                    {formatPrice(finalTotalINR)}
                   </span>
                 </div>
 
                 {/* Primary Proceed to Checkout Button */}
-                <Link
-                  href="/checkout"
-                  className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 block text-center"
-                >
-                  <span>Proceed to Checkout</span>
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                {selectedCount > 0 ? (
+                  <Link
+                    href="/checkout"
+                    className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 block text-center cursor-pointer"
+                  >
+                    <span>Proceed to Checkout ({selectedCount} {selectedCount === 1 ? 'item' : 'items'})</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full bg-stone-300 text-stone-500 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
+                  >
+                    <span>Select Items to Checkout</span>
+                  </button>
+                )}
 
                 {/* Coupon Code Input Form */}
                 <div className="pt-4 border-t border-[#C87F4A]/15 space-y-3">
