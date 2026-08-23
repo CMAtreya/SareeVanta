@@ -455,51 +455,46 @@ export default function ProductDetailPage() {
               </span>
             </div>
 
-            {/* Quantity Stepper */}
-            <div className="space-y-2">
+            {/* Quantity Stepper + Add to Cart + Heart Favorites Row */}
+            <div className="space-y-2 pt-1">
               <label className="text-xs font-bold uppercase tracking-wider text-[#1F1B16] flex items-center justify-between">
-                <span>Select Quantity:</span>
+                <span>Select Quantity & Order:</span>
                 <span className="text-[11px] font-mono text-stone-500 font-normal">
                   Standard 5.5m Pure Silk Saree
                 </span>
               </label>
 
-              <div className="flex items-center gap-4">
-                {/* Stepper */}
-                <div className="inline-flex items-center bg-white border border-[#C87F4A]/30 rounded-xl p-1 shadow-xs">
+              <div className="flex items-center gap-3">
+                {/* 1. Quantity Stepper */}
+                <div className="inline-flex items-center bg-white border border-[#C87F4A]/30 rounded-xl p-1 shadow-xs h-[50px] flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
-                    className="p-2 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                    className="h-full px-2.5 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center justify-center cursor-pointer"
                     aria-label="Decrease Quantity"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="w-12 text-center font-mono font-bold text-sm text-[#1F1B16]">
+                  <span className="w-9 sm:w-11 text-center font-mono font-bold text-sm text-[#1F1B16]">
                     {quantity}
                   </span>
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.min(stock, q + 1))}
                     disabled={quantity >= stock}
-                    className="p-2 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                    className="h-full px-2.5 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center justify-center cursor-pointer"
                     aria-label="Increase Quantity"
                   >
                     <Plus className="w-3.5 h-3.5" />
                   </button>
                 </div>
-              </div>
-            </div>
 
-            {/* Primary Action Buttons */}
-            <div className="space-y-3 pt-2">
-              {/* Add to Cart + Wishlist Row */}
-              <div className="flex items-center gap-3">
+                {/* 2. Add to Cart Button (Matching rounded-xl shape) */}
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className={`flex-1 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-md ${
+                  className={`flex-1 h-[50px] px-4 sm:px-6 rounded-xl text-xs font-sans font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer ${
                     addedAnimation
                       ? 'bg-emerald-700 text-white'
                       : 'bg-[#C87F4A] hover:bg-[#B36737] text-white transform hover:-translate-y-0.5'
@@ -518,19 +513,22 @@ export default function ProductDetailPage() {
                   )}
                 </button>
 
+                {/* 3. Heart Favorites Button (Matching rounded-xl shape) */}
                 <button
                   type="button"
                   onClick={() => toggleWishlist(product.id)}
-                  className={`p-4 rounded-sm border transition-colors flex items-center justify-center ${
+                  className={`h-[50px] w-[50px] rounded-xl border border-[#C87F4A]/30 transition-colors flex items-center justify-center flex-shrink-0 shadow-xs cursor-pointer ${
                     inWishlist
                       ? 'bg-red-50 border-red-300 text-red-600'
-                      : 'bg-white border-[#C87F4A]/30 text-[#1F1B16] hover:bg-[#FAF3E4]'
+                      : 'bg-white text-[#1F1B16] hover:bg-[#FAF3E4] hover:text-[#C87F4A]'
                   }`}
-                  aria-label="Wishlist"
+                  aria-label={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  title={inWishlist ? 'In Wishlist' : 'Save to Favorites'}
                 >
                   <Heart className={`w-5 h-5 ${inWishlist ? 'fill-red-600' : ''}`} />
                 </button>
               </div>
+            </div>
 
               {/* ==================================================== */}
               {/* INNOVATIVE PRODUCT SPECIFICATIONS & INFO TABS         */}
@@ -693,7 +691,6 @@ export default function ProductDetailPage() {
               </section>
             </div>
           </div>
-        </div>
 
         {/* ==================================================== */}
         {/* "YOU MAY ALSO LIKE" HORIZONTAL CAROUSEL              */}
