@@ -464,26 +464,26 @@ export default function ProductDetailPage() {
                 </span>
               </label>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {/* 1. Quantity Stepper */}
                 <div className="inline-flex items-center bg-white border border-[#C87F4A]/30 rounded-xl p-1 shadow-xs h-[50px] flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     disabled={quantity <= 1}
-                    className="h-full px-2.5 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center justify-center cursor-pointer"
+                    className="h-full px-2 sm:px-2.5 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center justify-center cursor-pointer"
                     aria-label="Decrease Quantity"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
-                  <span className="w-9 sm:w-11 text-center font-mono font-bold text-sm text-[#1F1B16]">
+                  <span className="w-7 sm:w-11 text-center font-mono font-bold text-xs sm:text-sm text-[#1F1B16]">
                     {quantity}
                   </span>
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.min(stock, q + 1))}
                     disabled={quantity >= stock}
-                    className="h-full px-2.5 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center justify-center cursor-pointer"
+                    className="h-full px-2 sm:px-2.5 rounded-lg text-stone-700 hover:bg-[#FAF3E4] hover:text-[#C87F4A] disabled:opacity-30 disabled:pointer-events-none transition-colors flex items-center justify-center cursor-pointer"
                     aria-label="Increase Quantity"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -494,7 +494,7 @@ export default function ProductDetailPage() {
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className={`flex-1 h-[50px] px-4 sm:px-6 rounded-xl text-xs font-sans font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                  className={`flex-1 h-[50px] px-2 sm:px-6 rounded-xl text-[11px] sm:text-xs font-sans font-bold uppercase tracking-[0.08em] sm:tracking-[0.15em] transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-md cursor-pointer ${
                     addedAnimation
                       ? 'bg-emerald-700 text-white'
                       : 'bg-[#C87F4A] hover:bg-[#B36737] text-white transform hover:-translate-y-0.5'

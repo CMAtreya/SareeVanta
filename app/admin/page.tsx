@@ -331,7 +331,7 @@ export default function AdminExecutiveDashboard() {
         </div>
 
         {/* Date Range Picker Controls */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs overflow-x-auto scrollbar-none max-w-full flex-wrap sm:flex-nowrap">
           {[
             { key: 'TODAY', label: 'Today' },
             { key: 'YESTERDAY', label: 'Yesterday' },
@@ -342,7 +342,7 @@ export default function AdminExecutiveDashboard() {
               key={tab.key}
               type="button"
               onClick={() => setDateRange(tab.key as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 dateRange === tab.key
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'

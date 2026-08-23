@@ -232,7 +232,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       {/* ================================================== */}
       {/* 1. STICKY TOP WORKSTATION HEADER                   */}
       {/* ================================================== */}
-      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-3 -mx-6 lg:-mx-8 -mt-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+      <div className="sticky top-16 z-20 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3 -mx-3 sm:-mx-5 md:-mx-6 lg:-mx-8 -mt-3 sm:-mt-5 md:-mt-6 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
         {/* Left: Breadcrumbs & Unsaved Warning */}
         <div className="flex items-center gap-3">
           <Link
@@ -246,7 +246,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-slate-400">Catalog /</span>
-              <h2 className="font-bold text-sm text-slate-900 font-sans truncate max-w-sm">
+              <h2 className="font-bold text-sm text-slate-900 font-sans truncate max-w-[200px] sm:max-w-sm">
                 {mode === 'create' ? 'Register New Handloom Saree' : `Edit SKU (${sku})`}
               </h2>
             </div>
@@ -260,7 +260,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
         </div>
 
         {/* Right: Actions Cluster */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           <button
             type="button"
             onClick={() => router.push('/admin/catalog')}
