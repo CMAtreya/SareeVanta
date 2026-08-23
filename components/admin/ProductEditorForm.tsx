@@ -31,6 +31,8 @@ import {
   CheckCircle2,
   X,
   Upload,
+  QrCode,
+  Download,
 } from 'lucide-react';
 import { products } from '@/lib/products';
 
@@ -50,6 +52,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [subtitle, setSubtitle] = useState('');
   const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [isQrGenerated, setIsQrGenerated] = useState<boolean>(false);
 
   // Form State: Technical Ethnic Taxonomy
   const [weave, setWeave] = useState('Mysore Silk');
@@ -110,6 +114,20 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     'Muhurtham',
     'Grand Reception',
   ]);
+  const [specialTags, setSpecialTags] = useState<string[]>([
+    'Best Seller',
+    'New Arrival',
+  ]);
+  const [availableSpecialTags, setAvailableSpecialTags] = useState<string[]>([
+    'Best Seller',
+    'New Arrival',
+    'Bridal Edit',
+    'Limited Edition',
+    'Silk Mark Certified',
+    'Heirloom Heritage',
+    'Vault Masterpiece',
+  ]);
+  const [newSpecialTagInput, setNewSpecialTagInput] = useState('');
   const [weightGrams, setWeightGrams] = useState('680');
   const [dimensions, setDimensions] = useState('38 x 28 x 4 cm');
   const [metaTitle, setMetaTitle] = useState('');
@@ -193,6 +211,21 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const discountPercent = originalPriceINR
     ? Math.round(((Number(originalPriceINR) - Number(priceINR)) / Number(originalPriceINR)) * 100)
     : 0;
+
+  // Add Custom Special Tag Action
+  const handleAddCustomSpecialTag = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = newSpecialTagInput.trim();
+    if (!trimmed) return;
+    if (!availableSpecialTags.includes(trimmed)) {
+      setAvailableSpecialTags([...availableSpecialTags, trimmed]);
+    }
+    if (!specialTags.includes(trimmed)) {
+      setSpecialTags([...specialTags, trimmed]);
+    }
+    setNewSpecialTagInput('');
+    setIsDirty(true);
+  };
 
   return (
     <div className="font-sans text-slate-900 select-none pb-28">
@@ -282,13 +315,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
         {/* LEFT COLUMN (65% - 8 Cols on lg screen)       */}
         {/* ============================================== */}
         <div className="lg:col-span-8 space-y-6">
-          {/* SECTION 1: BASIC IDENTIFIERS */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+          {/* SECTION 1: MASTERPIECE NOMENCLATURE & HERITAGE STORY */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
             <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2 pb-2 border-b border-slate-100">
               <FileText className="w-4 h-4 text-blue-600" />
-              <span>1. Basic Identifiers & Story</span>
+              <span>1. Masterpiece Nomenclature & Heritage Story</span>
             </h3>
 
+            {/* Saree Title */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Saree Title / Masterpiece Name *
@@ -303,69 +337,138 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Subtitle / Heritage Tagline
-                </label>
-                <input
-                  type="text"
-                  value={subtitle}
-                  onChange={(e) => {
-                    setSubtitle(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="e.g. Royal Heritage Wodeyar Collection"
-                  className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  URL Handle / Slug
-                </label>
-                <div className="flex items-center">
-                  <span className="px-3 py-2 bg-slate-100 border border-r-0 border-slate-300 rounded-l-xl text-slate-500 text-xs font-mono">
-                    /products/
-                  </span>
+            {/* Two-Column Grid: Left (Subtitle + Narrative & Loom Specs below it with matching width) / Right (QR Code Generator) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              {/* LEFT COLUMN: Subtitle on top + Detailed Saree Narrative & Loom Specs directly under it */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Subtitle / Heritage Tagline
+                  </label>
                   <input
                     type="text"
-                    value={slug}
+                    value={subtitle}
                     onChange={(e) => {
-                      setSlug(e.target.value);
+                      setSubtitle(e.target.value);
                       setIsDirty(true);
                     }}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-r-xl text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-900"
+                    placeholder="e.g. Royal Heritage Wodeyar Collection"
+                    className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-900"
+                  />
+                </div>
+
+                {/* Detailed Saree Narrative & Loom Specs (Same width under Subtitle) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Detailed Saree Narrative & Loom Specs
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleInsertFabricCareSnippet}
+                      className="text-[11px] font-mono font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>+ Care Snippet</span>
+                    </button>
+                  </div>
+                  <textarea
+                    rows={8}
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setIsDirty(true);
+                    }}
+                    placeholder="Describe the weaving technique, zari purity, occasion relevance, and sensory drape quality..."
+                    className="w-full p-3.5 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 leading-relaxed"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Description with Fabric Care Snippet Inserter */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
+              {/* RIGHT COLUMN: Generate QR Code Button & Square QR Output */}
+              <div className="space-y-3">
                 <label className="block text-xs font-semibold text-slate-700">
-                  Detailed Saree Narrative & Loom Specs
+                  Product QR
                 </label>
+
+                {/* Generate QR Button (1-time click then disabled) */}
                 <button
                   type="button"
-                  onClick={handleInsertFabricCareSnippet}
-                  className="text-[11px] font-mono font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+                  onClick={async () => {
+                    if (isQrGenerated) return;
+                    const targetSlug = slug || 'mysore-royal-crimson';
+                    const productUrl =
+                      typeof window !== 'undefined'
+                        ? `${window.location.origin}/products/${targetSlug}`
+                        : `https://neelsareehouse.com/products/${targetSlug}`;
+                    try {
+                      const QRCode = (await import('qrcode')).default;
+                      const url = await QRCode.toDataURL(productUrl, {
+                        type: 'image/png',
+                        width: 480,
+                        margin: 2,
+                        color: {
+                          dark: '#1F1B16',
+                          light: '#FFFFFF',
+                        },
+                      });
+                      setQrDataUrl(url);
+                      setIsQrGenerated(true);
+                      setIsDirty(true);
+                    } catch (err) {
+                      console.error('Failed to generate QR code:', err);
+                    }
+                  }}
+                  disabled={isQrGenerated}
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
+                    isQrGenerated
+                      ? 'bg-slate-100 text-slate-400 border border-slate-300 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white shadow-md cursor-pointer transform hover:-translate-y-0.5'
+                  }`}
                 >
-                  <Sparkles className="w-3 h-3" />
-                  <span>+ Insert Fabric Care Snippet</span>
+                  <QrCode className="w-4 h-4" />
+                  <span>{isQrGenerated ? '✓ QR Code Generated (Locked)' : 'Generate QR Code'}</span>
                 </button>
+
+                {/* Square QR Code Display Below Button */}
+                {qrDataUrl && (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in zoom-in-95 duration-200 shadow-inner">
+                    <div className="p-2.5 bg-white rounded-xl shadow-xs border border-slate-200 aspect-square flex items-center justify-center">
+                      <img
+                        src={qrDataUrl}
+                        alt="Storefront Product QR Code"
+                        className="w-36 h-36 object-contain rounded-lg select-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="inline-block text-[9px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] bg-[#FAF3E4] px-2.5 py-0.5 rounded-full border border-[#C87F4A]/30">
+                        Square QR Ready
+                      </span>
+                      <div className="text-[11px] font-mono text-slate-600 truncate max-w-xs block">
+                        https://neelsareehouse.com/products/{slug || 'mysore-royal-crimson'}
+                      </div>
+                      <p className="text-[10px] text-stone-500 font-sans">
+                        Scan to verify handloom authenticity or display on salon tag
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = qrDataUrl;
+                        link.download = `${slug || 'saree'}-qr-tag.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7A1C30] hover:text-[#5F1424] bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs hover:bg-[#FAF3E4] transition-all cursor-pointer transform hover:scale-105 active:scale-95"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download QR PNG (.png)</span>
+                    </button>
+                  </div>
+                )}
               </div>
-              <textarea
-                rows={6}
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  setIsDirty(true);
-                }}
-                placeholder="Describe the weaving technique, zari purity, occasion relevance, and sensory drape quality..."
-                className="w-full p-3.5 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 leading-relaxed"
-              />
             </div>
           </div>
 
@@ -896,7 +999,84 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             </div>
           </div>
 
-          {/* 3. SHIPPING & DIMENSIONS */}
+          {/* 3. SPECIAL TAGS (Under Occasion Tags) */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Special Tags</span>
+              </h4>
+              <span className="text-[10px] font-mono text-slate-400">
+                {specialTags.length} Selected
+              </span>
+            </div>
+
+            {/* Clickable Special Tags Badges (Best Seller, New Arrival, etc.) */}
+            <div className="flex flex-wrap gap-1.5">
+              {availableSpecialTags.map((tag) => {
+                const isSelected = specialTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setSpecialTags(
+                        isSelected
+                          ? specialTags.filter((t) => t !== tag)
+                          : [...specialTags, tag]
+                      );
+                      setIsDirty(true);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                      isSelected
+                        ? tag.toLowerCase().includes('best seller')
+                          ? 'bg-amber-600 text-white shadow-2xs'
+                          : tag.toLowerCase().includes('new arrival')
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'bg-[#7A1C30] text-white shadow-2xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    <span>{tag}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Admin Add New Special Tag Option */}
+            <div className="pt-2.5 border-t border-slate-100">
+              <label className="block text-[11px] font-semibold text-slate-700 mb-1.5">
+                + Add New Special Tag:
+              </label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  value={newSpecialTagInput}
+                  onChange={(e) => setNewSpecialTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomSpecialTag();
+                    }
+                  }}
+                  placeholder="e.g. Celebrity Pick, Royal Vault"
+                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-sans focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-900 bg-slate-50/50"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddCustomSpecialTag()}
+                  disabled={!newSpecialTagInput.trim()}
+                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Tag</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. SHIPPING & DIMENSIONS */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
             <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
               <Truck className="w-3.5 h-3.5 text-emerald-600" />
