@@ -809,45 +809,6 @@ export default function AccountProfilePage() {
                 Auto-applies complimentary custom tailored fall & pico on all order drapes
               </span>
             </div>
-
-            {/* AI Avatar Skin Tone for /try-on */}
-            <div>
-              <label className="text-[11px] font-mono uppercase tracking-wider text-stone-700 font-bold flex items-center gap-1.5 mb-1.5">
-                <Palette className="w-3.5 h-3.5 text-[#C87F4A]" />
-                <span>Default AI Avatar Skin Tone (/try-on)</span>
-              </label>
-              <div className="flex items-center gap-2 pt-1">
-                {SKIN_TONES.map((tone) => {
-                  const isSelected = watchedValues.skinTone === tone.id;
-                  return (
-                    <button
-                      key={tone.id}
-                      type="button"
-                      title={tone.label}
-                      onClick={() => setValue('skinTone', tone.id, { shouldDirty: true })}
-                      className={`relative w-8 h-8 rounded-full border-2 transition-transform cursor-pointer ${
-                        isSelected
-                          ? 'border-[#7A1C30] scale-110 shadow-md ring-2 ring-[#7A1C30]/30'
-                          : 'border-white hover:scale-105'
-                      }`}
-                      style={{ backgroundColor: tone.color }}
-                    >
-                      {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-stone-900 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-              <span className="text-[10px] text-stone-500 font-sans mt-1.5 block">
-                Selected:{' '}
-                <strong>
-                  {SKIN_TONES.find((s) => s.id === watchedValues.skinTone)?.label || 'Wheatish'}
-                </strong>
-              </span>
-            </div>
           </div>
         </div>
 

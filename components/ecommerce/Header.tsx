@@ -782,13 +782,6 @@ export default function Header() {
                     Our Story
                   </Link>
                   <Link
-                    href="/try-on"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
-                  >
-                    Virtual AI Try-On Studio
-                  </Link>
-                  <Link
                     href="/account"
                     onClick={() => setMobileMenuOpen(false)}
                     className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"

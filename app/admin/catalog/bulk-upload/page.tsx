@@ -380,7 +380,7 @@ export default function BulkUploadEnginePage() {
       if (current === 1) {
         setIngestStatusText(`Ingesting row 1 of ${validRowsCount}: Mysore Silk Crepe...`);
       } else if (current === 3) {
-        setIngestStatusText(`Ingesting row 3 of ${validRowsCount}: Generating AI avatar hashes...`);
+        setIngestStatusText(`Ingesting row 3 of ${validRowsCount}: Indexing CIELAB color harmony & zari attributes...`);
       } else if (current >= validRowsCount) {
         clearInterval(interval);
         setIngestStatusText(`Successfully ingested all ${validRowsCount} handloom SKUs into production database.`);

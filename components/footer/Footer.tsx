@@ -183,11 +183,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/try-on" className="hover:text-white transition-colors">
-                  AI Avatar Try-On Studio
-                </Link>
-              </li>
-              <li>
                 <Link href="/account/orders" className="hover:text-white transition-colors">
                   Track Your Dispatch
                 </Link>

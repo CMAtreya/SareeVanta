@@ -83,7 +83,6 @@ export default function CommandPalette({
     { title: 'Client Directory & Bridal CRM', category: 'Navigation', icon: Users, href: '/admin/customers' },
     { title: 'Discounts & Promotional Engine', category: 'Navigation', icon: Tag, href: '/admin/marketing/coupons' },
     { title: 'Storefront Banners & Marquee Ticker', category: 'Navigation', icon: Megaphone, href: '/admin/marketing/banners' },
-    { title: 'AI Avatar Asset Matrix Control Panel', category: 'Navigation', icon: Wand2, href: '/admin/marketing/ai-avatar' },
     { title: 'Artisan Clusters & Provenance', category: 'Navigation', icon: ShieldCheck, href: '/admin?tab=clusters' },
     { title: 'Instagram Marketing Reels', category: 'Navigation', icon: Film, href: '/admin/marketing/instagram-reels' },
   ];

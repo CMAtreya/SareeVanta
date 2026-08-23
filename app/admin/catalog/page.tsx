@@ -518,7 +518,6 @@ export default function AdminCatalogPage() {
                 <th className="p-3">Zari Purity</th>
                 <th className="p-3">Price & MRP</th>
                 <th className="p-3 w-32">Available Stock</th>
-                <th className="p-3 text-center">AI Avatar</th>
                 <th className="p-3 text-center">Visibility</th>
                 <th className="p-3 text-right">Actions</th>
               </tr>
@@ -670,26 +669,6 @@ export default function AdminCatalogPage() {
                         {saree.stock <= 1 && (
                           <span className="text-[10px] font-mono text-rose-600 block mt-0.5">
                             {saree.stock === 0 ? 'Out of Stock' : 'Single-Piece Luxury'}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* AI Avatar Status */}
-                      <td className="p-3 text-center">
-                        {saree.hasAiAvatar ? (
-                          <span
-                            className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"
-                            title="3D Drape Assets Ready"
-                          >
-                            <Wand2 className="w-3 h-3 text-emerald-600" />
-                            <span>Ready</span>
-                          </span>
-                        ) : (
-                          <span
-                            className="text-slate-400 font-mono text-xs"
-                            title="No AI Avatar Generated"
-                          >
-                            —
                           </span>
                         )}
                       </td>
@@ -1333,21 +1312,6 @@ export default function AdminCatalogPage() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-slate-900"
                   />
                 </div>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="avatar-check"
-                  checked={newSareeForm.hasAiAvatar}
-                  onChange={(e) =>
-                    setNewSareeForm({ ...newSareeForm, hasAiAvatar: e.target.checked })
-                  }
-                  className="w-4 h-4 rounded text-blue-600"
-                />
-                <label htmlFor="avatar-check" className="font-semibold text-slate-700 cursor-pointer">
-                  Generate AI Avatar 3D Drape Asset upon creation
-                </label>
               </div>
 
               <div className="px-0 pt-4 border-t border-slate-200 flex justify-end gap-2">

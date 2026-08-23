@@ -173,11 +173,6 @@ export default function Footer() {
                   New Season Arrivals
                 </Link>
               </li>
-              <li>
-                <Link href="/try-on" className="text-[#C87F4A] hover:underline transition-colors flex items-center gap-1">
-                  <span>AI Virtual Drape Try-On</span>
-                </Link>
-              </li>
             </ul>
           </div>
 

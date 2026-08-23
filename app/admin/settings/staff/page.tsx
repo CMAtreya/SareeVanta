@@ -110,12 +110,11 @@ const ROLES_INFO: Record<
   CATALOG_MANAGER: {
     label: 'Store & Catalog Manager',
     badgeColor: 'bg-blue-50 text-blue-900 border-blue-200',
-    description: 'Manages products, collections, hero banners, coupons, and AI avatar matrix. No financial or payout key access.',
+    description: 'Manages products, collections, hero banners, coupons, and discounts. No financial or payout key access.',
     permissions: [
       'Create, Edit, and Archive Saree SKUs',
       'Manage Storefront Banners & Marquee Ticker',
       'Create Promotional Discount Coupons',
-      'Manage AI Avatar Virtual Try-On Asset Matrix',
       'No Access to Financial Payouts or Tax Settings',
     ],
   },

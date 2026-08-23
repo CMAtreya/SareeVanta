@@ -489,18 +489,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {!isSidebarCollapsed && <span>Banners & Marquee</span>}
               </Link>
 
-              <Link
-                href="/admin/marketing/ai-avatar"
-                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
-                  pathname === '/admin/marketing/ai-avatar'
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                }`}
-                title="AI Avatar Asset Matrix"
-              >
-                <Wand2 className="w-4 h-4 flex-shrink-0 text-amber-400" />
-                {!isSidebarCollapsed && <span>AI Try-On Matrix</span>}
-              </Link>
+
 
               <Link
                 href="/admin/customerreviews"

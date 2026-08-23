@@ -532,15 +532,6 @@ export default function ProductDetailPage() {
                 </button>
               </div>
 
-              {/* Secondary "Try This on AI Avatar" Button (Linking to /try-on?saree=[slug]) */}
-              <Link
-                href={`/try-on?saree=${encodeURIComponent(product.slug)}`}
-                className="w-full py-3.5 rounded-sm bg-[#1F1B16] hover:bg-black text-[#FAF3E4] text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2 shadow-md"
-              >
-                <Sparkles className="w-4 h-4 text-[#C87F4A]" />
-                <span>Try This on AI Avatar Studio</span>
-              </Link>
-
               {/* ==================================================== */}
               {/* INNOVATIVE PRODUCT SPECIFICATIONS & INFO TABS         */}
               {/* Placed Directly Below "Try This on AI Avatar Studio"  */}

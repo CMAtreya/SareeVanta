@@ -187,8 +187,8 @@ COGS: ₹${financialMetrics.cogs.toLocaleString('en-IN')}
 Gross Margin: ${financialMetrics.grossMarginPercent}%
 Average Order Value: ₹${financialMetrics.averageOrderValue.toLocaleString('en-IN')}
 
-AI TRY-ON LIFT:
-Try-On Conversion Rate: 4.62% vs 0.94% (Non Try-On)
+INTERACTIVE VIDEO ENGAGEMENT LIFT:
+Video Engagement Conversion Rate: 4.62% vs 0.94% (Standard Browsing)
 Lift: +391% Conversion Surge
 Return Rate Reduction: 1.8% vs 4.9% (-63%)
 `;
@@ -445,7 +445,7 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       </div>
 
       {/* ================================================== */}
-      {/* 4. DUAL COLUMN: WEAVE MARGINS + AI TRY-ON LIFT     */}
+      {/* 4. DUAL COLUMN: WEAVE MARGINS + VIDEO ENGAGEMENT LIFT     */}
       {/* ================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Weave & Fabric Breakdown (7 Cols) */}
@@ -491,27 +491,27 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
           </div>
         </div>
 
-        {/* AI Try-On Conversion Lift Impact (5 Cols) */}
+        {/* Interactive Video Engagement Impact (5 Cols) */}
         <div className="lg:col-span-5 bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-amber-300 font-mono text-xs font-bold">
-              <Wand2 className="w-4 h-4" />
-              <span>AI VIRTUAL TRY-ON ROI LIFT</span>
+              <Sparkles className="w-4 h-4" />
+              <span>STUDIO & REEL ENGAGEMENT ROI LIFT</span>
             </div>
             <h3 className="font-bold text-base font-sans text-white">
-              Multi-Tone Dressing Room Impact
+              Studio Photography & Video Impact
             </h3>
             <p className="text-xs text-slate-300 font-mono leading-relaxed">
-              Comparison between visitors who engaged with the 5-tone AI drape tool vs standard catalog browsing
+              Comparison between visitors who engaged with high-res macro weave videos vs standard catalog browsing
             </p>
           </div>
 
           {/* Metric Comparison Grid */}
           <div className="grid grid-cols-2 gap-3 font-mono text-xs pt-2 border-t border-slate-800">
-            {/* Try-On Users */}
+            {/* Video Engaged Users */}
             <div className="p-3.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
               <span className="text-[10px] uppercase text-amber-300 block font-bold">
-                ✓ With AI Try-On
+                ✓ With Studio Video
               </span>
               <div className="text-xl font-bold text-emerald-400">4.62%</div>
               <div className="text-[10px] text-slate-300">Conv. Rate (AOV: ₹42.5k)</div>
@@ -520,7 +520,7 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
               </div>
             </div>
 
-            {/* Non Try-On Users */}
+            {/* Standard Browsing Users */}
             <div className="p-3.5 bg-white/5 rounded-xl border border-white/5 space-y-1">
               <span className="text-[10px] uppercase text-slate-400 block font-bold">
                 ✗ Standard Browsing

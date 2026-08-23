@@ -651,7 +651,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   </span>
                 </div>
                 <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-bold border border-emerald-200">
-                  Ready for AI Avatar
+                  4K Studio Ready
                 </span>
               </div>
               <input

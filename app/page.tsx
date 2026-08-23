@@ -491,56 +491,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ==================================================== */}
-      {/* 6. AI AVATAR TRY-ON TEASER SECTION */}
-      {/* ==================================================== */}
-      <section className="py-16 sm:py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#FAF3E4] via-[#F3E8D6] to-[#E2CE9F]/50 border border-[#C87F4A]/30 p-8 sm:p-12 shadow-silk-lg">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Copy */}
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#C87F4A] font-mono font-bold">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Next-Gen Virtual Fitting Room</span>
-              </div>
 
-              <h2 className="font-editorial text-3xl sm:text-5xl font-normal text-[#1F1B16] leading-tight">
-                See It Before You Buy It <br />
-                <span className="italic font-light text-[#773D21]">Try Any Saree on Our AI Avatar</span>
-              </h2>
-
-              <p className="text-xs sm:text-sm text-stone-700 font-sans leading-relaxed max-w-xl">
-                Visualize exact pleat fall, pallu length, and real metallic zari shine across customized body frames and skin tones in real-time before placing your order.
-              </p>
-
-              <div className="pt-2">
-                <Link
-                  href="/try-on"
-                  className="inline-flex items-center gap-2.5 bg-[#1F1B16] hover:bg-black text-[#FAF3E4] px-8 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all shadow-md"
-                >
-                  <span>Launch AI Avatar Try-On Studio</span>
-                  <ArrowRight className="w-4 h-4 text-[#C87F4A]" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Preview Card */}
-            <div className="lg:col-span-5 flex justify-center">
-              <div className="relative w-64 sm:w-72 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-[#C87F4A]/40 bg-white group">
-                <img
-                  src="https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"
-                  alt="AI Avatar Drape Simulation"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute top-3 left-3 bg-[#1F1B16]/90 backdrop-blur-sm text-[#FAF3E4] text-[9px] font-mono px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/20">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>Real-Time AI Physics Simulation</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ==================================================== */}
       {/* 7. "NEW ARRIVALS" PRODUCT GRID (4-5 Columns Desktop) */}
