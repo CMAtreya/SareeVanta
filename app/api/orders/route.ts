@@ -1,66 +1,51 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { products } from '@/lib/products';
 
 export async function GET() {
-  const mockOrders = [
-    {
-      order_number: 'NSH-2026-8942',
-      date: '20 Aug 2026',
-      status: 'Out for Delivery',
-      status_type: 'in_transit',
-      payment_method: 'UPI Instant Verified',
-      totalINR: 84870,
-      item_count: 2,
-      can_return: false,
-      items: [
-        {
-          product: products[0],
-          quantity: 1,
-        },
-        {
-          product: products[1],
-          quantity: 1,
-        },
-      ],
-    },
-    {
-      order_number: 'NSH-2026-7419',
-      date: '12 Aug 2026',
-      status: 'Delivered',
-      status_type: 'delivered',
-      delivered_date: '15 Aug 2026',
-      payment_method: 'Credit Card (HDFC Visa)',
-      totalINR: 42000,
-      item_count: 1,
-      can_return: true, // within 7-day window
-      items: [
-        {
-          product: products[2],
-          quantity: 1,
-        },
-      ],
-    },
-    {
-      order_number: 'NSH-2026-6102',
-      date: '18 Jul 2026',
-      status: 'Delivered',
-      status_type: 'delivered',
-      delivered_date: '21 Jul 2026',
-      payment_method: 'Netbanking (ICICI)',
-      totalINR: 31500,
-      item_count: 1,
-      can_return: false, // past 7 days
-      items: [
-        {
-          product: products[3],
-          quantity: 1,
-        },
-      ],
-    },
-  ];
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  return NextResponse.json({
-    orders: mockOrders,
-    count: mockOrders.length,
-  });
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { data: orders, error } = await supabase
+    .from('orders')
+    .select(`
+      id,
+      order_number,
+      order_status,
+      payment_status,
+      total_paise,
+      placed_at,
+      order_items (
+        id,
+        sku_snapshot,
+        product_name_snapshot,
+        color_name_snapshot,
+        unit_price_paise,
+        quantity,
+        line_total_paise
+      ),
+      order_delivery_addresses ( recipient_name, city, state, postal_code )
+    `)
+    .eq('customer_id', user.id)
+    .order('placed_at', { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  const formattedOrders = (orders || []).map((o: any) => ({
+    id: o.id,
+    orderNumber: o.order_number,
+    status: o.order_status,
+    paymentStatus: o.payment_status,
+    totalINR: Math.round(o.total_paise / 100),
+    placedAt: o.placed_at,
+    items: o.order_items || [],
+    shippingAddress: o.order_delivery_addresses?.[0] || null,
+  }));
+
+  return NextResponse.json({ orders: formattedOrders });
 }

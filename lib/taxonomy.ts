@@ -8,7 +8,7 @@ export interface SareeCollection {
   badge: string;
   assignedSkuCount: number;
   isFeaturedOnHomepage: boolean;
-  status: 'ACTIVE' | 'SCHEDULED' | 'DRAFT';
+  status: 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
   validDateRange?: string;
   assignedSkus: string[];
 }
@@ -95,7 +95,7 @@ export const INITIAL_COLLECTIONS: SareeCollection[] = [
     badge: 'Contemporary Luxe',
     assignedSkuCount: 12,
     isFeaturedOnHomepage: false,
-    status: 'SCHEDULED',
+    status: 'DRAFT',
     validDateRange: '1 Oct 2026 - 15 Nov 2026',
     assignedSkus: ['NSH-SKU-TIS-08'],
   },

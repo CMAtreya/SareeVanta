@@ -535,3 +535,12 @@ export const occasionFilters = [
   'Daily Classic',
   'Temple Visits',
 ];
+
+export function getProductBySlug(slug: string): Product | undefined {
+  return products.find((p) => p.slug === slug || p.id === slug);
+}
+
+export function getProducts(): Product[] {
+  return products;
+}
+
