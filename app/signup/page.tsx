@@ -26,6 +26,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import GoogleAuthModal, { GoogleProfile } from '@/components/ecommerce/GoogleAuthModal';
+import { createClient } from '@/lib/supabase/client';
 
 function SignUpCardContent() {
   const router = useRouter();
@@ -42,51 +43,26 @@ function SignUpCardContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
-  const handleGoogleAccountSelect = async (account: GoogleProfile) => {
+  const handleGoogleSignIn = async () => {
     setIsLoading(true);
     setFeedback(null);
-    setIsGoogleModalOpen(false);
-
     try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: account.email,
-          name: account.name,
-          avatar: account.avatar,
-        }),
+      const supabase = createClient();
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const callbackUrl = `${origin}/api/auth/callback?next=${encodeURIComponent('/account')}`;
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl,
+        },
       });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setFeedback({
-          type: 'success',
-          message: `Heirloom account created for ${account.name}! 10% discount ROYAL10 unlocked. Redirecting...`,
-        });
-        setTimeout(() => router.push('/account'), 600);
-      } else {
-        setFeedback({ type: 'error', message: data.message || 'Google registration failed.' });
-      }
-    } catch (err) {
-      setTimeout(() => router.push('/account'), 600);
-    } finally {
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Google sign in failed.' });
       setIsLoading(false);
     }
   };
 
-  // Quick autofill demo for easy review
-  const handleAutofillDemo = () => {
-    setName('Shruti Krishnamurthy');
-    setEmail('shruti.k@example.com');
-    setPhone('9845012345');
-    setCity('Bengaluru');
-    setPassword('MysuruSilk@2026');
-    setFeedback({
-      type: 'success',
-      message: 'Demo patron details populated. Ready to register!',
-    });
-  };
+
 
   const calculatePasswordStrength = (pass: string) => {
     if (!pass) return 0;
@@ -134,37 +110,30 @@ function SignUpCardContent() {
     setFeedback(null);
 
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          city,
-          newsletter: subscribeNews,
-        }),
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            phone,
+            city,
+          },
+        },
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
+      if (error) {
+        setFeedback({ type: 'error', message: error.message || 'Registration failed. Please try again.' });
+      } else {
         setFeedback({
           type: 'success',
-          message: 'Welcome to the Privilege Guild! 10% discount ROYAL10 unlocked. Entering account...',
+          message: 'Account created successfully! Entering account area...',
         });
-        setTimeout(() => {
-          router.push('/account');
-        }, 800);
-      } else {
-        setFeedback({ type: 'error', message: data.message || 'Registration failed. Please try again.' });
+        setTimeout(() => router.push('/account'), 800);
       }
     } catch (err: any) {
-      setFeedback({
-        type: 'success',
-        message: 'Account created! Welcome to Neel Saree House.',
-      });
-      setTimeout(() => router.push('/account'), 800);
+      setFeedback({ type: 'error', message: err.message || 'Registration error.' });
     } finally {
       setIsLoading(false);
     }
@@ -308,20 +277,6 @@ function SignUpCardContent() {
                 </Link>
               </div>
 
-              {/* Demo Autofill Banner for Quick Evaluation */}
-              <div className="mt-3.5 p-2.5 bg-[#FAF3E4]/70 rounded-2xl border border-[#C87F4A]/25 flex items-center justify-between gap-2 text-xs">
-                <span className="text-[11px] font-mono text-[#773D21] font-medium">
-                  Evaluating features? Autofill a demo profile:
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAutofillDemo}
-                  className="px-2.5 py-1 bg-white hover:bg-[#7A1C30] hover:text-white border border-[#C87F4A]/30 rounded-lg text-[11px] font-mono font-bold transition-all shadow-2xs flex-shrink-0"
-                >
-                  Autofill Demo
-                </button>
-              </div>
-
               {/* Feedback Banner */}
               {feedback && (
                 <div
@@ -343,7 +298,7 @@ function SignUpCardContent() {
               {/* 1-Click Google OAuth Sign Up Button */}
               <button
                 type="button"
-                onClick={() => setIsGoogleModalOpen(true)}
+                onClick={handleGoogleSignIn}
                 className="w-full mt-4 flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-stone-300 hover:border-[#7A1C30] hover:bg-[#FAF3E4]/40 bg-white text-stone-800 text-xs font-sans font-bold shadow-xs transition-all cursor-pointer group"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -568,14 +523,6 @@ function SignUpCardContent() {
         </div>
       </div>
 
-      {/* Google OAuth Chooser Modal */}
-      <GoogleAuthModal
-        isOpen={isGoogleModalOpen}
-        onClose={() => setIsGoogleModalOpen(false)}
-        onSelectAccount={handleGoogleAccountSelect}
-        title="Sign up with Google"
-        subtitle="to unlock your 10% welcome privilege at Neel Saree House"
-      />
     </div>
   );
 }

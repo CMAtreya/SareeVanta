@@ -20,16 +20,8 @@ export default function AccountWishlistPage() {
   };
 
   useEffect(() => {
-    // Filter matching products from wishlist IDs or fallback to initial items
-    const filtered = products.filter((p) => wishlist.includes(p.id));
-    if (filtered.length > 0) {
-      setSavedProducts(filtered);
-    } else if (wishlist.length > 0) {
-      // Map IDs if needed
-      setSavedProducts(products.slice(0, 3));
-    } else {
-      setSavedProducts([]);
-    }
+    const filtered = products.filter((p) => wishlist.includes(p.id) || wishlist.includes(p.slug));
+    setSavedProducts(filtered);
     setIsLoading(false);
   }, [wishlist]);
 

@@ -14,12 +14,14 @@ import {
   ArrowRight,
   ShieldCheck,
   Award,
+  User,
 } from 'lucide-react';
+import { useCart } from '@/components/providers/CartContext';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bagCount, setBagCount] = useState(2);
+  const { cartCount, wishlistCount, setIsCartDrawerOpen } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -37,13 +39,7 @@ export default function Header() {
   return (
     <>
       {/* Slim, Minimal Glassmorphic Fixed Navigation Bar */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
-          isScrolled
-            ? 'bg-[#FAF3E4]/90 backdrop-blur-md shadow-sm border-b border-[#C87F4A]/15 py-3.5'
-            : 'bg-transparent backdrop-blur-none border-b border-transparent py-5 sm:py-6'
-        }`}
-      >
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAF3E4]/95 backdrop-blur-md border-b border-[#C87F4A]/20 py-3 sm:py-4 shadow-sm transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
           <div className="flex items-center justify-between">
             {/* Left: Brand Monogram & Wordmark */}
@@ -125,29 +121,57 @@ export default function Header() {
               </Link>
             </nav>
 
-            {/* Right: CTA Button with Terracotta-to-Gold Gradient Border */}
-            <div className="flex items-center space-x-4">
-              {/* Bag Trigger */}
+            {/* Right: Actions (Profile, Wishlist, Cart) */}
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Account / Profile Salon Link */}
               <Link
-                href="/our-story#collections"
-                className="relative text-[#1F1B16] hover:text-[#C87F4A] transition-colors p-1.5 hidden sm:block"
-                aria-label="Shopping Bag"
+                href="/account"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-[#C87F4A] text-[#1F1B16] hover:text-white border border-[#C87F4A]/30 shadow-xs flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Account Salon"
+                title="Patron Account"
               >
-                <ShoppingBag className="w-4 h-4" />
-                <span className="absolute -top-0.5 -right-0.5 bg-[#C87F4A] text-white text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center font-bold">
-                  {bagCount}
-                </span>
+                <User className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               </Link>
+
+              {/* Wishlist Link */}
+              <Link
+                href="/account/wishlist"
+                className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-[#C87F4A] text-[#1F1B16] hover:text-white border border-[#C87F4A]/30 shadow-xs flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Saved Wishlist"
+                title="Wishlist"
+              >
+                <Heart className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#7A1C30] text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold font-mono shadow-xs border border-white">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Bag Trigger */}
+              <button
+                type="button"
+                id="header-cart-button"
+                onClick={() => setIsCartDrawerOpen(true)}
+                className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white hover:bg-[#C87F4A] text-[#1F1B16] hover:text-white border border-[#C87F4A]/30 shadow-xs flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Shopping Bag"
+                title="Shopping Bag"
+              >
+                <ShoppingBag className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-[#C87F4A] text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold font-mono shadow-xs border border-white">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
 
               {/* Gradient Border CTA Button: "Shop the Edit" */}
               <Link
                 href="/our-story#collections"
-                className="relative group p-[1px] rounded-sm transition-all duration-300 hover:shadow-silk hidden sm:inline-block"
+                className="relative group p-[1px] rounded-sm transition-all duration-300 hover:shadow-silk hidden md:inline-block ml-1"
               >
-                {/* Gradient Border Background */}
                 <span className="absolute inset-0 rounded-sm bg-gradient-to-r from-[#C87F4A] via-[#B8892B] to-[#C87F4A] transition-opacity duration-300" />
-                {/* Inner Button */}
-                <span className="relative block px-5 py-2.5 rounded-[1px] bg-[#FAF3E4] group-hover:bg-[#C87F4A] text-[#1F1B16] group-hover:text-white text-[11px] font-sans font-semibold uppercase tracking-[0.18em] transition-all duration-300">
+                <span className="relative block px-4 py-2 rounded-[1px] bg-[#FAF3E4] group-hover:bg-[#C87F4A] text-[#1F1B16] group-hover:text-white text-[11px] font-sans font-semibold uppercase tracking-[0.18em] transition-all duration-300">
                   Shop the Edit
                 </span>
               </Link>
@@ -156,10 +180,10 @@ export default function Header() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="text-[#1F1B16] hover:text-[#C87F4A] transition-colors p-1.5 lg:hidden rounded-sm"
+                className="w-9 h-9 rounded-full bg-white text-[#1F1B16] hover:text-[#C87F4A] border border-[#C87F4A]/30 flex items-center justify-center lg:hidden cursor-pointer"
                 aria-label="Open Navigation Menu"
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5" />
               </button>
             </div>
           </div>
