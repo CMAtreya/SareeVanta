@@ -991,33 +991,17 @@ export default function CustomerReviewsAdminPage() {
                   <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
                     <div>
                       <label className="block font-semibold text-slate-700 mb-1">
-                        Trigger Review Request After Delivery Webhook *
+                        Trigger Review Request After Delivery *
                       </label>
                       <select
                         value={reviewRequestDelayDays}
                         onChange={(e) => setReviewRequestDelayDays(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-white text-slate-900 font-mono font-bold"
                       >
-                        <option value="1">1 Day after BlueDart Delivery</option>
-                        <option value="3">3 Days after BlueDart Delivery (Recommended)</option>
-                        <option value="7">7 Days after BlueDart Delivery</option>
+                        <option value="1">1 Day after Delivery</option>
+                        <option value="3">3 Days after Delivery (Recommended)</option>
+                        <option value="7">7 Days after Delivery</option>
                       </select>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-1">
-                      <input
-                        type="checkbox"
-                        id="waReminders"
-                        checked={enableWhatsAppReminders}
-                        onChange={(e) => setEnableWhatsAppReminders(e.target.checked)}
-                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <label
-                        htmlFor="waReminders"
-                        className="text-xs text-slate-800 font-semibold cursor-pointer"
-                      >
-                        Dispatch WhatsApp interactive review request buttons
-                      </label>
                     </div>
                   </div>
                 </div>
@@ -1026,11 +1010,11 @@ export default function CustomerReviewsAdminPage() {
                 <div className="space-y-3">
                   <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center gap-1.5">
                     <Camera className="w-4 h-4 text-purple-600" />
-                    <span>3. Photo UGC Drape Incentive</span>
+                    <span>3. Photo Drape Review Incentive</span>
                   </h4>
                   <div className="p-4 bg-purple-50/50 border border-purple-200 rounded-2xl space-y-2">
                     <label className="block font-semibold text-purple-950 mb-1">
-                      Store Credit Reward for Photo/Video Review (₹)
+                      Store Credit Reward for Photo Review (Max 2 Photos) (₹)
                     </label>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs text-purple-900 font-bold">₹</span>

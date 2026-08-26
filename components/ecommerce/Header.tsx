@@ -263,8 +263,8 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Center: Long Rounded-Full Search Pill Bar with Static "Search for" + Animated Dynamic Saree Name */}
-          <div className="flex-1 max-w-4xl 2xl:max-w-6xl mx-3 sm:mx-6 xl:mx-10 relative">
+          {/* Center: Long Rounded-Full Search Pill Bar (Desktop & Tablet) */}
+          <div className="hidden sm:block flex-1 max-w-4xl 2xl:max-w-6xl mx-3 sm:mx-6 xl:mx-10 relative">
             <form
               onSubmit={handleSearchSubmit}
               className="relative w-full"
@@ -488,6 +488,63 @@ export default function Header() {
               </span>
             </button>
           </div>
+        </div>
+
+        {/* Mobile Dedicated Full-Width Search Bar Row */}
+        <div className="sm:hidden px-4 pb-3 pt-1.5 border-t border-[#C87F4A]/15 bg-[#FAF3E4]/95 relative">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <div
+              onClick={() => searchInputRef.current?.focus()}
+              className={`relative w-full h-10 px-4 rounded-full bg-white/90 border transition-all flex items-center justify-between shadow-2xs ${
+                searchFocused ? 'border-[#7A1C30] ring-2 ring-[#7A1C30]/20' : 'border-[#D9A876]'
+              }`}
+            >
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setTimeout(() => setSearchFocused(false), 250)}
+                className="w-full bg-transparent text-xs text-[#1F1B16] focus:outline-none pr-10 font-sans"
+              />
+              {!searchQuery && (
+                <div className="absolute left-4 right-10 inset-y-0 flex items-center pointer-events-none text-xs text-stone-500 font-sans select-none">
+                  <span className="text-stone-600 font-medium mr-1.5 flex-shrink-0">Search for</span>
+                  <div className="overflow-hidden h-5 flex items-center flex-1">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={phraseIndex}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.28, ease: 'easeOut' }}
+                        className="truncate text-[#7A1C30] font-medium"
+                      >
+                        {searchScrollPhrases[phraseIndex]}
+                      </motion.span>
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-1 z-10">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSearchQuery('');
+                    }}
+                    className="text-stone-400 p-1"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button type="submit" className="text-[#C87F4A] p-1">
+                  <Search className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
 

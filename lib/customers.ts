@@ -11,6 +11,7 @@ export interface CustomerRecord {
   totalOrders: number;
   totalSpend: number;
   lastActive: string;
+  lastOrderDate?: string;
   preferredWeaves: string[];
 }
 

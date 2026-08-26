@@ -15,20 +15,24 @@ import {
 import { CustomerRecord, SAMPLE_CUSTOMERS } from '@/lib/customers';
 
 export default function CustomerDirectoryPage() {
-  const [customers, setCustomers] = useState<CustomerRecord[]>(SAMPLE_CUSTOMERS);
+  const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSegment, setActiveSegment] = useState<'ALL' | 'ACTIVE_BUYERS'>('ALL');
 
   useEffect(() => {
-    // Fetch live customers from API if available
+    // Fetch live registered customers strictly from API
     fetch('/api/admin/customers')
       .then(res => res.json())
       .then(data => {
-        if (data.customers && data.customers.length > 0) {
+        if (data.customers && Array.isArray(data.customers)) {
           setCustomers(data.customers);
+        } else {
+          setCustomers([]);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setCustomers([]);
+      });
   }, []);
 
   const counts = useMemo(() => {
@@ -119,7 +123,7 @@ export default function CustomerDirectoryPage() {
             className="px-3 py-1.5 rounded-lg border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-700 text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-2xs"
           >
             <Download className="w-3.5 h-3.5 text-[#7A1C30]" />
-            <span>Export Directory (CSV)</span>
+            <span>Export Customer CSV</span>
           </button>
         </div>
       </div>
@@ -217,6 +221,12 @@ export default function CustomerDirectoryPage() {
                     <span>Total Spend</span>
                   </span>
                   <span className="font-bold text-stone-900">₹{customer.totalSpend.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-stone-500">
+                    <span>Last Order</span>
+                  </span>
+                  <span className="text-stone-700 font-semibold">{customer.lastOrderDate || customer.lastActive || 'Registered Recently'}</span>
                 </div>
               </div>
             </div>

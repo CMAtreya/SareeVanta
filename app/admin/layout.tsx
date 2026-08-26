@@ -137,20 +137,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setIsCommandPaletteOpen((prev) => !prev);
       }
 
-      // Keyboard Shortcuts Cheat Sheet (?)
+      // Keyboard Shortcuts Cheat Sheet (Alt+?)
       if (
-        e.key === '?' &&
+        (e.altKey && e.key === '?') &&
         !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
       ) {
         e.preventDefault();
         setIsShortcutsOpen((prev) => !prev);
       }
 
-      // Quick New Handloom SKU (N)
+      // Quick New Handloom SKU (Alt+N / ⌘N)
       if (
-        (e.key === 'n' || e.key === 'N') &&
-        !e.metaKey &&
-        !e.ctrlKey &&
+        ((e.metaKey || e.ctrlKey || e.altKey) && e.key.toLowerCase() === 'n') &&
         !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
       ) {
         e.preventDefault();
@@ -212,7 +210,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const unreadNotifCount = notifications.filter((n) => n.unread).length;
 
   return (
-    <div className="bg-[#FAF6F0] min-h-screen text-[#1F1B16] font-sans flex select-none relative overflow-x-hidden">
+    <div className="bg-[#FAF6F0] min-h-screen text-[#1F1B16] font-sans flex relative overflow-x-hidden">
       {/* Mobile Drawer Backdrop Overlay */}
       {isMobileSidebarOpen && (
         <div
@@ -312,53 +310,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Store Switcher Dropdown */}
         {(!isSidebarCollapsed || isMobileSidebarOpen) && (
           <div className="px-3 pt-3 pb-1 flex-shrink-0 bg-[#18110E] relative z-10">
-            <button
-              type="button"
-              onClick={() => setIsStoreSwitcherOpen(!isStoreSwitcherOpen)}
-              className="w-full px-2.5 py-1.5 bg-[#241712] hover:bg-[#2F1F17] text-left border border-[#38231B] rounded-xl text-xs flex items-center justify-between transition-colors shadow-2xs group"
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <Store className="w-3.5 h-3.5 text-[#C87F4A] flex-shrink-0" />
-                <span className="truncate text-[11px] font-medium text-[#FAF3E4]">{currentStore}</span>
+            <div className="w-full px-2.5 py-1.5 bg-[#241712] border border-[#38231B] rounded-xl text-xs flex items-center gap-2">
+              <Store className="w-3.5 h-3.5 text-[#C87F4A] flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="truncate text-[11px] font-bold text-[#FAF3E4] block">Mysuru Sayyaji Rao Studio</span>
+                <span className="text-[9px] font-mono text-stone-400 block">Single V1 Fulfillment Hub</span>
               </div>
-              <ChevronDown className="w-3 h-3 text-stone-500 group-hover:text-stone-300 flex-shrink-0" />
-            </button>
-
-            {isStoreSwitcherOpen && (
-              <div className="absolute left-3 right-3 top-full mt-1 bg-[#1F140F] border border-[#38231B] rounded-xl p-1.5 shadow-2xl z-40 space-y-1 text-xs">
-                {[
-                  'Mysuru Sayyaji Rao Flagship',
-                  'Bengaluru Showcase Salon',
-                  'Global Online Boutique',
-                ].map((store) => (
-                  <button
-                    key={store}
-                    type="button"
-                    onClick={() => {
-                      setCurrentStore(store);
-                      setIsStoreSwitcherOpen(false);
-                    }}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[11px] transition-colors flex items-center justify-between ${
-                      currentStore === store
-                        ? 'bg-[#7A1C30] text-white font-bold'
-                        : 'text-[#DBCBBF] hover:bg-[#2A1C16]'
-                    }`}
-                  >
-                    <span>{store}</span>
-                    {currentStore === store && <CheckCircle2 className="w-3 h-3 text-[#E2CE9F]" />}
-                  </button>
-                ))}
-              </div>
-            )}
+            </div>
           </div>
         )}
 
         {/* Smooth Scrollable Navigation Container */}
         <div
           data-lenis-prevent
-          className="flex-1 min-h-0 admin-sidebar-scroll px-3 py-2 space-y-4 text-xs font-sans select-none"
+          className="flex-1 min-h-0 admin-sidebar-scroll px-3 py-2 space-y-4 text-xs font-sans"
         >
-          {/* Section 1: Commerce */}
+          {/* Section 1: Commerce & Orders */}
           <div className="space-y-0.5">
               {!isSidebarCollapsed && (
                 <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
@@ -372,7 +339,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Dashboard Overview"
+                title="Dashboard"
               >
                 <LayoutDashboard className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Dashboard</span>}
@@ -385,17 +352,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Live Orders"
+                title="Orders"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <ShoppingCart className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                   {!isSidebarCollapsed && <span>Orders</span>}
                 </div>
-                {!isSidebarCollapsed && (
-                  <span className="text-[10px] font-mono bg-[#7A1C30]/40 text-[#E2CE9F] px-1.5 py-0.2 rounded font-bold border border-[#C87F4A]/40">
-                    14
-                  </span>
-                )}
               </Link>
 
               <Link
@@ -405,7 +367,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="BlueDart & Delhivery Shipments"
+                title="Shipments"
               >
                 <Truck className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Shipments</span>}
@@ -418,18 +380,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Returns & Exchanges"
+                title="Returns & Claims"
               >
                 <RotateCcw className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Returns & Exchanges</span>}
+                {!isSidebarCollapsed && <span>Returns & Claims</span>}
               </Link>
             </div>
 
-            {/* Section 2: Merchandising */}
+            {/* Section 2: Products & Inventory */}
             <div className="space-y-0.5">
               {!isSidebarCollapsed && (
                 <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
-                  Merchandising
+                  Catalog & Inventory
                 </div>
               )}
               <Link
@@ -439,10 +401,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Catalog & Products"
+                title="Products / Catalog"
               >
                 <Package className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Catalog / Products</span>}
+                {!isSidebarCollapsed && <span>Products / Catalog</span>}
               </Link>
 
               <Link
@@ -452,10 +414,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Silk Mark Inventory Matrix"
+                title="Inventory"
               >
                 <Layers className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Inventory Matrix</span>}
+                {!isSidebarCollapsed && <span>Inventory</span>}
               </Link>
 
               <Link
@@ -465,38 +427,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Curated Collections & Heritage Taxonomy"
+                title="Collections & Taxonomy"
               >
                 <FolderOpen className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Collections & Taxonomy</span>}
               </Link>
             </div>
 
-            {/* Section 3: Growth & Studio */}
+            {/* Section 3: Content & Marketing */}
             <div className="space-y-0.5">
               {!isSidebarCollapsed && (
                 <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
-                  Growth & Studio
+                  Content & Marketing
                 </div>
               )}
-              <Link
-                href="/admin/marketing/instagram-reels"
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
-                  pathname === '/admin/marketing/instagram-reels'
-                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
-                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
-                }`}
-                title="Live Shopping & Reels Manager"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Film className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                  {!isSidebarCollapsed && <span>Live Shopping Manager</span>}
-                </div>
-                {!isSidebarCollapsed && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                )}
-              </Link>
-
               <Link
                 href="/admin/marketing/coupons"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
@@ -504,10 +448,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Marketing & Discounts"
+                title="Discounts & Coupons"
               >
                 <Tag className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Marketing & Discounts</span>}
+                {!isSidebarCollapsed && <span>Discounts & Coupons</span>}
               </Link>
 
               <Link
@@ -517,10 +461,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Banners & Marquee"
+                title="Homepage Content"
               >
                 <Megaphone className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Banners & Marquee</span>}
+                {!isSidebarCollapsed && <span>Homepage Content</span>}
+              </Link>
+
+              <Link
+                href="/admin/marketing/instagram-reels"
+                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
+                  pathname === '/admin/marketing/instagram-reels'
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
+                }`}
+                title="Instagram Reels"
+              >
+                <Film className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
+                {!isSidebarCollapsed && <span>Instagram Reels</span>}
               </Link>
 
               <Link
@@ -530,18 +487,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Review Moderation & UGC Hub"
+                title="Reviews / UGC"
               >
                 <Star className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Customer Reviews & UGC</span>}
+                {!isSidebarCollapsed && <span>Reviews / UGC</span>}
               </Link>
             </div>
 
-            {/* Section 4: Operations */}
+            {/* Section 4: Operations & System */}
             <div className="space-y-0.5">
               {!isSidebarCollapsed && (
                 <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#9C8270] font-bold">
-                  Operations
+                  Operations & System
                 </div>
               )}
               <Link
@@ -551,10 +508,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Customers & CRM"
+                title="Customers"
               >
                 <Users className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Customers & CRM</span>}
+                {!isSidebarCollapsed && <span>Customers</span>}
               </Link>
 
               <Link
@@ -564,7 +521,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Performance Analytics & Reports"
+                title="Analytics & Reports"
               >
                 <BarChart3 className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Analytics & Reports</span>}
@@ -573,27 +530,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 href="/admin/settings/staff"
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
-                  pathname.startsWith('/admin/settings/staff')
+                  pathname.startsWith('/admin/settings')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
                     : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
                 }`}
-                title="Staff & Roles (RBAC)"
+                title="Staff & RBAC"
               >
                 <UserCog className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Staff & Roles</span>}
-              </Link>
-
-              <Link
-                href="/admin/settings"
-                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
-                  pathname === '/admin/settings' || (pathname.startsWith('/admin/settings') && !pathname.startsWith('/admin/settings/staff'))
-                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
-                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
-                }`}
-                title="Master Store Configuration"
-              >
-                <Settings className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
-                {!isSidebarCollapsed && <span>Store Settings</span>}
+                {!isSidebarCollapsed && <span>Staff & RBAC</span>}
               </Link>
             </div>
           </div>
@@ -793,13 +737,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Main Content Area with Smooth Page Transitions */}
         <main className="flex-1 p-3 sm:p-5 md:p-6 lg:p-8 w-full max-w-7xl mx-auto min-w-0 overflow-x-hidden">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.15 }}
             >
               {children}
             </motion.div>
