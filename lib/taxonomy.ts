@@ -23,6 +23,7 @@ export interface TaxonomyTerm {
   description: string;
   productCount: number;
   status: 'ACTIVE' | 'INACTIVE';
+  isGiTagged?: boolean;
 }
 
 export const INITIAL_COLLECTIONS: SareeCollection[] = [
