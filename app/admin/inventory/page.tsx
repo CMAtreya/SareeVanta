@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Layers,
@@ -234,6 +234,33 @@ export default function InventoryMatrixPage() {
   const [filterSegment, setFilterSegment] = useState<'ALL' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'SINGLE_PIECE'>('ALL');
   const [weaveFilter, setWeaveFilter] = useState('ALL');
 
+  useEffect(() => {
+    fetch('/api/admin/inventory')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.inventory && Array.isArray(data.inventory) && data.inventory.length > 0) {
+          const formatted: InventoryItem[] = data.inventory.map((inv: any, idx: number) => ({
+            id: inv.id || `inv-${idx}`,
+            sku: inv.product_variants?.sku || `NSH-SKU-MYS-0${idx + 1}`,
+            title: inv.product_variants?.products?.title || 'Heirloom Mulberry Silk Saree',
+            weave: 'Pure Mulberry Silk',
+            fabric: '100% Pure Mulberry Silk',
+            image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+            binLocation: `Vault-MYS-${10 + idx}`,
+            loomBatch: `LOOM-KA-MYS-${10 + idx}`,
+            costPrice: 20000,
+            retailPrice: 28500,
+            physicalStock: inv.physical_quantity ?? 1,
+            reservedStock: inv.reserved_quantity ?? 0,
+            reorderPoint: 2,
+            silkMarkAuditId: `CSB-2026-MYS-${3310 + idx}`,
+          }));
+          setInventory(formatted);
+        }
+      })
+      .catch((err) => console.error('Error fetching live inventory:', err));
+  }, []);
+
   // Modal State for stock adjustment
   const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
   const [adjustDirection, setAdjustDirection] = useState<'INCREASE' | 'DECREASE'>('INCREASE');
@@ -292,7 +319,7 @@ export default function InventoryMatrixPage() {
   }, [inventory, filterSegment, weaveFilter, searchQuery]);
 
   // Handle Stock Adjustment Confirmation
-  const handleConfirmStockAdjustment = (e: React.FormEvent) => {
+  const handleConfirmStockAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adjustingItem || adjustQuantity <= 0) return;
 
@@ -304,6 +331,20 @@ export default function InventoryMatrixPage() {
     setInventory((prev) =>
       prev.map((it) => (it.id === adjustingItem.id ? { ...it, physicalStock: newStock } : it))
     );
+
+    try {
+      await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sku: adjustingItem.sku,
+          quantity_delta: delta,
+          reason: adjustReason,
+        }),
+      });
+    } catch (err) {
+      console.error('Error dispatching inventory adjustment to API:', err);
+    }
 
     // Record in Audit Trail
     const newLog: AuditLogRecord = {

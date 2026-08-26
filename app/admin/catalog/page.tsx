@@ -110,6 +110,46 @@ export default function AdminCatalogPage() {
     null
   );
 
+  useEffect(() => {
+    fetch('/api/admin/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+          const formatted: CatalogSaree[] = data.products.map((p: any, idx: number) => {
+            const firstVariant = p.product_variants?.[0] || {};
+            const weave = p.weavings?.name || 'Mysore Silk Crepe';
+            const fabric = p.fabrics?.name || '100% Pure Mulberry Silk';
+            const zari = p.zari_specifications?.name || 'Pure 24K Gold Zari';
+            const priceINR = Math.round((p.base_selling_price_paise || 2850000) / 100);
+            const mrpINR = Math.round((p.base_mrp_paise || 3200000) / 100);
+
+            return {
+              id: p.id,
+              title: p.title,
+              sku: firstVariant.sku || `NSH-SKU-MYS-${10 + idx}`,
+              loomId: `LOOM-KA-${10 + idx}`,
+              hsnCode: '5007.20.10',
+              weave,
+              fabric,
+              zariType: zari,
+              priceINR,
+              originalPriceINR: mrpINR,
+              stock: 2,
+              hasAiAvatar: true,
+              isActive: p.is_published !== false,
+              status: p.is_published ? 'ACTIVE' : 'DRAFT',
+              images: [
+                'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+              ],
+              silkMarkNumber: `CSB-2026-MYS-${1000 + idx}`,
+            };
+          });
+          setCatalog(formatted);
+        }
+      })
+      .catch((err) => console.error('Error loading live catalog products:', err));
+  }, []);
+
   // Modals
   const [editingSaree, setEditingSaree] = useState<CatalogSaree | null>(null);
   const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);

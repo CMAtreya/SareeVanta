@@ -23,58 +23,81 @@ import { products, Product } from '@/lib/products';
 export default function AccountOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const orderId = (params?.id as string) || 'NSH-2026-8942';
+  const orderId = (params?.id as string) || '';
 
   const { currency, addToCart } = useCart();
   const [downloadingInvoice, setDownloadingInvoice] = useState(false);
   const [reordered, setReordered] = useState(false);
+  const [order, setOrder] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   const formatPrice = (inr: number) => {
     if (currency === 'USD') return `$${(inr / 83).toFixed(0)}`;
     if (currency === 'GBP') return `£${(inr / 105).toFixed(0)}`;
     if (currency === 'EUR') return `€${(inr / 90).toFixed(0)}`;
     if (currency === 'AED') return `AED ${(inr / 22.5).toFixed(0)}`;
-    return `₹${inr.toLocaleString('en-IN')}`;
+    return `₹${(inr || 0).toLocaleString('en-IN')}`;
   };
 
-  // Mock order details
-  const isDelivered = orderId === 'NSH-2026-7419' || orderId === 'NSH-2026-6102';
-  const isEligibleForReturn = orderId === 'NSH-2026-7419'; // Delivered within 7 days
+  useEffect(() => {
+    async function loadOrder() {
+      if (!orderId) {
+        setIsNotFound(true);
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (!res.ok) {
+          setIsNotFound(true);
+        } else {
+          const data = await res.json();
+          setOrder(data);
+        }
+      } catch (err) {
+        console.error(err);
+        setIsNotFound(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadOrder();
+  }, [orderId]);
 
-  const order = {
-    order_number: orderId,
-    date: '20 Aug 2026',
-    status: isDelivered ? 'Delivered' : 'Out for Delivery',
-    status_type: isDelivered ? 'delivered' : 'in_transit',
-    delivered_date: isDelivered ? '15 Aug 2026' : undefined,
-    payment_method: 'UPI Instant Verified (GPay)',
-    transaction_id: 'pay_nsh_982147192',
-    tracking_number: `BD-AIR-78294-${orderId.slice(-4) || '8942'}`,
-    courier: 'BlueDart Air Express (Insured Security Transit)',
-    shipping_address: {
-      name: 'Ananya S. Rao',
-      phone: '+91 98860 12345',
-      addressLine1: '42, Royal Palms Residency, Sayyaji Rao Road',
-      addressLine2: 'Near Mysore Palace North Gate',
-      city: 'Mysuru',
-      state: 'Karnataka',
-      pincode: '570001',
-    },
-    items: [
-      {
-        product: products[0],
-        quantity: 1,
-      },
-      {
-        product: products[1],
-        quantity: 1,
-      },
-    ],
-    subtotalINR: 94300,
-    discountINR: 9430,
-    shippingINR: 0,
-    totalINR: 84870,
-  };
+  if (isLoading) {
+    return (
+      <div className="py-16 text-center space-y-3">
+        <div className="w-8 h-8 border-2 border-[#7A1C30] border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs font-mono text-stone-500 uppercase tracking-widest">Loading Order Archive...</p>
+      </div>
+    );
+  }
+
+  if (isNotFound || !order) {
+    return (
+      <div className="bg-white rounded-3xl border border-[#E8DCC9] p-8 sm:p-12 text-center space-y-4 shadow-sm max-w-2xl mx-auto my-8">
+        <div className="w-16 h-16 rounded-full bg-[#FAF3E4] border border-[#C87F4A]/30 flex items-center justify-center mx-auto text-[#7A1C30]">
+          <Package className="w-8 h-8 stroke-[1.5]" />
+        </div>
+        <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+          Order Not Found
+        </h2>
+        <p className="text-xs sm:text-sm text-stone-600 font-sans max-w-md mx-auto">
+          We couldn&apos;t find an order matching identifier <span className="font-mono font-bold text-[#7A1C30] bg-[#FAF3E4] px-2 py-0.5 rounded">#{orderId}</span> in your account history.
+        </p>
+        <div className="pt-4 flex items-center justify-center gap-4">
+          <Link
+            href="/account/orders"
+            className="px-6 py-2.5 rounded-full bg-[#7A1C30] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#5F1424] transition-all shadow-sm flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to All Orders</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleDownloadInvoice = () => {
     setDownloadingInvoice(true);
@@ -84,9 +107,11 @@ export default function AccountOrderDetailPage() {
     }, 700);
   };
 
+  const isEligibleForReturn = order?.status_type === 'delivered' || order?.status === 'delivered';
+
   const handleReorder = () => {
-    order.items.forEach((item) => {
-      addToCart(item.product, item.quantity);
+    (order.items || []).forEach((item: any) => {
+      if (item.product) addToCart(item.product, item.quantity || 1);
     });
     setReordered(true);
     setTimeout(() => {
@@ -180,7 +205,7 @@ export default function AccountOrderDetailPage() {
           </span>
 
           <div className="divide-y divide-stone-100 space-y-4">
-            {order.items.map((item, idx) => (
+            {(order.items || []).map((item: any, idx: number) => (
               <div
                 key={idx}
                 className="pt-4 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"

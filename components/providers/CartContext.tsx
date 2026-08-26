@@ -48,6 +48,7 @@ interface CartContextType {
   wishlistCount: number;
   appliedCoupon: AppliedCoupon | null;
   couponDiscountINR: number;
+  clearCart: () => void;
   applyCoupon: (coupon: AppliedCoupon) => void;
   removeCoupon: () => void;
   cartBounced: boolean;
@@ -380,6 +381,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const wishlistCount = wishlist.length;
 
+  const clearCart = async () => {
+    setCart([]);
+    setAppliedCoupon(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('sareevanta_guest_cart');
+      } catch (e) {}
+    }
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('cart_items').delete().eq('customer_id', user.id);
+    }
+  };
+
   return (
     <CartContext.Provider
       value={{
@@ -392,6 +408,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        clearCart,
         toggleWishlist,
         isInWishlist,
         setIsCartDrawerOpen,

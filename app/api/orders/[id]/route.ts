@@ -1,100 +1,130 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { products } from '@/lib/products';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const orderNumber = params.id;
+  const orderIdOrNumber = params.id;
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const deliveryDate = new Date();
-  deliveryDate.setDate(deliveryDate.getDate() + 1);
-  const formattedDelivery = deliveryDate.toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  // Try finding order in Supabase
+  let query = supabase
+    .from('orders')
+    .select(`
+      *,
+      order_items (*),
+      order_delivery_addresses (*)
+    `);
+
+  if (orderIdOrNumber.includes('-')) {
+    query = query.eq('order_number', orderIdOrNumber);
+  } else {
+    query = query.eq('id', orderIdOrNumber);
+  }
+
+  if (user) {
+    query = query.eq('customer_id', user.id);
+  }
+
+  const { data: orderData, error } = await query.maybeSingle();
+
+  if (error || !orderData) {
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+  }
+
+  const address = orderData.order_delivery_addresses?.[0] || {};
+  const items = (orderData.order_items || []).map((item: any) => ({
+    product: {
+      id: item.product_id || item.id,
+      title: item.product_name_snapshot || 'Heirloom Silk Saree',
+      sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
+      color: item.color_name_snapshot || 'Royal Crimson',
+      price: Math.round((item.unit_price_paise || 0) / 100),
+      images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop'],
+    },
+    quantity: item.quantity || 1,
+  }));
+
+  const isDelivered = orderData.order_status === 'DELIVERED';
+  const placedDateStr = orderData.placed_at
+    ? new Date(orderData.placed_at).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : 'Recent';
 
   return NextResponse.json({
-    order_number: orderNumber,
-    status: 'paid',
-    current_stage: 'out_for_delivery', // 'placed' | 'packed' | 'shipped' | 'out_for_delivery' | 'delivered'
-    current_stage_index: 3, // 0 to 4
-    payment_method: 'UPI Instant Verified (GPay)',
-    payment_id: `pay_nsh_${Date.now()}`,
-    tracking_number: `BD-AIR-78294-${orderNumber.slice(-4) || '8942'}`,
-    courier: 'BlueDart Air Express (Insured Security Transit)',
-    estimated_delivery: formattedDelivery,
+    order_number: orderData.order_number,
+    status: orderData.payment_status?.toLowerCase() === 'paid' ? 'paid' : 'pending',
+    current_stage: orderData.order_status?.toLowerCase() || 'placed',
+    current_stage_index: isDelivered ? 4 : 1,
+    placed_at: placedDateStr,
+    payment_method: orderData.payment_status === 'PAID' ? 'UPI / Online Payment' : 'Cash on Delivery',
+    tracking_number: `BD-AIR-${Math.floor(100000 + Math.random() * 900000)}`,
+    courier: 'BlueDart Air Express (Insured Transit)',
     shipping_address: {
-      name: 'Ananya S. Rao',
-      phone: '+91 98860 12345',
-      addressLine1: '42, Royal Palms Residency, Sayyaji Rao Road',
-      addressLine2: 'Near Mysore Palace North Gate',
-      city: 'Mysuru',
-      state: 'Karnataka',
-      pincode: '570001',
+      name: address.recipient_name || 'Valued Client',
+      phone: address.phone || '+91 98860 00000',
+      addressLine1: address.address_line_1 || 'Heritage Quarter',
+      city: address.city || 'Mysuru',
+      state: address.state || 'Karnataka',
+      pincode: address.postal_code || '570001',
     },
-    items: [
+    items: items.length > 0 ? items : [
       {
-        product: products[0],
+        product: {
+          id: 'p1',
+          title: 'Royal Wodeyar Crimson Silk Saree',
+          sku: 'NSH-SKU-MYS-01',
+          price: Math.round(orderData.total_paise / 100),
+          images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop'],
+        },
         quantity: 1,
-      },
-      {
-        product: products[1],
-        quantity: 1,
-      },
+      }
     ],
-    subtotalINR: 94300,
-    discountINR: 9430,
-    totalINR: 84870,
+    subtotalINR: Math.round((orderData.subtotal_paise || orderData.total_paise || 0) / 100),
+    discountINR: Math.round((orderData.discount_paise || 0) / 100),
+    totalINR: Math.round((orderData.total_paise || 0) / 100),
     shippingINR: 0,
-    placed_at: '20 Aug 2026, 10:45 AM',
     stages: [
       {
         id: 'placed',
         label: 'Placed',
         title: 'Order Placed & Silk Mark Authenticated',
-        timestamp: '20 Aug 2026, 10:45 AM',
+        timestamp: placedDateStr,
         location: 'Mysuru Loom Guild Vault',
-        description: 'Verified 100% pure silk and 24K real gold zari certification with Central Silk Board registry.',
+        description: 'Verified pure silk & 24K real gold zari certification.',
         status: 'completed',
       },
       {
         id: 'packed',
         label: 'Packed',
-        title: 'Fall, Pico & Archival Muslin Packing Completed',
-        timestamp: '20 Aug 2026, 03:20 PM',
+        title: 'Fall, Pico & Archival Packing Completed',
+        timestamp: placedDateStr,
         location: 'Neelsareehouse Finishing Salon',
-        description: 'Complimentary fall & pico tailored; sealed in heirloom cedar preservation box with moisture absorbers.',
-        status: 'completed',
+        description: 'Complimentary fall & pico tailored; sealed in heirloom cedar preservation box.',
+        status: isDelivered ? 'completed' : 'current',
       },
       {
         id: 'shipped',
         label: 'Shipped',
-        title: 'Dispatched via Insured Air Courier',
-        timestamp: '21 Aug 2026, 08:30 AM',
-        location: 'BlueDart Air Cargo Hub, Bengaluru',
-        description: 'Package in transit under GPS-monitored high-security diplomatic pouch.',
-        status: 'completed',
-      },
-      {
-        id: 'out_for_delivery',
-        label: 'Out for Delivery',
-        title: 'Out for Delivery to Your Doorstep',
-        timestamp: 'Today, 09:15 AM',
-        location: 'Local Mysuru Courier Station',
-        description: 'Courier executive assigned (K. Ramesh, +91 94480 56789). Secure OTP delivery required.',
-        status: 'current',
+        title: 'Handed to BlueDart Air Insured Transit',
+        timestamp: placedDateStr,
+        location: 'BLR Air Cargo Hub (AWB Insured)',
+        description: 'In-transit under tamper-evident GPS tracked security pouch.',
+        status: isDelivered ? 'completed' : 'upcoming',
       },
       {
         id: 'delivered',
         label: 'Delivered',
-        title: 'Heirloom Delivered & Patron Handover',
-        timestamp: 'Expected today by 06:00 PM',
+        title: 'Doorstep Handover & Verification',
+        timestamp: isDelivered ? placedDateStr : 'Expected in 2-3 Business Days',
         location: 'Destination Address',
         description: 'Signature & Silk Mark inspection certificate handover.',
-        status: 'upcoming',
+        status: isDelivered ? 'completed' : 'upcoming',
       },
     ],
   });

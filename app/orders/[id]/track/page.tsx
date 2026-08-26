@@ -93,95 +93,15 @@ export default function OrderTrackingPage() {
         if (res.ok) {
           const data = await res.json();
           setOrderData(data);
-          setIsLoading(false);
-          return;
+        } else {
+          setOrderData(null);
         }
       } catch (e) {
         console.error('Error fetching order tracking:', e);
+        setOrderData(null);
+      } finally {
+        setIsLoading(false);
       }
-
-      // Fallback
-      setOrderData({
-        order_number: orderId,
-        status: 'paid',
-        current_stage: 'out_for_delivery',
-        current_stage_index: 3,
-        payment_method: 'UPI Instant Verified',
-        payment_id: 'pay_nsh_8912471',
-        tracking_number: `BD-AIR-78294-${orderId.slice(-4) || '8942'}`,
-        courier: 'BlueDart Air Express (Insured Security Transit)',
-        estimated_delivery: 'Tuesday, 25 Aug 2026',
-        shipping_address: {
-          name: 'Ananya S. Rao',
-          phone: '+91 98860 12345',
-          addressLine1: '42, Royal Palms Residency, Sayyaji Rao Road',
-          city: 'Mysuru',
-          state: 'Karnataka',
-          pincode: '570001',
-        },
-        items: [
-          {
-            product: products[0],
-            quantity: 1,
-          },
-          {
-            product: products[1],
-            quantity: 1,
-          },
-        ],
-        subtotalINR: 94300,
-        discountINR: 9430,
-        totalINR: 84870,
-        placed_at: '20 Aug 2026, 10:45 AM',
-        stages: [
-          {
-            id: 'placed',
-            label: 'Placed',
-            title: 'Order Placed & Silk Mark Authenticated',
-            timestamp: '20 Aug 2026, 10:45 AM',
-            location: 'Mysuru Loom Guild Vault',
-            description: 'Verified pure silk & 24K real gold zari certification.',
-            status: 'completed',
-          },
-          {
-            id: 'packed',
-            label: 'Packed',
-            title: 'Fall, Pico & Archival Packing Completed',
-            timestamp: '20 Aug 2026, 03:20 PM',
-            location: 'Neelsareehouse Finishing Salon',
-            description: 'Packaged in signature cedar preservation box.',
-            status: 'completed',
-          },
-          {
-            id: 'shipped',
-            label: 'Shipped',
-            title: 'Dispatched via Insured Air Courier',
-            timestamp: '21 Aug 2026, 08:30 AM',
-            location: 'BlueDart Air Cargo Hub, Bengaluru',
-            description: 'Package in transit under high-security courier protocol.',
-            status: 'completed',
-          },
-          {
-            id: 'out_for_delivery',
-            label: 'Out for Delivery',
-            title: 'Out for Delivery to Your Doorstep',
-            timestamp: 'Today, 09:15 AM',
-            location: 'Local Mysuru Courier Station',
-            description: 'Courier assigned for secure OTP delivery.',
-            status: 'current',
-          },
-          {
-            id: 'delivered',
-            label: 'Delivered',
-            title: 'Heirloom Delivered & Patron Handover',
-            timestamp: 'Expected today by 06:00 PM',
-            location: 'Destination Address',
-            description: 'Signature & Silk Mark inspection certificate handover.',
-            status: 'upcoming',
-          },
-        ],
-      });
-      setIsLoading(false);
     };
 
     fetchTracking();
@@ -203,13 +123,40 @@ export default function OrderTrackingPage() {
     }, 800);
   };
 
-  if (isLoading || !orderData) {
+  if (isLoading) {
     return (
       <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-16 text-center">
         <div className="inline-block w-8 h-8 border-3 border-[#C87F4A] border-t-transparent rounded-full animate-spin mb-3" />
         <p className="text-xs font-mono text-stone-500">
           Connecting to BlueDart live courier telemetry...
         </p>
+      </div>
+    );
+  }
+
+  if (!orderData) {
+    return (
+      <div className="bg-[#FAF3E4] min-h-screen py-16 px-4">
+        <div className="bg-white rounded-3xl border border-[#E8DCC9] p-8 sm:p-12 text-center space-y-4 shadow-sm max-w-xl mx-auto">
+          <div className="w-16 h-16 rounded-full bg-[#FAF3E4] border border-[#C87F4A]/30 flex items-center justify-center mx-auto text-[#7A1C30]">
+            <Package className="w-8 h-8 stroke-[1.5]" />
+          </div>
+          <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-stone-900">
+            Tracking Record Not Found
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-600 font-sans max-w-md mx-auto">
+            No live courier shipment tracking telemetry found for AWB or Order <span className="font-mono font-bold text-[#7A1C30] bg-[#FAF3E4] px-2 py-0.5 rounded">#{orderId}</span>.
+          </p>
+          <div className="pt-4 flex items-center justify-center gap-4">
+            <Link
+              href="/account/orders"
+              className="px-6 py-2.5 rounded-full bg-[#7A1C30] text-white text-xs font-semibold uppercase tracking-wider hover:bg-[#5F1424] transition-all shadow-sm flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Orders</span>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

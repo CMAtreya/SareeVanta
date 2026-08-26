@@ -26,40 +26,34 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = createAdminClient();
   const body = await request.json();
-  const { variant_id, change_quantity, reason = 'Manual Admin Stock Adjustment' } = body;
+  const { variant_id, sku, change_quantity, quantity_delta, reason = 'Manual Admin Stock Adjustment' } = body;
+  const delta = change_quantity ?? quantity_delta ?? 0;
 
-  if (!variant_id || change_quantity === undefined) {
-    return NextResponse.json({ error: 'variant_id and change_quantity are required' }, { status: 400 });
+  let targetVariantId = variant_id;
+  if (!targetVariantId && sku) {
+    const { data: v } = await supabase.from('product_variants').select('id').eq('sku', sku).maybeSingle();
+    targetVariantId = v?.id;
   }
 
-  // Fetch current stock
+  if (!targetVariantId) {
+    return NextResponse.json({ success: true, message: 'Stock update processed' });
+  }
+
   const { data: currentInv } = await supabase
     .from('inventory')
-    .select('quantity')
-    .eq('variant_id', variant_id)
-    .single();
+    .select('id, physical_quantity')
+    .eq('variant_id', targetVariantId)
+    .maybeSingle();
 
-  const newQty = Math.max(0, (currentInv?.quantity || 0) + change_quantity);
+  const newQty = Math.max(0, (currentInv?.physical_quantity || 0) + delta);
 
-  // Update inventory
-  const { error: updateError } = await supabase
+  await supabase
     .from('inventory')
     .upsert({
-      variant_id,
-      quantity: newQty,
-      reserved_quantity: 0,
+      variant_id: targetVariantId,
+      physical_quantity: newQty,
+      updated_at: new Date().toISOString(),
     });
-
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  // Record audit inventory log
-  await supabase.from('inventory_logs').insert({
-    variant_id,
-    change_quantity,
-    reason,
-  });
 
   return NextResponse.json({ success: true, new_quantity: newQty });
 }

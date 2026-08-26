@@ -209,7 +209,7 @@ export default function Header() {
 
       {/* 2. MAIN HEADER ROW (Glassmorphism, Centered Scrolling Search Pill, Action Icons) */}
       <div
-        className={`w-full transition-all duration-300 ${
+        className={`w-full relative z-40 transition-all duration-300 ${
           isScrolled
             ? 'bg-[#FAF3E4]/90 backdrop-blur-md shadow-sm border-b border-[#C87F4A]/25'
             : 'bg-[#FAF3E4]/95 backdrop-blur-md border-b border-[#C87F4A]/20'
@@ -549,7 +549,7 @@ export default function Header() {
       </div>
 
       {/* 3. BOTTOM CATEGORY NAVIGATION BAR (Glassmorphic 4-Category Bar) */}
-      <nav className="hidden lg:block w-full bg-[#FAF3E4]/85 backdrop-blur-md border-b border-[#C87F4A]/15 py-2.5">
+      <nav className="hidden lg:block w-full relative z-20 bg-[#FAF3E4]/85 backdrop-blur-md border-b border-[#C87F4A]/15 py-2.5">
         <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
           <ul className="flex items-center justify-center gap-10 xl:gap-14 text-xs font-sans font-semibold tracking-wide uppercase text-stone-800">
             {/* 1. Shop by Category (Comprehensive Mega-Menu - 4 Columns: Weave, Fabric, Occasion, Pattern) */}

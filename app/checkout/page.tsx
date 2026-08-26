@@ -50,7 +50,7 @@ const initialSavedAddresses: SavedAddress[] = [];
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, cartSubtotalINR, cartTotalINR, appliedCoupon, couponDiscountINR, currency } = useCart();
+  const { cart, cartSubtotalINR, cartTotalINR, appliedCoupon, couponDiscountINR, currency, clearCart } = useCart();
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
@@ -330,6 +330,7 @@ export default function CheckoutPage() {
             : 'Cash on Delivery',
       });
 
+      clearCart();
       setTimeout(() => {
         setIsSubmittingOrder(false);
         setCurrentStep(4);

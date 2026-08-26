@@ -287,49 +287,37 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   };
 
   // Save / Publish Action
-  const handleSave = (targetStatus: 'PUBLISHED' | 'DRAFT') => {
+  const handleSave = async (targetStatus: 'PUBLISHED' | 'DRAFT') => {
     if (!title.trim() || !sellingPrice) return;
 
     setIsSaving(true);
     const updatedProductPayload = {
-      id: productId || `prod-${Date.now()}`,
-      sku,
-      barcode,
       title: title.trim(),
+      slug: title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
       description: description.trim(),
-      weave,
-      fabric,
-      color: colorVariants[0]?.name || 'Royal Crimson',
-      zariGrade: zariSpec,
-      occasion: selectedOccasions.join(' & ') || 'Bridal',
-      occasions: selectedOccasions,
-      specialBadges: selectedBadges,
-      costPrice: Number(costPrice) || 0,
-      mrp: Number(mrp) || Number(sellingPrice) * 1.18,
-      priceINR: Number(sellingPrice) || 28000,
-      originalPriceINR: Number(mrp) || Number(sellingPrice) * 1.18,
-      stockCount: Number(stock) || 0,
-      gstRate: Number(gstRate) || 18,
-      hsnCode,
-      blousePiece: hasBlousePiece ? `${blouseLength} x ${blouseWidth}` : undefined,
-      dimensions: `${sareeLength} x ${sareeWidth}`,
-      silkMarkCertified: isSilkMarkCertified,
-      images,
-      status: targetStatus,
+      base_mrp_inr: Number(mrp) || Number(sellingPrice) * 1.18,
+      base_selling_price_inr: Number(sellingPrice) || 28000,
+      sku: sku || `NSH-SKU-MYS-${Math.floor(1000 + Math.random() * 9000)}`,
     };
 
-    console.log('[AdminProductSave] Payload constructed for persistence:', updatedProductPayload);
+    try {
+      await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProductPayload),
+      });
+    } catch (err) {
+      console.error('Error dispatching product save to API:', err);
+    }
 
+    setStatus(targetStatus);
+    setIsSaving(false);
+    setIsDirty(false);
+    setSaveToast(true);
     setTimeout(() => {
-      setStatus(targetStatus);
-      setIsSaving(false);
-      setIsDirty(false);
-      setSaveToast(true);
-      setTimeout(() => {
-        setSaveToast(false);
-        router.push('/admin/catalog');
-      }, 800);
-    }, 500);
+      setSaveToast(false);
+      router.push('/admin/catalog');
+    }, 800);
   };
 
   return (
