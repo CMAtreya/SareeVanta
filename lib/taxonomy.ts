@@ -6,10 +6,11 @@ export interface SareeCollection {
   description: string;
   coverImage: string;
   badge: string;
-  collectionType: 'Rule-Based' | 'Curated';
+  collectionType?: 'Rule-Based' | 'Curated';
   assignedSkuCount: number;
   isFeaturedOnHomepage: boolean;
   status: 'ACTIVE' | 'DRAFT';
+  validDateRange?: string;
   assignedSkus: string[];
 }
 
@@ -23,6 +24,10 @@ export interface TaxonomyTerm {
   description: string;
   productCount: number;
   status: 'ACTIVE' | 'INACTIVE';
+  isGiTagged?: boolean;
+  originState?: string;
+  isSilkMarkCertified?: boolean;
+  silkMarkCertified?: boolean;
 }
 
 export const INITIAL_COLLECTIONS: SareeCollection[] = [

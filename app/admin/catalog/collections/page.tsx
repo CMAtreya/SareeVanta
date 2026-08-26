@@ -203,7 +203,7 @@ export default function CollectionsTaxonomyPage() {
       code: taxCode.trim().toUpperCase(),
       originState: taxCategory === 'WEAVE' ? taxOrigin : undefined,
       isGiTagged: taxCategory === 'WEAVE' ? taxGi : undefined,
-      silkMarkCertified: taxCategory === 'WEAVE' ? taxSilkMark : undefined,
+      isSilkMarkCertified: taxCategory === 'WEAVE' ? taxSilkMark : undefined,
       description: taxDesc.trim(),
       productCount: 0,
       status: 'ACTIVE',
@@ -606,8 +606,6 @@ export default function CollectionsTaxonomyPage() {
                               ? 'bg-purple-50 text-purple-900 border border-purple-200'
                               : term.category === 'ZARI'
                               ? 'bg-yellow-50 text-yellow-900 border border-yellow-200'
-                              : term.category === 'LOOM'
-                              ? 'bg-blue-50 text-blue-900 border border-blue-200'
                               : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
                           }`}
                         >
