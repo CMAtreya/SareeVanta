@@ -1,0 +1,103 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  const supabase = createAdminClient();
+
+  const { data: products, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      weavings(name),
+      fabrics(name),
+      occasions(name),
+      patterns(name),
+      border_stylings(name),
+      zari_specifications(name),
+      product_variants(*, colors(name, hex_code))
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ products: products || [] });
+}
+
+export async function POST(request: Request) {
+  const supabase = createAdminClient();
+  const body = await request.json();
+
+  const {
+    title,
+    slug,
+    description,
+    base_mrp_inr,
+    base_selling_price_inr,
+    weaving_id,
+    fabric_id,
+    occasion_id,
+    pattern_id,
+    border_styling_id,
+    zari_specification_id,
+    sku,
+    color_id,
+  } = body;
+
+  if (!title || !slug || !base_selling_price_inr) {
+    return NextResponse.json({ error: 'Title, slug, and selling price are required' }, { status: 400 });
+  }
+
+  const baseMrpPaise = Math.round((base_mrp_inr || base_selling_price_inr) * 100);
+  const baseSellingPricePaise = Math.round(base_selling_price_inr * 100);
+
+  // 1. Create Product
+  const { data: product, error: productError } = await supabase
+    .from('products')
+    .insert({
+      title,
+      slug,
+      description: description || '',
+      base_mrp_paise: baseMrpPaise,
+      base_selling_price_paise: baseSellingPricePaise,
+      weaving_id: weaving_id || null,
+      fabric_id: fabric_id || null,
+      occasion_id: occasion_id || null,
+      pattern_id: pattern_id || null,
+      border_styling_id: border_styling_id || null,
+      zari_specification_id: zari_specification_id || null,
+      is_published: true,
+    })
+    .select('id')
+    .single();
+
+  if (productError) {
+    return NextResponse.json({ error: productError.message }, { status: 500 });
+  }
+
+  // 2. Create Default Variant & Initial Inventory
+  if (sku && color_id) {
+    const { data: variant } = await supabase
+      .from('product_variants')
+      .insert({
+        product_id: product.id,
+        color_id,
+        sku,
+        price_paise: baseSellingPricePaise,
+        mrp_paise: baseMrpPaise,
+      })
+      .select('id')
+      .single();
+
+    if (variant) {
+      await supabase.from('inventory').insert({
+        variant_id: variant.id,
+        quantity: body.initial_stock || 10,
+        reserved_quantity: 0,
+      });
+    }
+  }
+
+  return NextResponse.json({ success: true, product_id: product.id });
+}

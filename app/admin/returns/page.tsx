@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   RotateCcw,
@@ -196,11 +196,30 @@ const INITIAL_RETURNS: ReturnRequestItem[] = [
 ];
 
 export default function ReverseLogisticsPage() {
-  const [returns, setReturns] = useState<ReturnRequestItem[]>(INITIAL_RETURNS);
+  const [returns, setReturns] = useState<ReturnRequestItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeQueueTab, setActiveQueueTab] = useState<ReturnStatus | 'ALL'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectingReturn, setInspectingReturn] = useState<ReturnRequestItem | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Fetch live return claims strictly from API (No mock data fallback)
+  useEffect(() => {
+    fetch('/api/returns')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.claims && Array.isArray(data.claims)) {
+          setReturns(data.claims);
+        } else {
+          setReturns([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching live return claims:', err);
+        setReturns([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   // Inspection Form State
   const [qcSilkMark, setQcSilkMark] = useState(true);
@@ -377,7 +396,7 @@ export default function ReverseLogisticsPage() {
             )}
           </div>
           <p className="text-xs text-stone-500 font-mono mt-0.5">
-            Reverse Pickup Courier AWBs, Central Hub Silk Mark QC Inspection & Instant Refunds
+            Reverse Pickup Courier AWBs, Verification Pending & Refund Processing
           </p>
         </div>
       </div>
@@ -415,10 +434,10 @@ export default function ReverseLogisticsPage() {
               urgent: counts.RETURN_REQUESTED > 0,
             },
             { key: 'PICKUP_SCHEDULED', label: 'Pickup Scheduled', count: counts.PICKUP_SCHEDULED },
-            { key: 'IN_TRANSIT', label: 'In-Transit to Hub', count: counts.IN_TRANSIT },
-            { key: 'QC_PENDING', label: 'QC Inspection Pending', count: counts.QC_PENDING },
+            { key: 'IN_TRANSIT', label: 'In-Transit', count: counts.IN_TRANSIT },
+            { key: 'QC_PENDING', label: 'Verification Pending', count: counts.QC_PENDING },
             { key: 'REFUND_PROCESSED', label: 'Refund Processed', count: counts.REFUND_PROCESSED },
-            { key: 'REJECTED', label: 'Rejected', count: counts.REJECTED },
+            { key: 'REJECTED', label: 'Return Failed / Claim Closed', count: counts.REJECTED },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -451,8 +470,8 @@ export default function ReverseLogisticsPage() {
       {/* 3. RETURNS QUEUE DATA TABLE                        */}
       {/* ================================================== */}
       <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-sans">
+        <div className="overflow-x-auto max-w-full">
+          <table className="min-w-[900px] w-full text-left text-xs font-sans">
             <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[10px] uppercase">
               <tr>
                 <th className="p-3.5">Return & Order File</th>

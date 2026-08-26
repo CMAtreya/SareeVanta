@@ -23,6 +23,7 @@ export interface Product {
   weave: string;
   fabric: string;
   occasion: string;
+  occasions?: string[];
   priceINR: number;
   originalPriceINR?: number;
   rating: number;
@@ -38,6 +39,7 @@ export interface Product {
   isNew?: boolean;
   isBridal?: boolean;
   isBestseller?: boolean;
+  specialBadges?: string[];
   description: string;
   artisanCluster: string;
   silkMarkCertified: boolean;
@@ -535,3 +537,12 @@ export const occasionFilters = [
   'Daily Classic',
   'Temple Visits',
 ];
+
+export function getProductBySlug(slug: string): Product | undefined {
+  return products.find((p) => p.slug === slug || p.id === slug);
+}
+
+export function getProducts(): Product[] {
+  return products;
+}
+

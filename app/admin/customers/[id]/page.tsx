@@ -188,23 +188,13 @@ export default function Customer360ProfilePage({
                 {customer.name}
               </h1>
               {/* VIP / Bridal Segment Tag */}
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
-                  customer.tier === 'ROYAL_HERITAGE_VIP'
-                    ? 'bg-[#FAF3E4] text-[#7A1C30] border-[#C87F4A]/30'
-                    : customer.tier === 'BRIDAL_TROUSSEAU'
-                    ? 'bg-rose-50 text-rose-800 border-rose-200'
-                    : customer.tier === 'GOLD_PATRON'
-                    ? 'bg-amber-50 text-amber-800 border-amber-200'
-                    : 'bg-stone-100 text-stone-700 border-stone-200'
-                }`}
-              >
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border bg-[#FAF3E4] text-[#7A1C30] border-[#C87F4A]/30">
                 <Crown className="w-3 h-3 text-[#C87F4A]" />
-                <span>{customer.tier.replace(/_/g, ' ')}</span>
+                <span>Verified Client</span>
               </span>
             </div>
             <p className="text-[11px] font-mono text-stone-500 mt-0.5">
-              Patron ID: {customer.id} • Active {customer.lastActive} • Silk Loyalty VIP Tier
+              Client ID: {customer.id} • Active {customer.lastActive}
             </p>
           </div>
         </div>
@@ -301,21 +291,7 @@ export default function Customer360ProfilePage({
               </div>
             </div>
 
-            {/* Bridal Milestone Tag */}
-            {customer.bridalTag && (
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-1 text-amber-950">
-                <div className="font-bold text-xs flex items-center gap-1.5 text-amber-800">
-                  <Crown className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Bridal Milestone Inscription</span>
-                </div>
-                <div className="font-semibold">{customer.bridalTag}</div>
-                {customer.weddingDate && (
-                  <div className="text-[11px] font-mono text-amber-700">
-                    Target Event: {customer.weddingDate}
-                  </div>
-                )}
-              </div>
-            )}
+
 
             {/* Direct Contact Details */}
             <div className="space-y-2 pt-2 border-t border-slate-100 font-mono text-xs text-slate-700">

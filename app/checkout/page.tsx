@@ -30,6 +30,8 @@ import {
   Crown,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
+import { createClient } from '@/lib/supabase/client';
+import { sanitizePincode, validatePincode } from '@/lib/pincode';
 
 interface SavedAddress {
   id: string;
@@ -44,46 +46,72 @@ interface SavedAddress {
   isDefault?: boolean;
 }
 
-const initialSavedAddresses: SavedAddress[] = [
-  {
-    id: 'addr-1',
-    type: 'Home',
-    name: 'Ananya S. Rao',
-    phone: '+91 98860 12345',
-    addressLine1: '42, Royal Palms Residency, Sayyaji Rao Road',
-    addressLine2: 'Near Mysore Palace North Gate',
-    city: 'Mysuru',
-    state: 'Karnataka',
-    pincode: '570001',
-    isDefault: true,
-  },
-  {
-    id: 'addr-2',
-    type: 'Work',
-    name: 'Ananya S. Rao',
-    phone: '+91 98860 12345',
-    addressLine1: 'Level 4, Prestige Meridian, MG Road',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pincode: '560001',
-  },
-];
+const initialSavedAddresses: SavedAddress[] = [];
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartSubtotalINR, cartTotalINR, appliedCoupon, couponDiscountINR, currency } = useCart();
 
-  // 4-Step Checkout Flow:
-  // 1 = Delivery Address
-  // 2 = Read-Only Order Review (placed before payment details)
-  // 3 = Payment Details & Gateway
-  // 4 = Order Confirmation
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Address State
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>(initialSavedAddresses);
-  const [selectedAddressId, setSelectedAddressId] = useState<string>(initialSavedAddresses[0].id);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('');
   const [isAddingNewAddress, setIsAddingNewAddress] = useState(false);
+
+  useEffect(() => {
+    async function checkAuthAndLoadAddresses() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login?redirect=/checkout');
+        return;
+      }
+
+      const meta = user.user_metadata || {};
+      const userFullName =
+        meta.full_name ||
+        meta.name ||
+        (meta.given_name ? `${meta.given_name} ${meta.family_name || ''}`.trim() : '') ||
+        '';
+      const userPhone = meta.phone || user.phone || '';
+
+      setNewAddress((prev) => ({
+        ...prev,
+        name: prev.name || userFullName,
+        phone: prev.phone || userPhone,
+      }));
+
+      const { data: addresses } = await supabase
+        .from('customer_addresses')
+        .select('*')
+        .eq('customer_id', user.id);
+
+      if (addresses && addresses.length > 0) {
+        const formatted = addresses.map((a: any) => ({
+          id: a.id,
+          type: (a.label || 'Home') as 'Home' | 'Work',
+          name: a.recipient_name,
+          phone: a.phone,
+          addressLine1: a.address_line_1,
+          addressLine2: a.address_line_2,
+          city: a.city,
+          state: a.state,
+          pincode: a.postal_code,
+          isDefault: a.is_default,
+        }));
+        setSavedAddresses(formatted);
+        const defaultAddr = formatted.find((a) => a.isDefault) || formatted[0];
+        setSelectedAddressId(defaultAddr.id);
+      } else {
+        setSavedAddresses([]);
+        setIsAddingNewAddress(true);
+      }
+    }
+
+    checkAuthAndLoadAddresses();
+  }, [router]);
 
   // New Address Form State
   const [newAddress, setNewAddress] = useState({
@@ -177,15 +205,51 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleSaveNewAddress = (e: React.FormEvent) => {
+  const handleSaveNewAddress = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validatePincode(newAddress.pincode)) {
+      alert('PIN Code must be exactly 6 digits (starting with 1-9).');
+      return;
+    }
     if (!serviceability.serviceable) return;
 
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const formattedPhone = newAddress.phone.startsWith('+91')
+      ? newAddress.phone
+      : `+91 ${newAddress.phone.replace(/\D/g, '')}`;
+
+    let newId = `addr-${Date.now()}`;
+
+    if (user) {
+      const { data } = await supabase
+        .from('customer_addresses')
+        .insert({
+          customer_id: user.id,
+          label: 'Home',
+          recipient_name: newAddress.name,
+          phone: formattedPhone,
+          address_line_1: newAddress.addressLine1,
+          address_line_2: newAddress.addressLine2,
+          city: newAddress.city,
+          state: newAddress.state,
+          postal_code: newAddress.pincode,
+          is_default: savedAddresses.length === 0,
+        })
+        .select()
+        .single();
+
+      if (data) {
+        newId = data.id;
+      }
+    }
+
     const created: SavedAddress = {
-      id: `addr-${Date.now()}`,
-      type: newAddress.type,
+      id: newId,
+      type: 'Home',
       name: newAddress.name,
-      phone: newAddress.phone,
+      phone: formattedPhone,
       addressLine1: newAddress.addressLine1,
       addressLine2: newAddress.addressLine2,
       city: newAddress.city,
@@ -193,7 +257,7 @@ export default function CheckoutPage() {
       pincode: newAddress.pincode,
     };
 
-    setSavedAddresses([...savedAddresses, created]);
+    setSavedAddresses((prev) => [...prev, created]);
     setSelectedAddressId(created.id);
     setIsAddingNewAddress(false);
   };
@@ -407,11 +471,11 @@ export default function CheckoutPage() {
         {/* ==================================================== */}
         {/* MAIN 2-COLUMN CHECKOUT LAYOUT                        */}
         {/* ==================================================== */}
-        <div className={`max-w-6xl mx-auto ${currentStep === 4 ? '' : 'grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start'}`}>
+        <div className={`max-w-6xl mx-auto ${currentStep === 4 || currentStep === 2 ? '' : 'grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start'}`}>
           {/* ==================================================== */}
           {/* LEFT: STEP CONTENT                                   */}
           {/* ==================================================== */}
-          <div className={currentStep === 4 ? 'w-full max-w-4xl mx-auto' : 'lg:col-span-7'}>
+          <div className={currentStep === 4 || currentStep === 2 ? 'w-full max-w-3xl mx-auto' : 'lg:col-span-7'}>
             <AnimatePresence mode="wait">
               {/* =================================================== */}
               {/* STEP 1: DELIVERY ADDRESS                            */}
@@ -560,7 +624,12 @@ export default function CheckoutPage() {
                               required
                               maxLength={6}
                               value={newAddress.pincode}
-                              onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                              onChange={(e) => setNewAddress({ ...newAddress, pincode: sanitizePincode(e.target.value) })}
+                              onPaste={(e) => {
+                                e.preventDefault();
+                                const pasted = e.clipboardData.getData('text');
+                                setNewAddress({ ...newAddress, pincode: sanitizePincode(pasted) });
+                              }}
                               placeholder="570001"
                               className="w-full px-3.5 py-2.5 bg-[#FAF3E4]/50 border border-stone-300 rounded-xl text-xs font-mono focus:outline-none focus:border-[#C87F4A]"
                             />
@@ -655,18 +724,19 @@ export default function CheckoutPage() {
               )}
 
               {/* =================================================== */}
-              {/* STEP 2: READ-ONLY ORDER REVIEW (BEFORE PAYMENT)     */}
+              {/* STEP 2: SINGLE INTEGRATED ORDER REVIEW CARD          */}
               {/* =================================================== */}
               {currentStep === 2 && (
                 <motion.div
                   key="step-2-review"
-                  initial={{ opacity: 0, x: -15 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 15 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
                   className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C87F4A]/25 shadow-silk space-y-6"
                 >
-                  <div className="flex items-center justify-between pb-3 border-b border-[#C87F4A]/20">
+                  {/* Card Header */}
+                  <div className="pb-4 border-b border-[#C87F4A]/20 flex items-center justify-between">
                     <div>
                       <button
                         type="button"
@@ -674,23 +744,18 @@ export default function CheckoutPage() {
                         className="text-xs font-mono text-[#C87F4A] hover:underline flex items-center gap-1 mb-1 cursor-pointer"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
-                        <span>Back to Address</span>
+                        <span>Back to Address Selection</span>
                       </button>
                       <span className="text-[10px] font-mono uppercase tracking-widest text-[#7A1C30] font-bold block mb-0.5">
-                        Step 2 of 4 • Read-Only Final Review
+                        Step 2 of 4 • Final Review
                       </span>
-                      <h2 className="font-editorial text-2xl font-bold text-[#1F1B16]">
-                        Review Your Heirloom Order
+                      <h2 className="font-editorial text-2xl sm:text-3xl font-bold text-[#1F1B16]">
+                        Review Your Order
                       </h2>
                     </div>
-
-                    <span className="text-xs font-mono text-[#7A1C30] bg-[#FAF3E4] px-3 py-1 rounded-full font-bold border border-[#C87F4A]/30 flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-[#C87F4A]" />
-                      <span>Ready for Payment</span>
-                    </span>
                   </div>
 
-                  {/* 1. Read-Only Delivery Address Box */}
+                  {/* 1. Delivery Address Summary */}
                   <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF3E4]/50 border border-[#C87F4A]/20 space-y-2 relative">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-mono uppercase tracking-wider text-[#773D21] font-bold flex items-center gap-1.5">
@@ -700,7 +765,7 @@ export default function CheckoutPage() {
                       <button
                         type="button"
                         onClick={() => setCurrentStep(1)}
-                        className="text-[11px] font-mono text-[#7A1C30] hover:underline font-semibold cursor-pointer"
+                        className="text-xs font-mono text-[#7A1C30] hover:underline font-semibold cursor-pointer"
                       >
                         Edit Address
                       </button>
@@ -718,42 +783,44 @@ export default function CheckoutPage() {
                         Contact: {selectedAddress.phone}
                       </div>
                     </div>
-                    <div className="mt-2 pt-2 border-t border-[#C87F4A]/15 flex items-center gap-1.5 text-[11px] font-sans text-emerald-800 font-semibold">
-                      <Truck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Express BlueDart Air • Delivery by {serviceability.estimatedDelivery}</span>
-                    </div>
+                    {serviceability.estimatedDelivery && (
+                      <div className="mt-2 pt-2 border-t border-[#C87F4A]/15 flex items-center gap-1.5 text-[11px] font-sans text-emerald-800 font-semibold">
+                        <Truck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Express Air Delivery • Estimated Delivery: {serviceability.estimatedDelivery}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* 2. Read-Only Curated Items Showcase */}
+                  {/* 2. Order Items */}
                   <div className="space-y-3">
                     <span className="text-[11px] font-mono uppercase tracking-wider text-stone-700 font-bold block">
-                      Curated Sarees in this Drape Vault ({cart.length})
+                      Order Items ({cart.length})
                     </span>
-                    <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                    <div className="space-y-3">
                       {cart.map((item) => (
                         <div
                           key={item.product.id}
-                          className="p-3 rounded-2xl border border-stone-200 bg-white flex items-center justify-between gap-3"
+                          className="p-3.5 rounded-2xl border border-stone-200 bg-white flex items-center justify-between gap-4"
                         >
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-center gap-3.5 min-w-0">
                             <img
                               src={item.product.images[0]}
                               alt={item.product.title}
-                              className="w-12 h-16 rounded-lg object-cover border border-stone-200 flex-shrink-0"
+                              className="w-14 h-18 rounded-xl object-cover border border-stone-200 flex-shrink-0"
                             />
-                            <div className="truncate">
-                              <h4 className="text-xs font-editorial font-bold text-[#1F1B16] truncate">
+                            <div className="truncate space-y-0.5">
+                              <h4 className="text-xs sm:text-sm font-editorial font-bold text-[#1F1B16] truncate">
                                 {item.product.title}
                               </h4>
-                              <span className="text-[10px] font-mono text-[#773D21] block">
-                                Qty: {item.quantity} • Hand-Hemmed Fall & Pico Included
+                              <span className="text-[11px] font-mono text-stone-600 block">
+                                Quantity: {item.quantity}
                               </span>
-                              <span className="text-[10px] font-sans text-stone-500">
-                                Certified Silkmark Seal Attached
+                              <span className="text-[10px] font-sans text-emerald-700 font-semibold block">
+                                ✓ Fall & Pico Included
                               </span>
                             </div>
                           </div>
-                          <div className="text-right flex-shrink-0 font-mono text-xs font-bold text-[#1F1B16]">
+                          <div className="text-right flex-shrink-0 font-mono text-xs sm:text-sm font-bold text-[#1F1B16]">
                             {formatPrice((item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity)}
                           </div>
                         </div>
@@ -761,23 +828,48 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* 3. Royal Patron Guarantee Banner */}
-                  <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 leading-relaxed font-sans">
-                    <p className="flex items-start gap-2">
-                      <ShieldCheck className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
-                      <span>
-                        Your heirloom order is protected by the <strong>Neel Saree House Royal Guarantee</strong>. Each drape is individually inspected by master weavers in Mysuru before dispatch.
+                  {/* 3. Cost & Subtotal Breakdown */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF3E4]/30 border border-[#C87F4A]/20 space-y-2.5 text-xs font-sans">
+                    <div className="flex justify-between text-stone-600">
+                      <span>Subtotal</span>
+                      <span className="font-mono">{formatPrice(cartSubtotalINR)}</span>
+                    </div>
+
+                    {appliedCoupon && (
+                      <div className="flex justify-between text-emerald-800 font-semibold">
+                        <span>Discount ({appliedCoupon.code})</span>
+                        <span className="font-mono">-{formatPrice(couponDiscountINR)}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between text-stone-600">
+                      <span>Fall & Pico Stitching</span>
+                      <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">Complimentary</span>
+                    </div>
+
+                    <div className="flex justify-between text-stone-600">
+                      <span>Delivery</span>
+                      <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">Free</span>
+                    </div>
+
+                    <div className="pt-3 border-t border-[#C87F4A]/20 flex justify-between font-bold text-sm text-[#1F1B16]">
+                      <span>Total Amount</span>
+                      <span className="font-mono text-base text-[#7A1C30]">
+                        {formatPrice(cartTotalINR)}
                       </span>
-                    </p>
+                    </div>
+                    <span className="text-[10px] text-stone-400 font-sans block text-right">
+                      Includes 18% Handloom GST
+                    </span>
                   </div>
 
-                  {/* Proceed to Step 3 (Payment Details) Button */}
+                  {/* Proceed to Step 3 (Payment) Button */}
                   <button
                     type="button"
                     onClick={handleContinueToPayment}
                     className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-3.5 rounded-xl text-xs font-sans font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-md hover:-translate-y-0.5 cursor-pointer"
                   >
-                    <span>Proceed to Payment Details (Step 3)</span>
+                    <span>Proceed to Payment Options (Step 3)</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </motion.div>
@@ -1165,15 +1257,15 @@ export default function CheckoutPage() {
           </div>
 
           {/* ==================================================== */}
-          {/* RIGHT: CONDENSED ORDER SUMMARY (STICKY ACROSS STEPS) */}
+          {/* RIGHT: CONDENSED ORDER SUMMARY (STEP 1 & 3 ONLY)     */}
           {/* ==================================================== */}
-          {currentStep !== 4 && (
+          {(currentStep === 1 || currentStep === 3) && (
             <div className="lg:col-span-5">
               <div className="sticky top-24 bg-white rounded-3xl p-6 sm:p-7 border border-[#C87F4A]/25 shadow-silk space-y-5">
                 <h3 className="font-editorial text-xl font-bold text-[#1F1B16] pb-3 border-b border-[#C87F4A]/20 flex items-center justify-between">
-                  <span>Heirloom Curations</span>
+                  <span>Order Summary</span>
                   <span className="text-xs font-mono text-[#773D21] font-semibold">
-                    {cart.length} {cart.length === 1 ? 'Piece' : 'Pieces'}
+                    {cart.length} {cart.length === 1 ? 'Item' : 'Items'}
                   </span>
                 </h3>
 
@@ -1209,39 +1301,39 @@ export default function CheckoutPage() {
                 {/* Price Breakdown */}
                 <div className="pt-4 border-t border-[#C87F4A]/20 space-y-2 text-xs font-sans">
                   <div className="flex justify-between text-stone-600">
-                    <span>Loom Subtotal</span>
+                    <span>Subtotal</span>
                     <span className="font-mono">{formatPrice(cartSubtotalINR)}</span>
                   </div>
 
                   {appliedCoupon && (
                     <div className="flex justify-between text-emerald-800 font-semibold">
-                      <span>Privilege Voucher ({appliedCoupon.code})</span>
+                      <span>Discount ({appliedCoupon.code})</span>
                       <span className="font-mono">-{formatPrice(couponDiscountINR)}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between text-stone-600">
-                    <span>Ready-to-Drape Fall & Pico Stitching</span>
+                    <span>Fall & Pico Stitching</span>
                     <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">
                       Complimentary
                     </span>
                   </div>
 
                   <div className="flex justify-between text-stone-600">
-                    <span>Express Insured BlueDart Air</span>
+                    <span>Express Air Delivery</span>
                     <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">
                       Free
                     </span>
                   </div>
 
                   <div className="pt-3 border-t border-[#C87F4A]/20 flex justify-between font-bold text-sm text-[#1F1B16]">
-                    <span>Total Investment</span>
+                    <span>Total Amount</span>
                     <span className="font-mono text-base text-[#7A1C30]">
                       {formatPrice(cartTotalINR)}
                     </span>
                   </div>
                   <span className="text-[10px] text-stone-400 font-sans block text-right">
-                    Includes 18% Handloom GST & Insured Transit Protection
+                    Includes 18% Handloom GST
                   </span>
                 </div>
 

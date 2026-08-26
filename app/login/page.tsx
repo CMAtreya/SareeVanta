@@ -24,16 +24,16 @@ import {
   Check,
 } from 'lucide-react';
 import GoogleAuthModal, { GoogleProfile } from '@/components/ecommerce/GoogleAuthModal';
+import { createClient } from '@/lib/supabase/client';
 
 function LoginCardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const redirectUrl = searchParams.get('redirect') || '/account';
 
-  // Login Mode: 'otp' | 'password'
-  const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('9886012345');
+  // Login Mode: 'password' | 'otp'
+  const [authMode, setAuthMode] = useState<'password' | 'otp'>('password');
+  const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -44,55 +44,25 @@ function LoginCardContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
 
-  const handleGoogleAccountSelect = async (account: GoogleProfile) => {
-    setIsLoading(true);
-    setFeedback(null);
-    setIsGoogleModalOpen(false);
-
-    try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: account.email,
-          name: account.name,
-          avatar: account.avatar,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setFeedback({
-          type: 'success',
-          message: `Signed in with Google as ${account.name}! Redirecting...`,
-        });
-        setTimeout(() => router.push(redirectUrl), 600);
-      } else {
-        setFeedback({ type: 'error', message: data.message || 'Google sign in failed.' });
-      }
-    } catch (err) {
-      setTimeout(() => router.push(redirectUrl), 600);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Test Patron Profiles for 1-Click Evaluation
-  const testProfiles = [
-    { name: 'Ananya S. Rao', phone: '9886012345', email: 'ananya.rao@example.com', role: 'Royal Loom Patron' },
-    { name: 'Kavya Sundaram', phone: '9876543210', email: 'kavya.s@example.com', role: 'VIP Collector' },
-  ];
-
-  const selectTestProfile = (p: (typeof testProfiles)[0]) => {
-    setPhone(p.phone);
-    setEmail(p.email);
-    setPassword('SilkHouse@2026');
-    setFeedback({
-      type: 'success',
-      message: `Profile loaded: ${p.name} (${p.role})`,
-    });
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setFeedback(null);
+    try {
+      const supabase = createClient();
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const callbackUrl = `${origin}/api/auth/callback?next=${encodeURIComponent(redirectUrl)}`;
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl,
+        },
+      });
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Google sign in failed.' });
+      setIsLoading(false);
+    }
   };
 
   // Countdown timer for OTP
@@ -106,11 +76,11 @@ function LoginCardContent() {
     return () => clearInterval(timer);
   }, [step, countdown]);
 
-  // 1. Request OTP
+  // 1. Request Email OTP
   const handleRequestOtp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!phone.trim() || phone.length < 10) {
-      setFeedback({ type: 'error', message: 'Please enter a valid 10-digit mobile number.' });
+    if (!email.trim() || !email.includes('@')) {
+      setFeedback({ type: 'error', message: 'Please enter a valid email address.' });
       return;
     }
 
@@ -118,28 +88,21 @@ function LoginCardContent() {
     setFeedback(null);
 
     try {
-      const res = await fetch('/api/auth/otp/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({ email });
 
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (error) {
+        setFeedback({ type: 'error', message: error.message || 'Failed to send login code.' });
+      } else {
         setStep('otp');
         setCountdown(30);
-        setOtpValues(['1', '2', '3', '4', '5', '6']); // Demo prefill
         setFeedback({
           type: 'success',
-          message: data.message || `OTP sent to +91 ${phone}`,
+          message: `Login OTP code dispatched to ${email}`,
         });
-      } else {
-        setFeedback({ type: 'error', message: data.message || 'Failed to send OTP.' });
       }
-    } catch (err) {
-      setStep('otp');
-      setCountdown(30);
-      setOtpValues(['1', '2', '3', '4', '5', '6']);
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Failed to send OTP.' });
     } finally {
       setIsLoading(false);
     }
@@ -165,12 +128,12 @@ function LoginCardContent() {
     }
   };
 
-  // 3. Verify OTP
+  // 3. Verify Email OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const fullOtp = otpValues.join('');
-    if (fullOtp.length !== 6) {
-      setFeedback({ type: 'error', message: 'Please enter all 6 digits of the OTP.' });
+    const token = otpValues.join('');
+    if (token.length !== 6) {
+      setFeedback({ type: 'error', message: 'Please enter all 6 digits of the OTP code.' });
       return;
     }
 
@@ -178,21 +141,21 @@ function LoginCardContent() {
     setFeedback(null);
 
     try {
-      const res = await fetch('/api/auth/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp: fullOtp }),
+      const supabase = createClient();
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'email',
       });
 
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setFeedback({ type: 'success', message: 'Authentication verified! Welcome back to Neel Saree House.' });
-        setTimeout(() => router.push(redirectUrl), 600);
+      if (error) {
+        setFeedback({ type: 'error', message: error.message || 'Invalid or expired OTP code.' });
       } else {
-        setFeedback({ type: 'error', message: data.message || 'Invalid OTP code. Please try again.' });
+        setFeedback({ type: 'success', message: 'Authentication verified! Redirecting...' });
+        setTimeout(() => router.push(redirectUrl), 600);
       }
-    } catch (err) {
-      setTimeout(() => router.push(redirectUrl), 600);
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Verification error.' });
     } finally {
       setIsLoading(false);
     }
@@ -209,11 +172,24 @@ function LoginCardContent() {
     setIsLoading(true);
     setFeedback(null);
 
-    setTimeout(() => {
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setFeedback({ type: 'error', message: error.message || 'Invalid email or password.' });
+      } else {
+        setFeedback({ type: 'success', message: 'Signed in successfully! Redirecting...' });
+        setTimeout(() => router.push(redirectUrl), 600);
+      }
+    } catch (err: any) {
+      setFeedback({ type: 'error', message: err.message || 'Authentication error.' });
+    } finally {
       setIsLoading(false);
-      setFeedback({ type: 'success', message: 'Signed in successfully! Entering your account salon...' });
-      setTimeout(() => router.push(redirectUrl), 600);
-    }, 600);
+    }
   };
 
   return (
@@ -278,7 +254,7 @@ function LoginCardContent() {
                   Welcome to Royal Mysore Heritage
                 </h3>
                 <p className="text-xs text-stone-300 font-sans mt-2 leading-relaxed">
-                  Access your bespoke saree orders, digital Silk Mark certificates, bespoke blouse tailoring archives, and VIP privilege perks.
+                  Access your bespoke saree orders, digital Silk Mark certificates, and bespoke blouse tailoring archives.
                 </p>
               </div>
             </div>
@@ -336,31 +312,11 @@ function LoginCardContent() {
                 </Link>
               </div>
 
-              {/* Fast Test Patron Selector */}
-              <div className="mt-4 p-3 bg-[#FAF3E4]/70 rounded-2xl border border-[#C87F4A]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
-                <span className="font-mono text-[11px] text-[#773D21] font-semibold flex items-center gap-1.5">
-                  <Crown className="w-3.5 h-3.5 text-[#C87F4A]" />
-                  <span>1-Click Test Patron:</span>
-                </span>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  {testProfiles.map((p, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => selectTestProfile(p)}
-                      className="flex-1 sm:flex-none px-2.5 py-1 bg-white hover:bg-[#7A1C30] hover:text-white border border-[#C87F4A]/30 rounded-lg text-[11px] font-sans font-medium transition-all shadow-2xs"
-                    >
-                      {p.name.split(' ')[0]} ({p.role.split(' ')[0]})
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* 1-Click Google OAuth Button */}
               <button
                 type="button"
-                onClick={() => setIsGoogleModalOpen(true)}
-                className="w-full mt-4 flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-stone-300 hover:border-[#7A1C30] hover:bg-[#FAF3E4]/40 bg-white text-stone-800 text-xs font-sans font-bold shadow-xs transition-all cursor-pointer group"
+                onClick={handleGoogleSignIn}
+                className="w-full mt-6 flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-stone-300 hover:border-[#7A1C30] hover:bg-[#FAF3E4]/40 bg-white text-stone-800 text-xs font-sans font-bold shadow-xs transition-all cursor-pointer group"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
@@ -384,30 +340,15 @@ function LoginCardContent() {
               </button>
 
               {/* Divider */}
-              <div className="relative my-4 flex items-center justify-center">
+              <div className="relative my-5 flex items-center justify-center">
                 <div className="w-full border-t border-stone-200" />
                 <span className="absolute bg-white px-3 text-[10px] font-mono uppercase tracking-wider text-stone-400">
-                  or sign in with mobile / email
+                  or sign in with email credentials
                 </span>
               </div>
 
-              {/* Mode Switcher Tabs (OTP vs Password) */}
+              {/* Mode Switcher Tabs (Password vs OTP) */}
               <div className="flex p-1 bg-[#FAF3E4] rounded-xl border border-[#C87F4A]/20">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('otp');
-                    setFeedback(null);
-                  }}
-                  className={`flex-1 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center justify-center gap-1.5 ${
-                    authMode === 'otp'
-                      ? 'bg-white text-[#7A1C30] shadow-xs'
-                      : 'text-stone-600 hover:text-[#1F1B16]'
-                  }`}
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Instant Mobile OTP</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -422,6 +363,21 @@ function LoginCardContent() {
                 >
                   <KeyRound className="w-3.5 h-3.5" />
                   <span>Password Login</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('otp');
+                    setFeedback(null);
+                  }}
+                  className={`flex-1 py-2 rounded-lg text-xs font-sans font-semibold transition-all flex items-center justify-center gap-1.5 ${
+                    authMode === 'otp'
+                      ? 'bg-white text-[#7A1C30] shadow-xs'
+                      : 'text-stone-600 hover:text-[#1F1B16]'
+                  }`}
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Email OTP Code</span>
                 </button>
               </div>
 
@@ -444,27 +400,24 @@ function LoginCardContent() {
               )}
 
               {/* ===================================================== */}
-              {/* AUTH FORM: MODE 1 (OTP FLOW)                          */}
+              {/* AUTH FORM: MODE 1 (EMAIL OTP FLOW)                     */}
               {/* ===================================================== */}
               {authMode === 'otp' && (
                 <div className="mt-6 space-y-4">
-                  {step === 'phone' ? (
+                  {step === 'email' ? (
                     <form onSubmit={handleRequestOtp} className="space-y-4">
                       <div>
                         <label className="text-[11px] font-mono uppercase tracking-wider text-stone-700 font-bold block mb-1.5">
-                          Registered Mobile Number
+                          Registered Email Address
                         </label>
-                        <div className="flex rounded-xl border border-stone-300 focus-within:border-[#7A1C30] focus-within:ring-2 focus-within:ring-[#7A1C30]/20 bg-white overflow-hidden transition-all shadow-xs">
-                          <span className="px-3.5 py-3 bg-[#FAF3E4] border-r border-stone-200 text-xs font-mono font-bold text-[#773D21] flex items-center">
-                            +91 (India)
-                          </span>
+                        <div className="flex items-center rounded-xl border border-stone-300 focus-within:border-[#7A1C30] focus-within:ring-2 focus-within:ring-[#7A1C30]/20 bg-white px-3.5 py-3 transition-all shadow-xs">
+                          <Mail className="w-4 h-4 text-stone-400 mr-2.5 flex-shrink-0" />
                           <input
-                            type="tel"
-                            maxLength={10}
-                            placeholder="9886012345"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                            className="w-full px-4 py-3 text-sm text-[#1F1B16] font-mono tracking-wider focus:outline-none bg-transparent"
+                            type="email"
+                            placeholder="customer@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full text-xs sm:text-sm text-[#1F1B16] focus:outline-none bg-transparent"
                           />
                         </div>
                       </div>
@@ -474,7 +427,7 @@ function LoginCardContent() {
                         disabled={isLoading}
                         className="w-full bg-[#7A1C30] hover:bg-[#601625] text-white py-3.5 rounded-xl text-xs font-sans font-bold uppercase tracking-widest transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                       >
-                        <span>{isLoading ? 'Requesting OTP...' : 'Send Secure OTP'}</span>
+                        <span>{isLoading ? 'Requesting Code...' : 'Send Login OTP'}</span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </form>
@@ -482,14 +435,14 @@ function LoginCardContent() {
                     <form onSubmit={handleVerifyOtp} className="space-y-5">
                       <div className="text-center space-y-1">
                         <span className="text-xs text-stone-600 font-sans block">
-                          Enter the 6-digit code sent to <strong className="text-[#1F1B16]">+91 {phone}</strong>
+                          Enter the 6-digit code sent to <strong className="text-[#1F1B16]">{email}</strong>
                         </span>
                         <button
                           type="button"
-                          onClick={() => setStep('phone')}
+                          onClick={() => setStep('email')}
                           className="text-[11px] font-mono text-[#7A1C30] hover:underline font-semibold"
                         >
-                          Change Number
+                          Change Email
                         </button>
                       </div>
 
@@ -641,14 +594,6 @@ function LoginCardContent() {
         </div>
       </div>
 
-      {/* Google OAuth Chooser Modal */}
-      <GoogleAuthModal
-        isOpen={isGoogleModalOpen}
-        onClose={() => setIsGoogleModalOpen(false)}
-        onSelectAccount={handleGoogleAccountSelect}
-        title="Sign in with Google"
-        subtitle="to continue to your Neel Saree House account"
-      />
     </div>
   );
 }

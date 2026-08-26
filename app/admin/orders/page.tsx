@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -323,11 +323,30 @@ const INITIAL_ORDERS: OrderRecord[] = [
 ];
 
 export default function RedesignedAdminOrdersPage() {
-  const [orders, setOrders] = useState<OrderRecord[]>(INITIAL_ORDERS);
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedStatusTab, setSelectedStatusTab] = useState<string>('ALL');
   const [selectedPaymentFilter, setSelectedPaymentFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
+
+  // Fetch live orders strictly from API (No mock data fallback)
+  useEffect(() => {
+    fetch('/api/admin/orders')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.orders && Array.isArray(data.orders)) {
+          setOrders(data.orders);
+        } else {
+          setOrders([]);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching live admin orders:', err);
+        setOrders([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   // Modals & Drawers
   const [activeInvoiceOrder, setActiveInvoiceOrder] = useState<OrderRecord | null>(null);
@@ -385,14 +404,14 @@ export default function RedesignedAdminOrdersPage() {
       // Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchesId = order.id.toLowerCase().includes(q);
-        const matchesName = order.customerName.toLowerCase().includes(q);
-        const matchesPhone = order.phone.includes(q);
-        const matchesEmail = order.email.toLowerCase().includes(q);
-        const matchesCity = order.city.toLowerCase().includes(q);
-        const matchesAwb = order.awb.toLowerCase().includes(q);
-        const matchesSku = order.items.some(
-          (i) => i.sku.toLowerCase().includes(q) || i.title.toLowerCase().includes(q)
+        const matchesId = (order.id || '').toLowerCase().includes(q);
+        const matchesName = (order.customerName || '').toLowerCase().includes(q);
+        const matchesPhone = (order.phone || '').includes(q);
+        const matchesEmail = (order.email || '').toLowerCase().includes(q);
+        const matchesCity = (order.city || '').toLowerCase().includes(q);
+        const matchesAwb = (order.awb || '').toLowerCase().includes(q);
+        const matchesSku = (order.items || []).some(
+          (i) => (i.sku || '').toLowerCase().includes(q) || (i.title || '').toLowerCase().includes(q)
         );
 
         if (
@@ -512,49 +531,24 @@ export default function RedesignedAdminOrdersPage() {
         </div>
       </div>
 
-      {/* 2. REVENUE & PERFORMANCE STAT CARDS */}
+      {/* 2. OPERATIONAL SUMMARY CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold">Gross Revenue</span>
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-xl font-bold font-editorial text-slate-900">
-            ₹{metrics.totalRevenue.toLocaleString('en-IN')}
-          </div>
-          <div className="text-[10px] font-mono text-emerald-600 font-bold flex items-center gap-0.5">
-            <TrendingUp className="w-2.5 h-2.5" />
-            <span>+18.4% this week</span>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500">
             <span className="text-[11px] font-semibold">Total Orders</span>
-            <Package className="w-4 h-4 text-slate-400" />
+            <Package className="w-4 h-4 text-[#7A1C30]" />
           </div>
           <div className="text-2xl font-bold font-editorial text-slate-900">{metrics.count}</div>
-          <div className="text-[10px] font-mono text-slate-400">100% Prepaid / VIP</div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-[11px] font-semibold">Avg. Order Value</span>
-            <BadgePercent className="w-4 h-4 text-blue-500" />
-          </div>
-          <div className="text-xl font-bold font-editorial text-slate-900">
-            ₹{metrics.aov.toLocaleString('en-IN')}
-          </div>
-          <div className="text-[10px] font-mono text-blue-600">Pure Mulberry Silk</div>
+          <div className="text-[10px] font-mono text-stone-500">Live Orders Pipeline</div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-amber-200 bg-amber-50/40 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-amber-700">
-            <span className="text-[11px] font-semibold">To Pack & Verify</span>
+            <span className="text-[11px] font-semibold">Processing / To Pack</span>
             <Clock className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-bold font-editorial text-amber-900">{metrics.toPackCount}</div>
-          <div className="text-[10px] font-mono text-amber-600">Archival Muslin Pack</div>
+          <div className="text-[10px] font-mono text-amber-600">Verification Pending</div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 shadow-2xs space-y-1">
@@ -563,16 +557,38 @@ export default function RedesignedAdminOrdersPage() {
             <Truck className="w-4 h-4 text-indigo-600" />
           </div>
           <div className="text-2xl font-bold font-editorial text-indigo-900">{metrics.readyCount}</div>
-          <div className="text-[10px] font-mono text-indigo-600">Blue Dart AWB Ready</div>
+          <div className="text-[10px] font-mono text-indigo-600">AWB Generated</div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-blue-200 bg-blue-50/40 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-blue-700">
+            <span className="text-[11px] font-semibold">In Transit</span>
+            <Truck className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-2xl font-bold font-editorial text-blue-900">
+            {orders.filter((o) => o.fulfillmentState === 'IN_TRANSIT' || o.fulfillmentState === 'OUT_FOR_DELIVERY').length}
+          </div>
+          <div className="text-[10px] font-mono text-blue-600">Courier Dispatched</div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-emerald-700">
+            <span className="text-[11px] font-semibold">Delivered</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-2xl font-bold font-editorial text-emerald-900">{metrics.deliveredCount}</div>
+          <div className="text-[10px] font-mono text-emerald-600">Completed Orders</div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-rose-200 bg-rose-50/40 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-rose-700">
-            <span className="text-[11px] font-semibold">Gift & Bridal</span>
-            <Gift className="w-4 h-4 text-rose-600" />
+            <span className="text-[11px] font-semibold">Cancelled Orders</span>
+            <X className="w-4 h-4 text-rose-600" />
           </div>
-          <div className="text-2xl font-bold font-editorial text-rose-900">{metrics.giftCount}</div>
-          <div className="text-[10px] font-mono text-rose-600">Custom Wax Sealed</div>
+          <div className="text-2xl font-bold font-editorial text-rose-900">
+            {orders.filter((o) => o.fulfillmentState === 'CANCELLED').length}
+          </div>
+          <div className="text-[10px] font-mono text-rose-600">Permanent Record Area</div>
         </div>
       </div>
 
@@ -582,15 +598,15 @@ export default function RedesignedAdminOrdersPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-stone-100">
           {[
             { id: 'ALL', label: 'All Orders', count: metrics.count },
-            { id: 'TO_PACK', label: 'To Pack (Muslin Seal)', count: metrics.toPackCount },
+            { id: 'TO_PACK', label: 'Processing / To Pack', count: metrics.toPackCount },
             { id: 'READY_TO_SHIP', label: 'Ready to Ship', count: metrics.readyCount },
             {
               id: 'DISPATCHED',
-              label: 'In Air Transit',
+              label: 'In Transit',
               count: orders.filter((o) => o.fulfillmentState === 'IN_TRANSIT' || o.fulfillmentState === 'OUT_FOR_DELIVERY').length,
             },
             { id: 'DELIVERED', label: 'Delivered', count: metrics.deliveredCount },
-            { id: 'GIFT_WRAPPED', label: 'Gift Wrapped & Bridal', count: metrics.giftCount },
+            { id: 'CANCELLED', label: 'Cancelled', count: orders.filter((o) => o.fulfillmentState === 'CANCELLED').length },
           ].map((tab) => {
             const isActive = selectedStatusTab === tab.id;
             return (
@@ -657,8 +673,8 @@ export default function RedesignedAdminOrdersPage() {
 
       {/* 4. REDESIGNED LUXURY ORDERS TABLE */}
       <div className="bg-white rounded-3xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+        <div className="overflow-x-auto max-w-full">
+          <table className="min-w-[900px] w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 font-semibold">Order ID & Date</th>
@@ -704,16 +720,10 @@ export default function RedesignedAdminOrdersPage() {
                           <div className="text-[11px] text-slate-500 font-mono">
                             {order.date}, {order.time}
                           </div>
-                          {order.isGiftWrapped && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
-                              <Gift className="w-2.5 h-2.5" />
-                              <span>Gift Wrapped</span>
-                            </span>
-                          )}
                         </div>
                       </td>
 
-                      {/* 2. Patron Details */}
+                      {/* 2. Customer Details */}
                       <td className="py-4 px-4 align-top">
                         <div className="space-y-1">
                           <div className="font-semibold text-slate-900 flex items-center gap-1.5">
@@ -726,16 +736,13 @@ export default function RedesignedAdminOrdersPage() {
                           <div className="text-[10px] text-slate-400 font-mono truncate max-w-[140px]">
                             {order.city}, {order.state}
                           </div>
-                          <span className="inline-block text-[9px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] bg-[#FAF3E4] px-1.5 py-0.2 rounded border border-[#C87F4A]/30">
-                            {order.customerType}
-                          </span>
                         </div>
                       </td>
 
                       {/* 3. Saree Items & Specs */}
                       <td className="py-4 px-4 align-top">
                         <div className="space-y-2 max-w-[240px]">
-                          {order.items.map((item, idx) => (
+                          {(order.items || []).map((item, idx) => (
                             <div key={idx} className="flex items-center gap-2.5">
                               <img
                                 src={item.image}
@@ -776,42 +783,44 @@ export default function RedesignedAdminOrdersPage() {
                         </div>
                       </td>
 
-                      {/* 5. Fulfillment State */}
+                      {/* 5. Fulfillment State (Sequential Operational Actions) */}
                       <td className="py-4 px-4 align-top">
                         <div className="space-y-1.5">
-                          <select
-                            value={order.fulfillmentState}
-                            onChange={(e) =>
-                              handleUpdateStatus(order.id, e.target.value as OrderRecord['fulfillmentState'])
-                            }
-                            className={`px-2.5 py-1 rounded-xl text-xs font-bold border focus:outline-none transition-colors cursor-pointer ${
-                              order.fulfillmentState === 'TO_PACK'
-                                ? 'bg-amber-50 text-amber-800 border-amber-300'
-                                : order.fulfillmentState === 'READY_TO_SHIP'
-                                ? 'bg-blue-50 text-blue-800 border-blue-300'
-                                : order.fulfillmentState === 'IN_TRANSIT' ||
-                                  order.fulfillmentState === 'OUT_FOR_DELIVERY'
-                                ? 'bg-indigo-50 text-indigo-800 border-indigo-300'
-                                : order.fulfillmentState === 'DELIVERED'
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
-                                : 'bg-slate-100 text-slate-800 border-slate-300'
-                            }`}
-                          >
-                            <option value="TO_PACK">📦 To Pack</option>
-                            <option value="READY_TO_SHIP">🏷️ Ready to Ship</option>
-                            <option value="IN_TRANSIT">✈️ In Air Transit</option>
-                            <option value="OUT_FOR_DELIVERY">🚚 Out for Delivery</option>
-                            <option value="DELIVERED">✓ Delivered</option>
-                            <option value="CANCELLED">✕ Cancelled</option>
-                          </select>
-
-                          <div className="text-[10px] text-slate-400 font-mono">
-                            {order.fulfillmentState === 'TO_PACK' && 'Needs Archival Muslin'}
-                            {order.fulfillmentState === 'READY_TO_SHIP' && 'Waiting Van Pickup'}
-                            {order.fulfillmentState === 'IN_TRANSIT' && 'In Flight Cargo Hub'}
-                            {order.fulfillmentState === 'OUT_FOR_DELIVERY' && 'Courier Out for Run'}
-                            {order.fulfillmentState === 'DELIVERED' && 'Patron Verified'}
-                          </div>
+                          {order.fulfillmentState === 'TO_PACK' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(order.id, 'READY_TO_SHIP')}
+                              className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-2xs"
+                            >
+                              Start Processing →
+                            </button>
+                          )}
+                          {order.fulfillmentState === 'READY_TO_SHIP' && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(order.id, 'IN_TRANSIT')}
+                              className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs"
+                            >
+                              Create Pickup Request →
+                            </button>
+                          )}
+                          {(order.fulfillmentState === 'IN_TRANSIT' || order.fulfillmentState === 'OUT_FOR_DELIVERY') && (
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold font-mono">
+                              <span>In Transit (AWB Active)</span>
+                            </div>
+                          )}
+                          {order.fulfillmentState === 'DELIVERED' && (
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold font-mono">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Delivered</span>
+                            </div>
+                          )}
+                          {order.fulfillmentState === 'CANCELLED' && (
+                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold font-mono">
+                              <X className="w-3 h-3 text-rose-600" />
+                              <span>Cancelled</span>
+                            </div>
+                          )}
                         </div>
                       </td>
 
@@ -850,18 +859,6 @@ export default function RedesignedAdminOrdersPage() {
                             <FileText className="w-3 h-3 text-blue-600" />
                             <span>GST Invoice</span>
                           </button>
-
-                          <a
-                            href={`https://wa.me/${order.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                              `Namaste ${order.customerName}, greeting from Neel Saree House (Estd. 1978). Your pure silk order (${order.id}) is confirmed. Track live here: https://neelsareehouse.com/account/orders`
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors"
-                          >
-                            <Share2 className="w-3 h-3" />
-                            <span>WhatsApp</span>
-                          </a>
                         </div>
                       </td>
                     </tr>

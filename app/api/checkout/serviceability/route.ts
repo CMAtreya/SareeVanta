@@ -14,10 +14,10 @@ export async function POST(request: Request) {
 
     const cleanPin = pincode.trim();
 
-    // Check 6-digit regex
-    if (!/^\d{6}$/.test(cleanPin)) {
+    // Check 6-digit regex (starts with 1-9)
+    if (!/^[1-9][0-9]{5}$/.test(cleanPin)) {
       return NextResponse.json(
-        { serviceable: false, message: 'PIN code must be exactly 6 numeric digits.' },
+        { serviceable: false, message: 'PIN code must be exactly 6 numeric digits (starting with 1-9).' },
         { status: 400 }
       );
     }

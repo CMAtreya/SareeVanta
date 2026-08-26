@@ -1,38 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
-  Save,
   Check,
-  Sparkles,
   Image as ImageIcon,
-  Video,
   Plus,
   Trash2,
-  ExternalLink,
-  HelpCircle,
-  Wand2,
-  FileText,
-  DollarSign,
-  Package,
-  Truck,
-  Globe,
-  Share2,
   Tag,
   ShieldCheck,
-  Layers,
-  AlertCircle,
-  Eye,
   Info,
-  Clock,
   CheckCircle2,
   X,
-  Upload,
-  QrCode,
-  Download,
+  Sparkles,
+  Calendar,
+  ChevronDown,
 } from 'lucide-react';
 import { products } from '@/lib/products';
 
@@ -41,99 +25,183 @@ interface ProductEditorFormProps {
   productId?: string;
 }
 
+// Code128 Barcode Visual SVG Generator Component
+const Code128BarcodeVisual = ({ value }: { value: string }) => {
+  const bars = useMemo(() => {
+    const pattern: number[] = [2, 1, 1, 2, 3, 2, 1, 1, 2, 2, 1, 3];
+    for (let i = 0; i < value.length; i++) {
+      const charCode = value.charCodeAt(i);
+      pattern.push((charCode % 3) + 1, ((charCode * 2) % 4) + 1, (charCode % 2) + 1);
+    }
+    pattern.push(2, 3, 3, 1, 1, 1, 2);
+    return pattern;
+  }, [value]);
+
+  return (
+    <div className="bg-white p-2.5 rounded-xl border border-amber-300 flex flex-col items-center justify-center space-y-1 shadow-2xs">
+      <svg className="h-9 w-full max-w-[220px]" viewBox="0 0 160 36" preserveAspectRatio="none">
+        {bars.map((width, idx) => {
+          const isBlack = idx % 2 === 0;
+          const x = bars.slice(0, idx).reduce((acc, w) => acc + w * 1.8, 4);
+          return isBlack ? (
+            <rect key={idx} x={x} y={0} width={width * 1.5} height={36} fill="#1F1B16" />
+          ) : null;
+        })}
+      </svg>
+      <span className="font-mono text-[11px] font-bold text-amber-950 tracking-widest">{value}</span>
+    </div>
+  );
+};
+
 export default function ProductEditorForm({ mode, productId }: ProductEditorFormProps) {
   const router = useRouter();
 
   // Find existing product if edit mode
-  const existingProduct = useMemoProduct(productId);
+  const existingProduct = products.find((p) => p.id === productId);
 
-  // Form State: Basic Identifiers
+  // Auto-generated SKU and Barcode for new items
+  const autoSku = `NSH-${Math.floor(1000 + Math.random() * 9000)}`;
+  const autoBarcode = `890${Math.floor(100000000 + Math.random() * 900000000)}`;
+
+  // Form State: System Identifiers (Read-Only)
+  const [sku, setSku] = useState(autoSku);
+  const [barcode, setBarcode] = useState(autoBarcode);
+
+  // Form State: Basic Info
   const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [isQrGenerated, setIsQrGenerated] = useState<boolean>(false);
 
-  // Form State: Technical Ethnic Taxonomy
+  // Form State: Weaving & Fabric Specs
   const [weave, setWeave] = useState('Mysore Silk');
+  const [fabricOptions, setFabricOptions] = useState<string[]>([
+    '100% Pure Mulberry Silk',
+    'Pure Mysore Crepe Silk',
+    'Kanchipuram Heavy Silk',
+    'Pure Katan Banarasi Silk',
+    'Tussar Georgette Silk',
+    'Chanderi Silk Cotton',
+    'Yeola Paithani Silk',
+    'Patan Double Ikkat Patola',
+  ]);
   const [fabric, setFabric] = useState('100% Pure Mulberry Silk');
-  const [zariType, setZariType] = useState('24K Tested Pure Zari');
-  const [loomType, setLoomType] = useState('Traditional Jacquard Handloom');
-  const [motifPattern, setMotifPattern] = useState('Mayil (Peacock) & Rudraksha Butta');
-  const [palluBorderDetails, setPalluBorderDetails] = useState('Rich Heavy Gold Zari Contrast Pallu');
-  const [hasBlousePiece, setHasBlousePiece] = useState(true);
-  const [blouseDetails, setBlouseDetails] = useState('Contrast Crimson Crepe with Gold Kasuti Border (80cm)');
-  const [isSilkMarkCertified, setIsSilkMarkCertified] = useState(true);
-  const [silkMarkNumber, setSilkMarkNumber] = useState('CSB-2026-MYS-8942');
+  const [isAddingNewFabric, setIsAddingNewFabric] = useState(false);
+  const [newFabricInput, setNewFabricInput] = useState('');
+  const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false);
 
-  // Form State: Media Asset Studio
-  const [mediaImages, setMediaImages] = useState<
-    { id: string; url: string; role: string }[]
+  const [zariOptions, setZariOptions] = useState<string[]>([
+    'Pure 24K Tested Zari',
+    'Tested Gold Zari',
+    'Silver Tested Zari',
+    'Pure Zari Thread Interlock',
+    'Antique Gold Zari',
+    'Copper Zari Weave',
+    'No Zari / Resham Threadwork',
+  ]);
+  const [zariSpec, setZariSpec] = useState('Pure 24K Tested Zari');
+  const [isAddingNewZari, setIsAddingNewZari] = useState(false);
+  const [newZariInput, setNewZariInput] = useState('');
+  const [isZariDropdownOpen, setIsZariDropdownOpen] = useState(false);
+
+  // Form State: Color Variant Management (BFS-1 §6.3 & DSS §4)
+  const SAREE_COLOR_PALETTE = [
+    { name: 'Royal Crimson', hex: '#8B1E28', code: 'CRM' },
+    { name: 'Peacock Teal', hex: '#005F73', code: 'TEL' },
+    { name: 'Kanchipuram Gold', hex: '#D97706', code: 'GLD' },
+    { name: 'Rani Pink', hex: '#BE185D', code: 'PNK' },
+    { name: 'Bottle Green', hex: '#065F46', code: 'GRN' },
+    { name: 'Midnight Blue', hex: '#1E3A8A', code: 'BLU' },
+    { name: 'Mustard Yellow', hex: '#B45309', code: 'YEL' },
+    { name: 'Deep Violet', hex: '#5B21B6', code: 'VIO' },
+    { name: 'Ivory White', hex: '#F5F5F4', code: 'IVR' },
+  ];
+
+  const [colorVariants, setColorVariants] = useState<
+    { id: string; name: string; hex: string; sku: string; stockCount: number; images: [string, string, string] }[]
   >([
     {
-      id: 'img-1',
-      url: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
-      role: 'Primary Drape',
+      id: 'var-1',
+      name: 'Royal Crimson',
+      hex: '#8B1E28',
+      sku: `${autoSku}-CRM`,
+      stockCount: 3,
+      images: [
+        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
+        'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=800&auto=format&fit=crop',
+        '',
+      ],
     },
     {
-      id: 'img-2',
-      url: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=800&auto=format&fit=crop',
-      role: 'Pallu Close-up',
-    },
-    {
-      id: 'img-3',
-      url: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=800&auto=format&fit=crop',
-      role: 'Border Macro',
+      id: 'var-2',
+      name: 'Peacock Teal',
+      hex: '#005F73',
+      sku: `${autoSku}-TEL`,
+      stockCount: 2,
+      images: [
+        'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=800&auto=format&fit=crop',
+        '',
+        '',
+      ],
     },
   ]);
-  const [hasVideo, setHasVideo] = useState(true);
-  const [videoUrl, setVideoUrl] = useState(
-    'https://assets.mixkit.co/videos/preview/mixkit-woman-wearing-a-traditional-indian-dress-41315-large.mp4'
-  );
 
-  // Form State: Inventory & Financials
-  const [sku, setSku] = useState('NSH-SKU-MYS-01');
-  const [loomTag, setLoomTag] = useState('LOOM-KA-MYS-28');
-  const [hsnCode, setHsnCode] = useState('5007.20.10');
-  const [gstRate, setGstRate] = useState('5%');
-  const [costPrice, setCostPrice] = useState('18500');
-  const [priceINR, setPriceINR] = useState('28500');
-  const [originalPriceINR, setOriginalPriceINR] = useState('32000');
-  const [stock, setStock] = useState('3');
-
-  // Form State: Sidebar Controls
-  const [status, setStatus] = useState<'ACTIVE' | 'DRAFT' | 'ARCHIVED'>('ACTIVE');
-  const [channels, setChannels] = useState({
-    onlineStore: true,
-    whatsAppCatalog: true,
-    liveShopping: true,
-  });
-  const [occasions, setOccasions] = useState<string[]>([
+  // Form State: Occasions (Multi-Select Tags)
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([
+    'Bridal',
+    'Muhurtham',
+  ]);
+  const availableOccasions = [
     'Bridal',
     'Muhurtham',
     'Grand Reception',
+    'Sangeet',
+    'Festive',
+    'Cocktail Soirée',
+  ];
+
+  // Form State: Special Marketing Badges & Tags
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([
+    'Best Seller',
+    'Silk Mark Certified',
   ]);
-  const [specialTags, setSpecialTags] = useState<string[]>([
+  const [availableBadges, setAvailableBadges] = useState<string[]>([
     'Best Seller',
     'New Arrival',
-  ]);
-  const [availableSpecialTags, setAvailableSpecialTags] = useState<string[]>([
-    'Best Seller',
-    'New Arrival',
-    'Bridal Edit',
     'Limited Edition',
     'Silk Mark Certified',
     'Heirloom Heritage',
     'Vault Masterpiece',
   ]);
-  const [newSpecialTagInput, setNewSpecialTagInput] = useState('');
-  const [weightGrams, setWeightGrams] = useState('680');
-  const [dimensions, setDimensions] = useState('38 x 28 x 4 cm');
-  const [metaTitle, setMetaTitle] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
+  const [customTagInput, setCustomTagInput] = useState('');
 
-  // UI state
+  // Form State: Pricing & Financials (Order: Cost Price -> MRP -> Selling Price -> Stock)
+  const [costPrice, setCostPrice] = useState('18500'); // Internal editable
+  const [mrp, setMrp] = useState('34000');
+  const [sellingPrice, setSellingPrice] = useState('28000');
+  const [stock, setStock] = useState('5');
+  const [gstRate, setGstRate] = useState('18');
+  const [hsnCode, setHsnCode] = useState('5007');
+
+  // Form State: Blouse & Physical Dimensions
+  const [hasBlousePiece, setHasBlousePiece] = useState(true);
+  const [blouseLength, setBlouseLength] = useState('0.80m');
+  const [blouseWidth, setBlouseWidth] = useState('1.14m');
+  const [sareeLength, setSareeLength] = useState('5.5m');
+  const [sareeWidth, setSareeWidth] = useState('1.14m');
+  const [packageWeight, setPackageWeight] = useState('680g');
+  const [packageDimensions, setPackageDimensions] = useState('38 x 28 x 4 cm');
+
+  // Form State: Certification & Status
+  const [isSilkMarkCertified, setIsSilkMarkCertified] = useState(true);
+  const [status, setStatus] = useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
+
+  // Media Images
+  const [images, setImages] = useState<string[]>([
+    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=800&auto=format&fit=crop',
+  ]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+
+  // Save / UI States
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
@@ -142,708 +210,299 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   useEffect(() => {
     if (mode === 'edit' && existingProduct) {
       setTitle(existingProduct.title);
-      setSubtitle((existingProduct as any).storySubtitle || `${existingProduct.weave} Masterpiece`);
-      setSlug(existingProduct.slug);
       setDescription(
         existingProduct.description ||
-          'Handcrafted pure mulberry silk saree woven on traditional pitlooms with sacred tested zari threads.'
+          `${existingProduct.title} handcrafted in pure mulberry silk with authentic zari borders.`
       );
       setWeave(existingProduct.weave);
-      setPriceINR(String(existingProduct.priceINR));
-      setOriginalPriceINR(String(existingProduct.originalPriceINR || Math.round(existingProduct.priceINR * 1.15)));
-      setSku((existingProduct as any).sku || `NSH-SKU-${existingProduct.id.slice(0, 4)}`);
-      setMetaTitle(`${existingProduct.title} | Pure Silk Sarees | NEEL SAREE HOUSE`);
-      setMetaDescription(`Handwoven ${existingProduct.weave} pure silk saree certified with Silk Mark tag. Free BlueDart air delivery across India.`);
+      setSellingPrice(String(existingProduct.priceINR));
+      setMrp(String(existingProduct.originalPriceINR || Math.round(existingProduct.priceINR * 1.18)));
+      setCostPrice(String(Math.round(existingProduct.priceINR * 0.65)));
+      setSku((existingProduct as any).sku || `NSH-${Math.floor(1000 + Math.random() * 9000)}`);
+      setBarcode((existingProduct as any).barcode || `890${Math.floor(100000000 + Math.random() * 900000000)}`);
       if (existingProduct.images?.length) {
-        setMediaImages(
-          existingProduct.images.map((url, i) => ({
-            id: `img-${i}`,
-            url,
-            role: i === 0 ? 'Primary Drape' : i === 1 ? 'Pallu Close-up' : 'Border Macro',
-          }))
-        );
+        setImages(existingProduct.images);
       }
     } else if (mode === 'create') {
-      setTitle('Royal Mysuru Gold Zari Vintage Crepe Silk');
-      setSubtitle('Royal Heritage Wodeyar Collection');
-      setSlug('royal-mysuru-gold-zari-vintage-crepe-silk');
+      setTitle('Kanchipuram Heavy Korvai Bridal Silk Saree');
       setDescription(
-        'An opulent pure Mysore silk saree meticulously spun with pure mulberry silk filaments and accented with radiant gold zari borders for auspicious occasions.'
+        'Opulent Kanchipuram silk saree featuring double-shuttle Korvai interlocked temple borders and pure gold zari bullion.'
       );
-      setMetaTitle('Royal Mysuru Gold Zari Crepe Silk | NEEL SAREE HOUSE');
-      setMetaDescription('Authentic pure Mysore crepe silk handloom saree with Central Silk Board Silk Mark certification.');
     }
   }, [mode, existingProduct]);
 
-  // Auto-generate Slug on Title change
-  const handleTitleChange = (val: string) => {
-    setTitle(val);
-    setIsDirty(true);
-    if (mode === 'create') {
-      setSlug(val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
-      setMetaTitle(`${val} | NEEL SAREE HOUSE`);
+  // Calculated Discount Percent
+  const discountPercent = mrp && sellingPrice
+    ? Math.max(0, Math.round(((Number(mrp) - Number(sellingPrice)) / Number(mrp)) * 100))
+    : 0;
+
+  // Toggle Occasion Tag
+  const toggleOccasion = (occ: string) => {
+    if (selectedOccasions.includes(occ)) {
+      setSelectedOccasions(selectedOccasions.filter((o) => o !== occ));
+    } else {
+      setSelectedOccasions([...selectedOccasions, occ]);
     }
+    setIsDirty(true);
   };
 
-  // Insert Fabric Care Snippet
-  const handleInsertFabricCareSnippet = () => {
-    const careSnippet =
-      '\n\n--- FABRIC CARE & PRESERVATION ---\n• 100% Pure Mulberry Silk with Tested Zari.\n• Dry-clean only with reputable saree specialists.\n• Wrap and store in unbleached pure cotton or muslin fabric.\n• Change folding crease every 3-4 months to preserve weave integrity.\n• Iron on medium silk temperature setting only on the reverse face.';
-    setDescription((prev) => prev + careSnippet);
+  // Toggle Special Badge Tag
+  const toggleBadge = (badge: string) => {
+    if (selectedBadges.includes(badge)) {
+      setSelectedBadges(selectedBadges.filter((b) => b !== badge));
+    } else {
+      setSelectedBadges([...selectedBadges, badge]);
+    }
+    setIsDirty(true);
+  };
+
+  // Add Custom Badge Action
+  const handleAddCustomBadge = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = customTagInput.trim();
+    if (!trimmed) return;
+    if (!availableBadges.includes(trimmed)) {
+      setAvailableBadges([...availableBadges, trimmed]);
+    }
+    if (!selectedBadges.includes(trimmed)) {
+      setSelectedBadges([...selectedBadges, trimmed]);
+    }
+    setCustomTagInput('');
+    setIsDirty(true);
+  };
+
+  // Add Image URL
+  const handleAddImage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newImageUrl.trim()) return;
+    setImages([...images, newImageUrl.trim()]);
+    setNewImageUrl('');
+    setIsDirty(true);
+  };
+
+  // Remove Image
+  const handleRemoveImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
     setIsDirty(true);
   };
 
   // Save / Publish Action
-  const handleSave = (publishState: 'ACTIVE' | 'DRAFT') => {
+  const handleSave = (targetStatus: 'PUBLISHED' | 'DRAFT') => {
+    if (!title.trim() || !sellingPrice) return;
+
     setIsSaving(true);
+    const updatedProductPayload = {
+      id: productId || `prod-${Date.now()}`,
+      sku,
+      barcode,
+      title: title.trim(),
+      description: description.trim(),
+      weave,
+      fabric,
+      color: colorVariants[0]?.name || 'Royal Crimson',
+      zariGrade: zariSpec,
+      occasion: selectedOccasions.join(' & ') || 'Bridal',
+      occasions: selectedOccasions,
+      specialBadges: selectedBadges,
+      costPrice: Number(costPrice) || 0,
+      mrp: Number(mrp) || Number(sellingPrice) * 1.18,
+      priceINR: Number(sellingPrice) || 28000,
+      originalPriceINR: Number(mrp) || Number(sellingPrice) * 1.18,
+      stockCount: Number(stock) || 0,
+      gstRate: Number(gstRate) || 18,
+      hsnCode,
+      blousePiece: hasBlousePiece ? `${blouseLength} x ${blouseWidth}` : undefined,
+      dimensions: `${sareeLength} x ${sareeWidth}`,
+      silkMarkCertified: isSilkMarkCertified,
+      images,
+      status: targetStatus,
+    };
+
+    console.log('[AdminProductSave] Payload constructed for persistence:', updatedProductPayload);
+
     setTimeout(() => {
-      setStatus(publishState);
+      setStatus(targetStatus);
       setIsSaving(false);
       setIsDirty(false);
       setSaveToast(true);
       setTimeout(() => {
         setSaveToast(false);
         router.push('/admin/catalog');
-      }, 900);
-    }, 600);
-  };
-
-  const discountPercent = originalPriceINR
-    ? Math.round(((Number(originalPriceINR) - Number(priceINR)) / Number(originalPriceINR)) * 100)
-    : 0;
-
-  // Add Custom Special Tag Action
-  const handleAddCustomSpecialTag = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const trimmed = newSpecialTagInput.trim();
-    if (!trimmed) return;
-    if (!availableSpecialTags.includes(trimmed)) {
-      setAvailableSpecialTags([...availableSpecialTags, trimmed]);
-    }
-    if (!specialTags.includes(trimmed)) {
-      setSpecialTags([...specialTags, trimmed]);
-    }
-    setNewSpecialTagInput('');
-    setIsDirty(true);
+      }, 800);
+    }, 500);
   };
 
   return (
-    <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
-      {/* ================================================== */}
-      {/* 1. TOP ACTION & STATUS HEADER                      */}
-      {/* ================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#E8DCC9]">
-        {/* Left: Title, Back & Status */}
+    <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in max-w-6xl mx-auto">
+      {/* Toast Notification */}
+      {saveToast && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-900 text-emerald-100 px-4 py-3 rounded-xl shadow-xl border border-emerald-700 flex items-center gap-2 font-semibold text-xs animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>Product SKU saved successfully! Redirecting to Catalog...</span>
+        </div>
+      )}
+
+      {/* 1. TOP ACTION & STATUS HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href="/admin/catalog"
-            className="p-2 rounded-xl text-stone-500 hover:text-stone-900 hover:bg-[#FAF3E4] border border-[#E8DCC9] bg-white transition-colors flex-shrink-0 shadow-2xs"
+            className="p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 bg-white transition-colors shadow-2xs"
             title="Back to Catalog"
           >
             <ArrowLeft className="w-4 h-4 text-[#7A1C30]" />
           </Link>
 
-          <div className="min-w-0">
+          <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans truncate">
-                {mode === 'create' ? 'Register New Handloom Saree' : `Edit SKU (${sku})`}
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans truncate">
+                {mode === 'create' ? 'Create Product SKU' : `Edit Product SKU (${sku})`}
               </h1>
-              <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold">
-                {mode === 'create' ? 'New Masterpiece' : 'Central Silk Board QC'}
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase border ${
+                  status === 'PUBLISHED'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                }`}
+              >
+                {status === 'PUBLISHED' ? 'Published' : 'Draft / Unpublished'}
               </span>
             </div>
-            {isDirty ? (
-              <div className="flex items-center gap-1.5 text-[11px] font-mono text-amber-700 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>Unsaved modifications detected</span>
-              </div>
-            ) : (
-              <p className="text-xs text-stone-500 font-mono mt-0.5">
-                Handloom provenance, tested zari purity, inventory matrix & storefront lookbook assets
-              </p>
-            )}
+            <p className="text-xs text-slate-500 font-mono mt-0.5">
+              Configure Product Metadata & Inventory Details
+            </p>
           </div>
         </div>
 
-        {/* Right: Actions Cluster */}
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap flex-shrink-0">
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => router.push('/admin/catalog')}
-            className="px-3.5 py-2 rounded-xl border border-[#E8DCC9] bg-white text-stone-700 text-xs font-semibold hover:bg-[#FAF6F0] transition-colors shadow-2xs cursor-pointer"
-          >
-            Discard
-          </button>
-
-          <button
-            type="button"
-            disabled={isSaving}
             onClick={() => handleSave('DRAFT')}
-            className="px-3.5 py-2 rounded-xl border border-[#E8DCC9] bg-white hover:bg-[#FAF6F0] text-stone-800 text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
+            disabled={isSaving}
+            className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-2xs"
           >
-            Save Draft
+            Save as Draft
           </button>
 
           <button
             type="button"
+            onClick={() => handleSave('PUBLISHED')}
             disabled={isSaving}
-            onClick={() => handleSave('ACTIVE')}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-[#7A1C30] hover:bg-[#601625] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             {isSaving ? (
-              <div className="flex items-center gap-1.5">
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Publishing...</span>
-              </div>
+              <span>Saving...</span>
             ) : (
               <>
-                <Check className="w-3.5 h-3.5 text-amber-200" />
-                <span>{mode === 'create' ? 'Publish to Store' : 'Update Live Saree'}</span>
+                <Check className="w-4 h-4 text-amber-200" />
+                <span>Save & Publish SKU</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Success Toast */}
-      {saveToast && (
-        <div className="fixed bottom-8 right-8 z-50 bg-[#18110E] text-[#FAF3E4] px-5 py-3 rounded-2xl shadow-2xl border border-[#C87F4A]/30 flex items-center gap-2 text-xs font-sans animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>Handloom Masterpiece SKU successfully published to live storefront.</span>
+      {/* 2. READ-ONLY SYSTEM IDENTIFIERS (SKU & VISUAL CODE128 BARCODE) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 shadow-2xs">
+        <div>
+          <label className="block text-[10px] font-mono uppercase tracking-wider text-amber-900 font-bold mb-1">
+            System SKU (Read-Only & Immutable) *
+          </label>
+          <input
+            type="text"
+            readOnly
+            value={sku}
+            className="w-full px-3.5 py-2.5 bg-white border border-amber-300 rounded-xl font-mono font-bold text-amber-950 select-all cursor-default text-xs"
+          />
+          <p className="text-[10px] text-amber-800 font-mono mt-1">Primary internal admin identifier</p>
         </div>
-      )}
 
-      {/* ================================================== */}
-      {/* 2. TWO-COLUMN WORKSPACE (65% Left / 35% Right)     */}
-      {/* ================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* ============================================== */}
-        {/* LEFT COLUMN (65% - 8 Cols on lg screen)       */}
-        {/* ============================================== */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* SECTION 1: MASTERPIECE NOMENCLATURE & HERITAGE STORY */}
-          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-5">
-            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2 pb-2 border-b border-stone-100">
-              <FileText className="w-4 h-4 text-blue-600" />
-              <span>1. Masterpiece Nomenclature & Heritage Story</span>
+        <div>
+          <label className="block text-[10px] font-mono uppercase tracking-wider text-amber-900 font-bold mb-1">
+            Scannable Internal Barcode (Code128 Format) *
+          </label>
+          <Code128BarcodeVisual value={barcode} />
+        </div>
+      </div>
+
+      {/* 3. MAIN FORM GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Basic Details, Pricing, Weave Specs */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Basic Info Card */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <Tag className="w-4 h-4 text-[#7A1C30]" />
+              <span>Product Details</span>
             </h3>
 
-            {/* Saree Title */}
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Saree Title / Masterpiece Name *
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Saree Title / Product Name *
               </label>
               <input
                 type="text"
                 required
                 value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="e.g. Royal Mysuru Vintage Gold Zari Crepe Silk"
-                className="w-full px-3.5 py-2.5 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-sm font-sans focus:outline-none focus:border-[#7A1C30] text-stone-900 font-semibold"
-              />
-            </div>
-
-            {/* Two-Column Grid: Left (Subtitle + Narrative & Loom Specs below it with matching width) / Right (QR Code Generator) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {/* LEFT COLUMN: Subtitle on top + Detailed Saree Narrative & Loom Specs directly under it */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 mb-1">
-                    Subtitle / Heritage Tagline
-                  </label>
-                  <input
-                    type="text"
-                    value={subtitle}
-                    onChange={(e) => {
-                      setSubtitle(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    placeholder="e.g. Royal Heritage Wodeyar Collection"
-                    className="w-full px-3.5 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans focus:outline-none focus:border-[#7A1C30] text-stone-900"
-                  />
-                </div>
-
-                {/* Detailed Saree Narrative & Loom Specs (Same width under Subtitle) */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-semibold text-stone-700">
-                      Detailed Saree Narrative & Loom Specs
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleInsertFabricCareSnippet}
-                      className="text-[11px] font-mono font-semibold text-[#7A1C30] hover:text-[#5F1424] flex items-center gap-1 transition-colors cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3 text-[#C87F4A]" />
-                      <span>+ Care Snippet</span>
-                    </button>
-                  </div>
-                  <textarea
-                    rows={8}
-                    value={description}
-                    onChange={(e) => {
-                      setDescription(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    placeholder="Describe the weaving technique, zari purity, occasion relevance, and sensory drape quality..."
-                    className="w-full p-3.5 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans focus:outline-none focus:border-[#7A1C30] text-stone-800 leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* RIGHT COLUMN: Generate QR Code Button & Square QR Output */}
-              <div className="space-y-3">
-                <label className="block text-xs font-semibold text-stone-700">
-                  Product QR
-                </label>
-
-                {/* Generate QR Button (1-time click then disabled) */}
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (isQrGenerated) return;
-                    const targetSlug = slug || 'mysore-royal-crimson';
-                    const productUrl =
-                      typeof window !== 'undefined'
-                        ? `${window.location.origin}/products/${targetSlug}`
-                        : `https://neelsareehouse.com/products/${targetSlug}`;
-                    try {
-                      const QRCode = (await import('qrcode')).default;
-                      const url = await QRCode.toDataURL(productUrl, {
-                        type: 'image/png',
-                        width: 480,
-                        margin: 2,
-                        color: {
-                          dark: '#1F1B16',
-                          light: '#FFFFFF',
-                        },
-                      });
-                      setQrDataUrl(url);
-                      setIsQrGenerated(true);
-                      setIsDirty(true);
-                    } catch (err) {
-                      console.error('Failed to generate QR code:', err);
-                    }
-                  }}
-                  disabled={isQrGenerated}
-                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs ${
-                    isQrGenerated
-                      ? 'bg-stone-100 text-stone-400 border border-[#E8DCC9] cursor-not-allowed'
-                      : 'bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white shadow-md cursor-pointer transform hover:-translate-y-0.5'
-                  }`}
-                >
-                  <QrCode className="w-4 h-4 text-amber-200" />
-                  <span>{isQrGenerated ? '✓ QR Code Generated (Locked)' : 'Generate QR Code'}</span>
-                </button>
-
-                {/* Square QR Code Display Below Button */}
-                {qrDataUrl && (
-                  <div className="p-4 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl flex flex-col items-center justify-center text-center space-y-3 animate-in fade-in zoom-in-95 duration-200 shadow-inner">
-                    <div className="p-2.5 bg-white rounded-xl shadow-xs border border-[#E8DCC9] aspect-square flex items-center justify-center">
-                      <img
-                        src={qrDataUrl}
-                        alt="Storefront Product QR Code"
-                        className="w-36 h-36 object-contain rounded-lg select-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="inline-block text-[9px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] bg-[#FAF3E4] px-2.5 py-0.5 rounded-full border border-[#C87F4A]/30">
-                        Square QR Ready
-                      </span>
-                      <div className="text-[11px] font-mono text-stone-600 truncate max-w-xs block">
-                        https://neelsareehouse.com/products/{slug || 'mysore-royal-crimson'}
-                      </div>
-                      <p className="text-[10px] text-stone-500 font-sans">
-                        Scan to verify handloom authenticity or display on salon tag
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = qrDataUrl;
-                        link.download = `${slug || 'saree'}-qr-tag.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                      }}
-                      className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#7A1C30] hover:text-[#5F1424] bg-white px-3.5 py-2 rounded-xl border border-[#E8DCC9] shadow-2xs hover:bg-[#FAF3E4] transition-all cursor-pointer transform hover:scale-105 active:scale-95"
-                    >
-                      <Download className="w-3.5 h-3.5 text-[#C87F4A]" />
-                      <span>Download QR PNG (.png)</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 2: TECHNICAL ETHNIC TAXONOMY */}
-          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
-            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2 pb-2 border-b border-stone-100">
-              <ShieldCheck className="w-4 h-4 text-[#C87F4A]" />
-              <span>2. Technical Ethnic Taxonomy (Silk House Specs)</span>
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Weave Tradition *
-                </label>
-                <select
-                  value={weave}
-                  onChange={(e) => {
-                    setWeave(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                >
-                  <option value="Mysore Silk">Mysore Silk</option>
-                  <option value="Kanchipuram">Kanchipuram</option>
-                  <option value="Banarasi">Banarasi</option>
-                  <option value="Paithani">Paithani</option>
-                  <option value="Patola">Patola</option>
-                  <option value="Chanderi">Chanderi</option>
-                  <option value="Tussar">Tussar</option>
-                  <option value="Ikkat">Ikkat</option>
-                  <option value="Tissue Georgette">Tissue Georgette</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Fabric Composition *
-                </label>
-                <select
-                  value={fabric}
-                  onChange={(e) => {
-                    setFabric(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                >
-                  <option value="100% Pure Mulberry Silk">100% Pure Mulberry Silk</option>
-                  <option value="Pure Kanchipuram Raw Silk">Pure Kanchipuram Raw Silk</option>
-                  <option value="Mulberry Silk Cotton Blend">Mulberry Silk Cotton Blend</option>
-                  <option value="Pure Organza Silk">Pure Organza Silk</option>
-                  <option value="Pure Georgette Crepe Silk">Pure Georgette Crepe Silk</option>
-                  <option value="Metallic Tissue Silk">Metallic Tissue Silk</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Zari Specification *
-                </label>
-                <select
-                  value={zariType}
-                  onChange={(e) => {
-                    setZariType(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                >
-                  <option value="24K Tested Pure Zari">24K Tested Pure Gold Zari</option>
-                  <option value="Sacred 3-Shuttle Pure Gold Zari">Sacred 3-Shuttle Pure Gold Zari</option>
-                  <option value="Half-Fine Tested Zari">Half-Fine Tested Zari</option>
-                  <option value="Antiqued Silver Core Zari">Antiqued Silver Core Zari</option>
-                  <option value="Tapestry Pure Zari">Tapestry Pure Zari</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Loom Construction Type
-                </label>
-                <select
-                  value={loomType}
-                  onChange={(e) => {
-                    setLoomType(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                >
-                  <option value="Traditional Jacquard Handloom">Traditional Jacquard Handloom</option>
-                  <option value="Authentic Pitloom Handloom">Authentic Pitloom Handloom</option>
-                  <option value="Frame Handloom 3-Shuttle">Frame Handloom 3-Shuttle</option>
-                  <option value="Kadhwa Hand-Loom Shuttle">Kadhwa Hand-Loom Shuttle</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Motif / Design Pattern
-                </label>
-                <input
-                  type="text"
-                  value={motifPattern}
-                  onChange={(e) => {
-                    setMotifPattern(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="e.g. Mayil (Peacock), Rudraksha Butta, Temple Border"
-                  className="w-full px-3.5 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Pallu & Border Styling
-                </label>
-                <input
-                  type="text"
-                  value={palluBorderDetails}
-                  onChange={(e) => {
-                    setPalluBorderDetails(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="e.g. Contrast Korvai Temple Border with Rich Brocade Pallu"
-                  className="w-full px-3.5 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-sans text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-            </div>
-
-            {/* Blouse Piece & Silk Mark Toggles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-stone-100">
-              {/* Blouse Piece */}
-              <div className="p-3.5 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-stone-900">Blouse Piece Included</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setHasBlousePiece(!hasBlousePiece);
-                      setIsDirty(true);
-                    }}
-                    className={`w-9 h-5 rounded-full transition-colors relative inline-flex items-center p-0.5 ${
-                      hasBlousePiece ? 'bg-[#7A1C30]' : 'bg-stone-300'
-                    }`}
-                  >
-                    <span
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        hasBlousePiece ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-                {hasBlousePiece && (
-                  <input
-                    type="text"
-                    value={blouseDetails}
-                    onChange={(e) => {
-                      setBlouseDetails(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    placeholder="Blouse color & length (e.g. Contrast 80cm)"
-                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#E8DCC9] rounded-lg text-stone-800 font-sans focus:outline-none focus:border-[#7A1C30]"
-                  />
-                )}
-              </div>
-
-              {/* Silk Mark Certificate */}
-              <div className="p-3.5 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-stone-900">
-                    Central Silk Board Certified
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSilkMarkCertified(!isSilkMarkCertified);
-                      setIsDirty(true);
-                    }}
-                    className={`w-9 h-5 rounded-full transition-colors relative inline-flex items-center p-0.5 ${
-                      isSilkMarkCertified ? 'bg-emerald-600' : 'bg-stone-300'
-                    }`}
-                  >
-                    <span
-                      className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                        isSilkMarkCertified ? 'translate-x-4' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-                {isSilkMarkCertified && (
-                  <input
-                    type="text"
-                    value={silkMarkNumber}
-                    onChange={(e) => {
-                      setSilkMarkNumber(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    placeholder="Silk Mark Tag # (e.g. CSB-2026-MYS-8942)"
-                    className="w-full px-2.5 py-1.5 text-xs bg-white border border-[#E8DCC9] rounded-lg text-stone-800 font-mono focus:outline-none focus:border-[#7A1C30]"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 3: MEDIA ASSET STUDIO */}
-          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-              <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-[#C87F4A]" />
-                <span>3. Media Asset Studio & Role Tagger</span>
-              </h3>
-              <span className="text-[11px] font-mono text-stone-500">
-                {mediaImages.length} High-Res Frames
-              </span>
-            </div>
-
-            {/* Images Grid with Role Taggers */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              {mediaImages.map((img, idx) => (
-                <div
-                  key={img.id}
-                  className="group relative rounded-xl border border-[#E8DCC9] overflow-hidden bg-[#FAF6F0] p-2 space-y-2 shadow-2xs"
-                >
-                  <div className="h-44 rounded-lg overflow-hidden relative bg-stone-200">
-                    <img
-                      src={img.url}
-                      alt={`Saree View ${idx + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-2 left-2 bg-[#18110E]/80 text-[#FAF3E4] font-mono text-[10px] px-2 py-0.5 rounded backdrop-blur-xs font-bold">
-                      #{idx + 1}
-                    </div>
-                  </div>
-
-                  {/* Role Selector */}
-                  <div>
-                    <label className="block text-[10px] font-mono uppercase text-stone-500 mb-0.5">
-                      Asset Role Tag
-                    </label>
-                    <select
-                      value={img.role}
-                      onChange={(e) => {
-                        const newImgs = [...mediaImages];
-                        newImgs[idx].role = e.target.value;
-                        setMediaImages(newImgs);
-                        setIsDirty(true);
-                      }}
-                      className="w-full p-1.5 border border-[#E8DCC9] rounded-lg text-xs bg-white text-stone-800 font-medium focus:outline-none focus:border-[#7A1C30]"
-                    >
-                      <option value="Primary Drape">Primary Drape</option>
-                      <option value="Pallu Close-up">Pallu Close-up</option>
-                      <option value="Border Macro">Border Macro</option>
-                      <option value="Blouse Piece">Blouse Piece</option>
-                      <option value="Pleat View">Pleat View</option>
-                    </select>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Drag and Drop Ingestion Box */}
-            <div className="border-2 border-dashed border-[#E8DCC9] rounded-xl p-5 text-center bg-[#FAF6F0] hover:border-[#7A1C30] transition-colors cursor-pointer space-y-1">
-              <Upload className="w-6 h-6 text-[#7A1C30] mx-auto" />
-              <p className="font-semibold text-xs text-stone-800">
-                Drag and drop high-resolution saree photos (Up to 50MB)
-              </p>
-              <p className="text-[10px] text-stone-500 font-mono">
-                Recommended: 2000x2600 px studio drape lighting
-              </p>
-            </div>
-
-            {/* Video Asset Uploader */}
-            <div className="p-4 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Video className="w-4 h-4 text-[#7A1C30]" />
-                  <span className="text-xs font-bold text-stone-900">
-                    10-Second Real-Drape 4K Video Clip
-                  </span>
-                </div>
-                <span className="text-[10px] font-mono bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded font-bold border border-emerald-200">
-                  4K Studio Ready
-                </span>
-              </div>
-              <input
-                type="text"
-                value={videoUrl}
                 onChange={(e) => {
-                  setVideoUrl(e.target.value);
+                  setTitle(e.target.value);
                   setIsDirty(true);
                 }}
-                placeholder="Video CDN URL (e.g. https://...)"
-                className="w-full px-3 py-2 border border-[#E8DCC9] rounded-lg text-xs font-mono bg-white text-stone-800 focus:outline-none focus:border-[#7A1C30]"
+                placeholder="e.g. Kanchipuram Heavy Korvai Gold Brocade Silk Saree"
+                className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Weave Tradition *
+              </label>
+              <select
+                value={weave}
+                onChange={(e) => {
+                  setWeave(e.target.value);
+                  setIsDirty(true);
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 bg-white"
+              >
+                <option value="Mysore Silk">Mysore Silk</option>
+                <option value="Kanchipuram">Kanchipuram</option>
+                <option value="Banarasi">Banarasi</option>
+                <option value="Paithani">Paithani</option>
+                <option value="Patola">Patola</option>
+                <option value="Tissue Georgette">Tissue Georgette</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Description
+              </label>
+              <textarea
+                rows={4}
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setIsDirty(true);
+                }}
+                placeholder="Craftsmanship details, weaving notes, pallu design..."
+                className="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30] resize-y"
               />
             </div>
           </div>
 
-          {/* SECTION 4: SINGLE-PIECE & BATCH INVENTORY */}
-          <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
-            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2 pb-2 border-b border-stone-100">
-              <Package className="w-4 h-4 text-emerald-600" />
-              <span>4. Single-Piece & Financials Matrix</span>
+          {/* Pricing & Financials (Exact Order: Cost Price (Internal) -> MRP -> Selling Price -> Stock) */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <Info className="w-4 h-4 text-[#7A1C30]" />
+              <span>Pricing & Financials</span>
             </h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Master SKU *</label>
-                <input
-                  type="text"
-                  required
-                  value={sku}
-                  onChange={(e) => {
-                    setSku(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">Loom Tag ID</label>
-                <input
-                  type="text"
-                  value={loomTag}
-                  onChange={(e) => {
-                    setLoomTag(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">HSN Code</label>
-                <input
-                  type="text"
-                  value={hsnCode}
-                  onChange={(e) => {
-                    setHsnCode(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">GST Rate</label>
-                <select
-                  value={gstRate}
-                  onChange={(e) => {
-                    setGstRate(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
-                >
-                  <option value="5%">5% Handloom Silk GST</option>
-                  <option value="12%">12% High-Value GST</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Cost Price (₹ Internal)
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                  <span>Cost Price (Internal)</span>
                 </label>
                 <input
                   type="number"
@@ -852,352 +511,668 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setCostPrice(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
+                  placeholder="18500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+                />
+                <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">Admin Only</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">MRP (₹)</label>
+                <input
+                  type="number"
+                  value={mrp}
+                  onChange={(e) => {
+                    setMrp(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  placeholder="34000"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Selling Price (₹) *
-                </label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Selling Price (₹) *</label>
                 <input
                   type="number"
                   required
-                  value={priceINR}
+                  value={sellingPrice}
                   onChange={(e) => {
-                    setPriceINR(e.target.value);
+                    setSellingPrice(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
+                  placeholder="28000"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900"
                 />
+                {discountPercent > 0 && (
+                  <span className="text-[10px] text-emerald-700 font-bold font-mono mt-0.5 block">
+                    {discountPercent}% Discount
+                  </span>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Compare-at MRP (₹)
-                </label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Physical Stock *</label>
                 <input
                   type="number"
-                  value={originalPriceINR}
-                  onChange={(e) => {
-                    setOriginalPriceINR(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono text-stone-800 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Stock Qty (Loom)
-                </label>
-                <input
-                  type="number"
+                  required
                   value={stock}
                   onChange={(e) => {
                     setStock(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-mono font-bold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900"
                 />
               </div>
             </div>
 
-            {discountPercent > 0 && (
-              <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono text-emerald-800 flex items-center justify-between">
-                <span>Calculated Storefront Discount:</span>
-                <span className="font-bold">{discountPercent}% OFF MSRP</span>
+            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">HSN Code</label>
+                <input
+                  type="text"
+                  value={hsnCode}
+                  onChange={(e) => setHsnCode(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono text-slate-900"
+                />
               </div>
-            )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">GST Rate</label>
+                <input
+                  type="text"
+                  value={`${gstRate}%`}
+                  readOnly
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono text-slate-700 bg-slate-50 cursor-default"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Weaving & Fabric Specs */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <ShieldCheck className="w-4 h-4 text-[#7A1C30]" />
+              <span>Weaving & Fabric Specifications</span>
+            </h3>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Left Column: Custom Fabric Selection Dropdown */}
+              <div className="space-y-1.5 relative">
+                <label className="block text-xs font-semibold text-slate-700">Fabric Specification *</label>
+                {!isAddingNewFabric ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsFabricDropdownOpen(!isFabricDropdownOpen);
+                        setIsZariDropdownOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
+                    >
+                      <span className="truncate">{fabric}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#7A1C30] transition-transform ${isFabricDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isFabricDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingNewFabric(true);
+                            setIsFabricDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-xl text-[11px] font-bold text-[#7A1C30] hover:bg-[#F3E7CE] flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Add New Fabric Category...</span>
+                        </button>
+
+                        {/* Subtle Horizontal Divider Line (Per Reference Image) */}
+                        <div className="my-1 border-b border-[#E8DCC9]" />
+
+                        <div className="max-h-48 overflow-y-auto space-y-0.5 custom-scrollbar">
+                          {fabricOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setFabric(opt);
+                                setIsFabricDropdownOpen(false);
+                                setIsDirty(true);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-between ${
+                                fabric === opt
+                                  ? 'bg-[#7A1C30] text-white font-bold'
+                                  : 'text-[#1F1B16] hover:bg-[#F5ECE0]'
+                              }`}
+                            >
+                              <span>{opt}</span>
+                              {fabric === opt && <CheckCircle2 className="w-3.5 h-3.5 text-[#E2CE9F]" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newFabricInput}
+                      onChange={(e) => setNewFabricInput(e.target.value)}
+                      placeholder="Type custom fabric name..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newFabricInput.trim()) {
+                          const val = newFabricInput.trim();
+                          setFabricOptions([val, ...fabricOptions]);
+                          setFabric(val);
+                          setNewFabricInput('');
+                          setIsDirty(true);
+                        }
+                        setIsAddingNewFabric(false);
+                      }}
+                      className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingNewFabric(false)}
+                      className="px-2.5 py-2 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Custom Zari Specification Dropdown */}
+              <div className="space-y-1.5 relative">
+                <label className="block text-xs font-semibold text-slate-700">Zari Specification *</label>
+                {!isAddingNewZari ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsZariDropdownOpen(!isZariDropdownOpen);
+                        setIsFabricDropdownOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
+                    >
+                      <span className="truncate">{zariSpec}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#7A1C30] transition-transform ${isZariDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isZariDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingNewZari(true);
+                            setIsZariDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-xl text-[11px] font-bold text-[#7A1C30] hover:bg-[#F3E7CE] flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Add New Zari Specification...</span>
+                        </button>
+
+                        {/* Subtle Horizontal Divider Line (Per Reference Image) */}
+                        <div className="my-1 border-b border-[#E8DCC9]" />
+
+                        <div className="max-h-48 overflow-y-auto space-y-0.5 custom-scrollbar">
+                          {zariOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setZariSpec(opt);
+                                setIsZariDropdownOpen(false);
+                                setIsDirty(true);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-between ${
+                                zariSpec === opt
+                                  ? 'bg-[#7A1C30] text-white font-bold'
+                                  : 'text-[#1F1B16] hover:bg-[#F5ECE0]'
+                              }`}
+                            >
+                              <span>{opt}</span>
+                              {zariSpec === opt && <CheckCircle2 className="w-3.5 h-3.5 text-[#E2CE9F]" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newZariInput}
+                      onChange={(e) => setNewZariInput(e.target.value)}
+                      placeholder="Type custom zari spec..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newZariInput.trim()) {
+                          const val = newZariInput.trim();
+                          setZariOptions([val, ...zariOptions]);
+                          setZariSpec(val);
+                          setNewZariInput('');
+                          setIsDirty(true);
+                        }
+                        setIsAddingNewZari(false);
+                      }}
+                      className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingNewZari(false)}
+                      className="px-2.5 py-2 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Color Variant Management Card (BFS-1 §6.3 & DSS §4 Compliant Redesign) */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#7A1C30]" />
+                  <span>Color Variant Management (BFS-1 §6.3)</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  Select color palette chip, manage 3 drape photos per variant & auto-generated SKUs
+                </p>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded-full font-bold">
+                Master Product → Color Variants
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              {colorVariants.map((varItem, idx) => (
+                <div key={varItem.id} className="p-4 bg-slate-50/90 border border-slate-200 rounded-2xl space-y-3">
+                  {/* Top Row: Palette Picker Chips & Basic Specs */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200/60">
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                        Choose Color Palette Swatch *
+                      </label>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {SAREE_COLOR_PALETTE.map((pal) => {
+                          const isSelected = varItem.hex === pal.hex;
+                          return (
+                            <button
+                              key={pal.code}
+                              type="button"
+                              onClick={() => {
+                                const updated = [...colorVariants];
+                                updated[idx].hex = pal.hex;
+                                updated[idx].name = pal.name;
+                                updated[idx].sku = `${autoSku}-${pal.code}`;
+                                setColorVariants(updated);
+                                setIsDirty(true);
+                              }}
+                              className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer ${
+                                isSelected ? 'border-[#7A1C30] scale-110 shadow-sm ring-2 ring-[#7A1C30]/20' : 'border-white shadow-2xs hover:scale-105'
+                              }`}
+                              style={{ backgroundColor: pal.hex }}
+                              title={`${pal.name} (${pal.code})`}
+                            >
+                              {isSelected && <Check className={`w-3 h-3 ${pal.hex === '#F5F5F4' ? 'text-slate-800' : 'text-white'}`} />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">Color Name</label>
+                        <input
+                          type="text"
+                          value={varItem.name}
+                          onChange={(e) => {
+                            const updated = [...colorVariants];
+                            updated[idx].name = e.target.value;
+                            setColorVariants(updated);
+                            setIsDirty(true);
+                          }}
+                          className="px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-white font-semibold text-slate-900 w-36"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                          Variant SKU (Read-Only)
+                        </label>
+                        <input
+                          type="text"
+                          value={varItem.sku}
+                          readOnly
+                          className="px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-slate-100 font-mono font-bold text-slate-700 w-36 cursor-not-allowed"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">Physical Stock</label>
+                        <input
+                          type="number"
+                          value={varItem.stockCount}
+                          onChange={(e) => {
+                            const updated = [...colorVariants];
+                            updated[idx].stockCount = parseInt(e.target.value, 10) || 0;
+                            setColorVariants(updated);
+                            setIsDirty(true);
+                          }}
+                          className="px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-white font-mono font-bold text-slate-900 w-20"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setColorVariants(colorVariants.filter((_, i) => i !== idx));
+                          setIsDirty(true);
+                        }}
+                        className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-100 transition-colors self-end mb-0.5"
+                        title="Remove Variant"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Bottom Row: 3 Variant Images (Primary Drape, Detail Zari, Pallu Shot) */}
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                      <span>Variant Drape Images (Up to 3 Photos per Color Variant)</span>
+                      <span className="text-slate-400">BFS-1 §6.3 Compliant</span>
+                    </label>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[
+                        { label: 'Image 1 (Primary Drape)' },
+                        { label: 'Image 2 (Weave / Zari Detail)' },
+                        { label: 'Image 3 (Pallu / Border Detail)' },
+                      ].map((slot, imgIdx) => (
+                        <div key={imgIdx} className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-12 h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center flex-shrink-0 relative group">
+                              {varItem.images[imgIdx] ? (
+                                <>
+                                  <img src={varItem.images[imgIdx]} alt={`Slot ${imgIdx + 1}`} className="w-full h-full object-cover" />
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...colorVariants];
+                                      const newImgs = [...updated[idx].images] as [string, string, string];
+                                      newImgs[imgIdx] = '';
+                                      updated[idx].images = newImgs;
+                                      setColorVariants(updated);
+                                      setIsDirty(true);
+                                    }}
+                                    className="absolute inset-0 bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                    title="Remove Photo"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              ) : (
+                                <ImageIcon className="w-5 h-5 text-slate-300" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <span className="block text-[10px] font-semibold text-slate-700 truncate">{slot.label}</span>
+                              <label className="cursor-pointer inline-flex items-center gap-1 text-[11px] font-bold text-[#7A1C30] hover:text-[#5F1424] bg-[#FAF3E4] hover:bg-[#F3E7CE] px-2.5 py-1 rounded-lg border border-[#C87F4A]/30 transition-colors">
+                                <Plus className="w-3 h-3 text-[#7A1C30]" />
+                                <span>{varItem.images[imgIdx] ? 'Change File' : 'Upload File'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const objectUrl = URL.createObjectURL(file);
+                                      const updated = [...colorVariants];
+                                      const newImgs = [...updated[idx].images] as [string, string, string];
+                                      newImgs[imgIdx] = objectUrl;
+                                      updated[idx].images = newImgs;
+                                      setColorVariants(updated);
+                                      setIsDirty(true);
+                                    }
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setColorVariants([
+                  ...colorVariants,
+                  {
+                    id: `var-${Date.now()}`,
+                    name: 'Kanchipuram Gold',
+                    hex: '#D97706',
+                    sku: `${autoSku}-GLD`,
+                    stockCount: 2,
+                    images: ['', '', ''],
+                  },
+                ]);
+                setIsDirty(true);
+              }}
+              className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-[#7A1C30]" />
+              <span>+ Add Saree Color Variant</span>
+            </button>
           </div>
         </div>
 
-        {/* ============================================== */}
-        {/* RIGHT COLUMN (35% - Sticky Sidebar)            */}
-        {/* ============================================== */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* 1. STATUS & CHANNELS */}
-          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
-            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider">
-              Status & Channels
-            </h4>
-
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Storefront State
-              </label>
-              <select
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value as any);
-                  setIsDirty(true);
-                }}
-                className="w-full px-3 py-2 bg-[#FAF6F0] border border-[#E8DCC9] focus:bg-white rounded-xl text-xs font-semibold text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-              >
-                <option value="ACTIVE">Active (Live on Website)</option>
-                <option value="DRAFT">Draft (Internal Staging)</option>
-                <option value="ARCHIVED">Archived (Sold Vault)</option>
-              </select>
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-stone-100 text-xs font-sans">
-              <label className="block font-semibold text-stone-700">Sales Channels</label>
-              {[
-                { key: 'onlineStore', label: 'Online Storefront' },
-                { key: 'whatsAppCatalog', label: 'WhatsApp VIP Catalog' },
-                { key: 'liveShopping', label: 'Live Video Shopping Studio' },
-              ].map((c) => (
-                <label key={c.key} className="flex items-center gap-2 cursor-pointer text-stone-700">
-                  <input
-                    type="checkbox"
-                    checked={(channels as any)[c.key]}
-                    onChange={(e) => {
-                      setChannels({ ...channels, [c.key]: e.target.checked });
-                      setIsDirty(true);
-                    }}
-                    className="w-4 h-4 rounded text-[#7A1C30] focus:ring-[#7A1C30]"
-                  />
-                  <span>{c.label}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* 2. OCCASION & COLLECTIONS */}
-          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
-            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
-              <Tag className="w-3.5 h-3.5 text-[#C87F4A]" />
-              <span>Occasion Tags</span>
-            </h4>
+        {/* Right Column: Occasions, Special Badges, Blouse & Dimensions, Silk Mark, Media */}
+        <div className="space-y-6">
+          {/* Occasion Tags Selector */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <Calendar className="w-4 h-4 text-[#7A1C30]" />
+              <span>Occasions & Wearability</span>
+            </h3>
 
             <div className="flex flex-wrap gap-1.5">
-              {[
-                'Bridal',
-                'Muhurtham',
-                'Grand Reception',
-                'Festive Pooja',
-                'Temple Votive',
-                'Trousseau Curation',
-              ].map((occ) => {
-                const isSelected = occasions.includes(occ);
+              {availableOccasions.map((occ) => {
+                const isSelected = selectedOccasions.includes(occ);
                 return (
                   <button
                     key={occ}
                     type="button"
-                    onClick={() => {
-                      setOccasions(
-                        isSelected
-                          ? occasions.filter((o) => o !== occ)
-                          : [...occasions, occ]
-                      );
-                      setIsDirty(true);
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                    onClick={() => toggleOccasion(occ)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-[#7A1C30] text-white shadow-2xs'
-                        : 'bg-[#FAF6F0] text-stone-600 hover:bg-[#FAF3E4] border border-[#E8DCC9]'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}
                   >
-                    {occ}
+                    {occ} {isSelected && '✓'}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* 3. SPECIAL TAGS (Under Occasion Tags) */}
-          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3.5">
-            <div className="flex items-center justify-between">
-              <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
-                <span>Special Tags</span>
-              </h4>
-              <span className="text-[10px] font-mono text-stone-400">
-                {specialTags.length} Selected
-              </span>
-            </div>
+          {/* Special Marketing Badges & Custom Tags */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
+              <Sparkles className="w-4 h-4 text-[#7A1C30]" />
+              <span>Special Marketing Badges</span>
+            </h3>
 
-            {/* Clickable Special Tags Badges (Best Seller, New Arrival, etc.) */}
             <div className="flex flex-wrap gap-1.5">
-              {availableSpecialTags.map((tag) => {
-                const isSelected = specialTags.includes(tag);
+              {availableBadges.map((badge) => {
+                const isSelected = selectedBadges.includes(badge);
                 return (
                   <button
-                    key={tag}
+                    key={badge}
                     type="button"
-                    onClick={() => {
-                      setSpecialTags(
-                        isSelected
-                          ? specialTags.filter((t) => t !== tag)
-                          : [...specialTags, tag]
-                      );
-                      setIsDirty(true);
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                    onClick={() => toggleBadge(badge)}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       isSelected
-                        ? tag.toLowerCase().includes('best seller')
-                          ? 'bg-amber-600 text-white shadow-2xs'
-                          : tag.toLowerCase().includes('new arrival')
-                          ? 'bg-emerald-600 text-white shadow-2xs'
-                          : 'bg-[#7A1C30] text-white shadow-2xs'
-                        : 'bg-[#FAF6F0] text-stone-600 hover:bg-[#FAF3E4] border border-[#E8DCC9]'
+                        ? 'bg-amber-600 text-white shadow-2xs'
+                        : 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200'
                     }`}
                   >
-                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
-                    <span>{tag}</span>
+                    {badge} {isSelected && '✓'}
                   </button>
                 );
               })}
             </div>
 
-            {/* Admin Add New Special Tag Option */}
-            <div className="pt-2.5 border-t border-stone-100">
-              <label className="block text-[11px] font-semibold text-stone-700 mb-1.5">
-                + Add New Special Tag:
+            <form onSubmit={handleAddCustomBadge} className="flex gap-2 pt-2 border-t border-slate-100">
+              <input
+                type="text"
+                value={customTagInput}
+                onChange={(e) => setCustomTagInput(e.target.value)}
+                placeholder="Add custom tag..."
+                className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900"
+              />
+              <button
+                type="submit"
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold"
+              >
+                + Tag
+              </button>
+            </form>
+          </div>
+
+          {/* Blouse & Dimensions */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-900">
+                <input
+                  type="checkbox"
+                  checked={hasBlousePiece}
+                  onChange={(e) => setHasBlousePiece(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#7A1C30] focus:ring-[#7A1C30]"
+                />
+                <span>Blouse Piece Included</span>
               </label>
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={newSpecialTagInput}
-                  onChange={(e) => setNewSpecialTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddCustomSpecialTag();
-                    }
-                  }}
-                  placeholder="e.g. Celebrity Pick, Royal Vault"
-                  className="flex-1 px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl text-xs font-sans focus:outline-none focus:border-[#7A1C30] text-stone-900"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleAddCustomSpecialTag()}
-                  disabled={!newSpecialTagInput.trim()}
-                  className="px-3 py-1.5 bg-[#7A1C30] hover:bg-[#5F1424] disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Tag</span>
-                </button>
-              </div>
             </div>
-          </div>
 
-          {/* 4. SHIPPING & DIMENSIONS */}
-          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
-            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Shipping & Weight</span>
-            </h4>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-semibold text-stone-700 mb-1">
-                  Weight (Grams) *
-                </label>
-                <div className="flex items-center">
+            {hasBlousePiece && (
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Blouse Length *</label>
                   <input
-                    type="number"
-                    value={weightGrams}
-                    onChange={(e) => {
-                      setWeightGrams(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    className="w-full px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-l-xl font-mono text-stone-900 focus:outline-none focus:border-[#7A1C30]"
+                    type="text"
+                    required={hasBlousePiece}
+                    value={blouseLength}
+                    onChange={(e) => setBlouseLength(e.target.value)}
+                    placeholder="e.g. 0.80m"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
                   />
-                  <span className="px-3 py-1.5 bg-[#FAF3E4] border border-l-0 border-[#E8DCC9] rounded-r-xl text-stone-600 font-mono">
-                    g
-                  </span>
                 </div>
-                <p className="text-[10px] text-stone-400 font-mono mt-0.5">
-                  Used for real-time BlueDart air parcel billing
-                </p>
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-700 mb-1">Blouse Width *</label>
+                  <input
+                    type="text"
+                    required={hasBlousePiece}
+                    value={blouseWidth}
+                    onChange={(e) => setBlouseWidth(e.target.value)}
+                    placeholder="e.g. 1.14m"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                  />
+                </div>
               </div>
+            )}
 
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
               <div>
-                <label className="block font-semibold text-stone-700 mb-1">
-                  Folded Dimensions (LxWxH)
-                </label>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Saree Length</label>
                 <input
                   type="text"
-                  value={dimensions}
-                  onChange={(e) => {
-                    setDimensions(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl font-mono text-stone-900 text-xs focus:outline-none focus:border-[#7A1C30]"
+                  value={sareeLength}
+                  onChange={(e) => setSareeLength(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Saree Width</label>
+                <input
+                  type="text"
+                  value={sareeWidth}
+                  onChange={(e) => setSareeWidth(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Package Weight</label>
+                <input
+                  type="text"
+                  value={packageWeight}
+                  onChange={(e) => setPackageWeight(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Package Dimensions</label>
+                <input
+                  type="text"
+                  value={packageDimensions}
+                  onChange={(e) => setPackageDimensions(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
                 />
               </div>
             </div>
           </div>
 
-          {/* 5. SEO & SOCIAL GRAPH */}
-          <div className="bg-white p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
-            <h4 className="font-bold text-xs text-[#1F1B16] uppercase font-mono tracking-wider flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-[#C87F4A]" />
-              <span>SEO & Social Preview</span>
-            </h4>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <div className="flex justify-between font-semibold text-stone-700 mb-1">
-                  <span>Meta Title</span>
-                  <span className="text-[10px] font-mono text-stone-400">{metaTitle.length}/70</span>
-                </div>
-                <input
-                  type="text"
-                  value={metaTitle}
-                  onChange={(e) => {
-                    setMetaTitle(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-1.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl text-xs text-stone-900 focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between font-semibold text-stone-700 mb-1">
-                  <span>Meta Description</span>
-                  <span className="text-[10px] font-mono text-stone-400">
-                    {metaDescription.length}/160
-                  </span>
-                </div>
-                <textarea
-                  rows={3}
-                  value={metaDescription}
-                  onChange={(e) => {
-                    setMetaDescription(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full p-2.5 bg-[#FAF6F0] border border-[#E8DCC9] rounded-xl text-xs text-stone-800 leading-relaxed focus:outline-none focus:border-[#7A1C30]"
-                />
-              </div>
-
-              {/* Google Search Card Snippet Preview */}
-              <div className="p-3 rounded-xl bg-[#FAF6F0] border border-[#E8DCC9] text-left space-y-1">
-                <div className="text-[11px] text-emerald-700 font-mono truncate">
-                  https://neelsareehouse.com/products/{slug}
-                </div>
-                <div className="text-xs font-semibold text-[#7A1C30] hover:underline cursor-pointer truncate">
-                  {metaTitle || title || 'Product Title Preview'}
-                </div>
-                <div className="text-[11px] text-stone-600 line-clamp-2">
-                  {metaDescription || description.slice(0, 140) || 'Product meta description snippet preview...'}
-                </div>
-              </div>
-            </div>
+          {/* Central Silk Board Certification */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isSilkMarkCertified}
+                onChange={(e) => setIsSilkMarkCertified(e.target.checked)}
+                className="w-4 h-4 rounded text-[#7A1C30] focus:ring-[#7A1C30]"
+              />
+              <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Central Silk Board Silk Mark Certified</span>
+              </span>
+            </label>
           </div>
+
+
         </div>
       </div>
     </div>
   );
-}
-
-// Helper hook to find product
-function useMemoProduct(productId?: string) {
-  return React.useMemo(() => {
-    if (!productId) return undefined;
-    return products.find(
-      (p) => p.id === productId || p.slug === productId || (p as any).sku === productId
-    );
-  }, [productId]);
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Product, products } from '@/lib/products';
 import FlyingCartAnimation, { FlyingItem } from '@/components/ecommerce/FlyingCartAnimation';
+import { createClient } from '@/lib/supabase/client';
 
 export interface CartItem {
   product: Product;
@@ -54,20 +56,10 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([
-    {
-      product: products[0],
-      quantity: 1,
-      tailoringExtraINR: 0,
-    },
-  ]);
-
-  const [wishlist, setWishlist] = useState<string[]>([
-    'mysore-royal-crimson',
-    'banarasi-kadwa-emerald',
-    'paithani-tilli-shot-purple',
-  ]);
-
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
   const [isMarqueeDismissed, setIsMarqueeDismissed] = useState(false);
   const [currency, setCurrency] = useState('INR');
@@ -77,10 +69,136 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [cartBounced, setCartBounced] = useState(false);
 
+  // --------------------------------------------------------------------------
+  // 1. AUTH & DB SYNC & PENDING ACTION EXECUTOR
+  // --------------------------------------------------------------------------
+  useEffect(() => {
+    const supabase = createClient();
+
+    const syncUserData = async (user: any) => {
+      setCurrentUser(user);
+
+      if (user) {
+        // Fetch saved cart from database
+        try {
+          const res = await fetch('/api/cart');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.cart?.items) {
+              const dbItems: CartItem[] = data.cart.items.map((item: any) => {
+                const foundProduct = products.find(p => p.id === item.product_id || p.slug === item.product_id) || products[0];
+                return {
+                  product: foundProduct,
+                  quantity: item.quantity,
+                  blouseOption: item.blouse_option || 'unstitched',
+                  tailoringExtraINR: item.tailoring_extra_inr || 0,
+                };
+              });
+              if (dbItems.length > 0) {
+                setCart(dbItems);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[CartContext] Failed to fetch DB cart:', err);
+        }
+
+        // Fetch saved wishlist from database
+        try {
+          const { data: wishlistData } = await supabase
+            .from('wishlist_items')
+            .select('variant_id')
+            .eq('customer_id', user.id);
+
+          if (wishlistData) {
+            setWishlist(wishlistData.map((w: any) => w.variant_id));
+          }
+        } catch (err) {
+          console.error('[CartContext] Failed to fetch DB wishlist:', err);
+        }
+
+        // Check & Execute Pending Cart Action from sessionStorage
+        try {
+          const pendingCartStr = sessionStorage.getItem('pending_cart_action');
+          if (pendingCartStr) {
+            sessionStorage.removeItem('pending_cart_action');
+            const pending = JSON.parse(pendingCartStr);
+            if (pending?.product) {
+              const targetProduct = products.find(p => p.id === pending.product.id) || pending.product;
+              setCart((prev) => {
+                const existing = prev.find(item => item.product.id === targetProduct.id);
+                if (existing) {
+                  return prev.map(item => item.product.id === targetProduct.id ? { ...item, quantity: item.quantity + (pending.quantity || 1) } : item);
+                }
+                return [...prev, { product: targetProduct, quantity: pending.quantity || 1, blouseOption: pending.blouseOption, tailoringExtraINR: pending.tailoringExtraINR }];
+              });
+              setIsCartDrawerOpen(true);
+            }
+          }
+        } catch (err) {
+          console.error('[CartContext] Error executing pending cart action:', err);
+        }
+
+        // Check & Execute Pending Wishlist Action from sessionStorage
+        try {
+          const pendingWishlistStr = sessionStorage.getItem('pending_wishlist_action');
+          if (pendingWishlistStr) {
+            sessionStorage.removeItem('pending_wishlist_action');
+            const pending = JSON.parse(pendingWishlistStr);
+            if (pending?.productId) {
+              setWishlist((prev) => prev.includes(pending.productId) ? prev : [...prev, pending.productId]);
+              await supabase.from('wishlist_items').upsert({ customer_id: user.id, variant_id: pending.productId });
+            }
+          }
+        } catch (err) {
+          console.error('[CartContext] Error executing pending wishlist action:', err);
+        }
+
+      } else {
+        // Guest user: restore cart & wishlist from localStorage
+        try {
+          const guestCart = localStorage.getItem('sareevanta_guest_cart');
+          if (guestCart) setCart(JSON.parse(guestCart));
+          const guestWishlist = localStorage.getItem('sareevanta_guest_wishlist');
+          if (guestWishlist) setWishlist(JSON.parse(guestWishlist));
+        } catch (err) {
+          console.error('[CartContext] Failed to restore guest storage:', err);
+        }
+      }
+    };
+
+    supabase.auth.getUser().then(({ data: { user } }) => syncUserData(user));
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncUserData(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Save guest cart / wishlist to localStorage whenever modified (when unauthenticated)
+  useEffect(() => {
+    if (!currentUser && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('sareevanta_guest_cart', JSON.stringify(cart));
+      } catch (e) {}
+    }
+  }, [cart, currentUser]);
+
+  useEffect(() => {
+    if (!currentUser && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('sareevanta_guest_wishlist', JSON.stringify(wishlist));
+      } catch (e) {}
+    }
+  }, [wishlist, currentUser]);
+
+  // --------------------------------------------------------------------------
+  // 2. FLYING ANIMATION & CART ACTIONS
+  // --------------------------------------------------------------------------
   const triggerFlyAnimation = (imageUrl: string, sourcePosition?: SourcePosition) => {
     if (typeof window === 'undefined') return;
 
-    // Locate header shopping cart button in DOM
     const cartEl =
       document.getElementById('header-cart-button') ||
       document.querySelector('[aria-label="Shopping Cart"]');
@@ -123,7 +241,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const handleFlightComplete = (id: string) => {
     setFlyingItems((prev) => prev.filter((item) => item.id !== id));
-    // Trigger elastic bounce on cart icon
     setCartBounced(true);
     setTimeout(() => setCartBounced(false), 500);
   };
@@ -135,11 +252,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     tailoringExtraINR = 0,
     sourcePosition?: SourcePosition
   ) => {
+    if (!currentUser) {
+      // Save intended cart action so post-login executor can fulfill it
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pending_cart_action', JSON.stringify({
+          product,
+          quantity,
+          blouseOption,
+          tailoringExtraINR,
+        }));
+        const currentPath = window.location.pathname;
+        router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      }
+      return;
+    }
+
     // 1. Update Cart Data State
     setCart((prev) => {
-      const existing = prev.find(
-        (item) => item.product.id === product.id
-      );
+      const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
@@ -150,13 +280,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return [...prev, { product, quantity, blouseOption, tailoringExtraINR }];
     });
 
-    // 2. Trigger silk-flight animation to Cart button (WITHOUT opening drawer)
+    // 2. Sync to Supabase Database
+    fetch('/api/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        productId: product.id,
+        quantity,
+        blouseOption,
+        tailoringExtraINR,
+      }),
+    }).catch(err => console.error('[CartContext] DB sync error:', err));
+
+    // 3. Trigger silk-flight animation
     const productImage = product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
     triggerFlyAnimation(productImage, sourcePosition);
   };
 
   const removeFromCart = (productId: string) => {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
+    if (currentUser) {
+      fetch('/api/cart', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      }).catch(err => console.error('[CartContext] DB remove error:', err));
+    }
   };
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -169,14 +318,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         item.product.id === productId ? { ...item, quantity } : item
       )
     );
+    if (currentUser) {
+      fetch('/api/cart', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity }),
+      }).catch(err => console.error('[CartContext] DB update error:', err));
+    }
   };
 
-  const toggleWishlist = (productId: string) => {
+  const toggleWishlist = async (productId: string) => {
+    if (!currentUser) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('pending_wishlist_action', JSON.stringify({ productId }));
+        const currentPath = window.location.pathname;
+        router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      }
+      return;
+    }
+
+    const isCurrentlyWishlisted = wishlist.includes(productId);
     setWishlist((prev) =>
-      prev.includes(productId)
+      isCurrentlyWishlisted
         ? prev.filter((id) => id !== productId)
         : [...prev, productId]
     );
+
+    const supabase = createClient();
+    if (isCurrentlyWishlisted) {
+      await supabase.from('wishlist_items').delete().eq('customer_id', currentUser.id).eq('variant_id', productId);
+    } else {
+      await supabase.from('wishlist_items').upsert({ customer_id: currentUser.id, variant_id: productId });
+    }
   };
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
@@ -235,7 +408,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      {/* Global Flying Saree to Cart Particles */}
       <FlyingCartAnimation items={flyingItems} onComplete={handleFlightComplete} />
     </CartContext.Provider>
   );
@@ -243,7 +415,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;

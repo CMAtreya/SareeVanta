@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Package,
   Heart,
@@ -14,10 +14,52 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { wishlistCount } = useCart();
+
+  const [userInfo, setUserInfo] = useState<{ name: string; email: string; initials: string }>({
+    name: 'Patron',
+    email: '',
+    initials: 'P',
+  });
+
+  useEffect(() => {
+    async function loadUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const meta = user.user_metadata || {};
+        const fullName =
+          meta.full_name ||
+          meta.name ||
+          (meta.given_name ? `${meta.given_name} ${meta.family_name || ''}`.trim() : '') ||
+          user.email?.split('@')[0] ||
+          'Patron';
+
+        const parts = fullName.split(' ');
+        const initials = parts.length > 1 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : fullName.substring(0, 2).toUpperCase();
+
+        setUserInfo({
+          name: fullName,
+          email: user.email || '',
+          initials,
+        });
+      }
+    }
+
+    loadUser();
+  }, []);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   const navItems = [
     {
@@ -64,18 +106,18 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             {/* User Profile Card Header */}
             <div className="flex items-center gap-3.5 pb-6 border-b border-[#C87F4A]/20">
               <div className="w-13 h-13 rounded-full bg-gradient-to-br from-[#C87F4A] to-[#773D21] text-white flex items-center justify-center font-editorial font-bold text-xl shadow-md border-2 border-white">
-                AR
+                {userInfo.initials}
               </div>
               <div className="truncate">
                 <div className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-[#C87F4A] font-bold">
                   <Sparkles className="w-3 h-3" />
-                  <span>Royal Patron</span>
+                  <span>Patron Account</span>
                 </div>
                 <h2 className="font-editorial text-lg font-bold text-[#1F1B16] truncate">
-                  Ananya S. Rao
+                  {userInfo.name}
                 </h2>
                 <span className="text-xs text-stone-500 font-sans block truncate">
-                  ananya.rao@example.com
+                  {userInfo.email}
                 </span>
               </div>
             </div>
@@ -122,13 +164,14 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
 
               {/* Logout Button */}
               <div className="pt-4 border-t border-stone-100 mt-4">
-                <Link
-                  href="/login"
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-stone-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-stone-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer text-left font-medium"
                 >
                   <LogOut className="w-4 h-4 text-stone-400" />
                   <span>Sign Out</span>
-                </Link>
+                </button>
               </div>
             </nav>
 

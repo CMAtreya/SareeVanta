@@ -318,15 +318,15 @@ export default function AdminExecutiveDashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 font-sans">
-              Executive Control Center
+              Dashboard
             </h1>
             <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Mysuru Flagship Live</span>
+              <span>Store Live</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 font-mono mt-0.5">
-            Morning Store Opening & Daily Order Dispatch Pipeline
+            Store Sales, Orders & Operations Overview
           </p>
         </div>
 

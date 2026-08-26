@@ -10,12 +10,8 @@ export interface CustomerRecord {
   country: string;
   totalOrders: number;
   totalSpend: number;
-  bridalTag?: string;
-  weddingDate?: string;
   lastActive: string;
-  tier: 'ROYAL_HERITAGE_VIP' | 'BRIDAL_TROUSSEAU' | 'GOLD_PATRON' | 'NEW_CLIENT';
-  rtoRisk: 'LOW' | 'MEDIUM' | 'HIGH';
-  isNri: boolean;
+  lastOrderDate?: string;
   preferredWeaves: string[];
 }
 
@@ -32,12 +28,7 @@ export const SAMPLE_CUSTOMERS: CustomerRecord[] = [
     country: 'India',
     totalOrders: 4,
     totalSpend: 148500,
-    bridalTag: 'Anniversary & Mother-of-Bride',
-    weddingDate: 'Nov 2026',
     lastActive: '2 hours ago',
-    tier: 'ROYAL_HERITAGE_VIP',
-    rtoRisk: 'LOW',
-    isNri: false,
     preferredWeaves: ['Mysore Silk', 'Kanchipuram Korvai'],
   },
   {
@@ -52,12 +43,7 @@ export const SAMPLE_CUSTOMERS: CustomerRecord[] = [
     country: 'India',
     totalOrders: 6,
     totalSpend: 264000,
-    bridalTag: 'Muhurtham Grand Trousseau',
-    weddingDate: '14 Dec 2026',
     lastActive: 'Yesterday, 03:40 PM',
-    tier: 'ROYAL_HERITAGE_VIP',
-    rtoRisk: 'LOW',
-    isNri: false,
     preferredWeaves: ['Kanchipuram 3-Shuttle', 'Tissue Georgette'],
   },
   {
@@ -72,11 +58,7 @@ export const SAMPLE_CUSTOMERS: CustomerRecord[] = [
     country: 'India',
     totalOrders: 3,
     totalSpend: 88000,
-    bridalTag: 'Festive Diwali & Reception',
     lastActive: '3 days ago',
-    tier: 'GOLD_PATRON',
-    rtoRisk: 'LOW',
-    isNri: false,
     preferredWeaves: ['Paithani Asawali', 'Banarasi Katan'],
   },
   {
@@ -92,66 +74,6 @@ export const SAMPLE_CUSTOMERS: CustomerRecord[] = [
     totalOrders: 2,
     totalSpend: 62000,
     lastActive: '4 days ago',
-    tier: 'GOLD_PATRON',
-    rtoRisk: 'LOW',
-    isNri: false,
     preferredWeaves: ['Banarasi Kadwa', 'Chanderi Silk'],
-  },
-  {
-    id: 'cust-105',
-    name: 'Aishwarya Patel',
-    avatarBg: 'from-emerald-400 to-emerald-600',
-    initials: 'AP',
-    phone: '+1 408 555 0199',
-    email: 'aishwarya.patel@silicontech.com',
-    city: 'San Jose, CA',
-    state: 'California',
-    country: 'United States',
-    totalOrders: 3,
-    totalSpend: 195000,
-    bridalTag: 'NRI Destination Wedding (Udaipur)',
-    weddingDate: 'Jan 2027',
-    lastActive: '12 days ago',
-    tier: 'ROYAL_HERITAGE_VIP',
-    rtoRisk: 'LOW',
-    isNri: true,
-    preferredWeaves: ['Patola Double Ikkat', 'Kanchipuram Pure Zari'],
-  },
-  {
-    id: 'cust-106',
-    name: 'Kavitha Sundaram',
-    avatarBg: 'from-amber-500 to-orange-600',
-    initials: 'KS',
-    phone: '+91 94440 88990',
-    email: 'kavitha.sundaram@gmail.com',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    country: 'India',
-    totalOrders: 1,
-    totalSpend: 32000,
-    bridalTag: 'Temple Votive & Housewarming',
-    lastActive: '18 Aug 2026',
-    tier: 'NEW_CLIENT',
-    rtoRisk: 'MEDIUM',
-    isNri: false,
-    preferredWeaves: ['Mysore Silk Crepe'],
-  },
-  {
-    id: 'cust-107',
-    name: 'Deepak Varma',
-    avatarBg: 'from-slate-400 to-slate-600',
-    initials: 'DV',
-    phone: '+91 98300 77889',
-    email: 'deepak.varma@tata.com',
-    city: 'Kolkata',
-    state: 'West Bengal',
-    country: 'India',
-    totalOrders: 1,
-    totalSpend: 54000,
-    lastActive: '19 Aug 2026',
-    tier: 'NEW_CLIENT',
-    rtoRisk: 'HIGH',
-    isNri: false,
-    preferredWeaves: ['Banarasi Kadwa'],
   },
 ];

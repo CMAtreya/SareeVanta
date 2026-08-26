@@ -1,103 +1,102 @@
+import { createClient } from '@/lib/supabase/server';
+import { products as mockProducts } from '@/lib/products';
 import { NextResponse } from 'next/server';
-import { products, Product } from '@/lib/products';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const weave = searchParams.get('weave');
+  const fabric = searchParams.get('fabric');
+  const occasion = searchParams.get('occasion');
+  const color = searchParams.get('color');
+  const search = searchParams.get('q');
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '20', 10);
 
-  const weaveParam = searchParams.get('weave');
-  const fabricParam = searchParams.get('fabric');
-  const occasionParam = searchParams.get('occasion');
-  const colorParam = searchParams.get('color');
-  const priceMinParam = searchParams.get('price_min');
-  const priceMaxParam = searchParams.get('price_max');
-  const silkMarkParam = searchParams.get('silk_mark');
-  const filterParam = searchParams.get('filter');
-  const sortParam = searchParams.get('sort') || 'featured';
-  const pageParam = parseInt(searchParams.get('page') || '1', 10);
-  const limitParam = parseInt(searchParams.get('limit') || '8', 10);
+  const supabase = createClient();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  const selectedWeaves = weaveParam ? weaveParam.split(',').map((w) => w.trim()) : [];
-  const selectedFabrics = fabricParam ? fabricParam.split(',').map((f) => f.trim()) : [];
-  const selectedOccasions = occasionParam ? occasionParam.split(',').map((o) => o.trim()) : [];
-  const selectedColors = colorParam ? colorParam.split(',').map((c) => c.trim().toLowerCase()) : [];
-  const priceMin = priceMinParam ? parseInt(priceMinParam, 10) : 0;
-  const priceMax = priceMaxParam ? parseInt(priceMaxParam, 10) : 200000;
-  const silkMarkOnly = silkMarkParam === 'true';
+  // If Supabase is connected, query Supabase DB
+  if (supabaseUrl && !supabaseUrl.includes('placeholder')) {
+    try {
+      let query = supabase
+        .from('products')
+        .select(`
+          id,
+          title,
+          slug,
+          description,
+          care_instructions,
+          base_mrp_paise,
+          base_selling_price_paise,
+          is_published,
+          weavings ( name ),
+          fabrics ( name ),
+          occasions ( name ),
+          patterns ( name ),
+          border_stylings ( name ),
+          zari_specifications ( name ),
+          product_variants (
+            id,
+            sku,
+            price_paise,
+            mrp_paise,
+            is_active,
+            colors ( name, hex_code ),
+            product_variant_media ( url, is_primary )
+          )
+        `)
+        .eq('is_published', true);
 
-  // Compute total counts per attribute across full inventory
-  const counts = {
-    weaves: {} as Record<string, number>,
-    fabrics: {} as Record<string, number>,
-    occasions: {} as Record<string, number>,
-    colors: {} as Record<string, number>,
-  };
+      if (search) {
+        query = query.ilike('title', `%${search}%`);
+      }
 
-  products.forEach((p) => {
-    counts.weaves[p.weave] = (counts.weaves[p.weave] || 0) + 1;
-    counts.fabrics[p.fabric] = (counts.fabrics[p.fabric] || 0) + 1;
-    counts.occasions[p.occasion] = (counts.occasions[p.occasion] || 0) + 1;
-    const colorKey = p.color.split(' ')[0];
-    counts.colors[colorKey] = (counts.colors[colorKey] || 0) + 1;
-  });
+      const { data, error } = await query.range((page - 1) * limit, page * limit - 1);
 
-  // Filter products
-  let filtered = products.filter((p) => {
-    if (selectedWeaves.length > 0 && !selectedWeaves.some((w) => p.weave.toLowerCase() === w.toLowerCase())) {
-      return false;
-    }
-    if (selectedFabrics.length > 0 && !selectedFabrics.some((f) => p.fabric.toLowerCase() === f.toLowerCase())) {
-      return false;
-    }
-    if (selectedOccasions.length > 0 && !selectedOccasions.some((o) => p.occasion.toLowerCase() === o.toLowerCase())) {
-      return false;
-    }
-    if (selectedColors.length > 0 && !selectedColors.some((c) => p.color.toLowerCase().includes(c))) {
-      return false;
-    }
-    if (p.priceINR < priceMin || p.priceINR > priceMax) {
-      return false;
-    }
-    if (silkMarkOnly && !p.silkMarkCertified) {
-      return false;
-    }
-    if (filterParam === 'new' && !p.isNew) {
-      return false;
-    }
-    if (filterParam === 'bridal' && !p.isBridal) {
-      return false;
-    }
-    if (filterParam === 'bestseller' && !p.isBestseller) {
-      return false;
-    }
-    return true;
-  });
+      if (!error && data && data.length > 0) {
+        // Transform database rows into JSON response
+        const formattedProducts = data.map((p: any) => {
+          const firstVariant = p.product_variants?.[0];
+          const weaveData: any = Array.isArray(p.weavings) ? p.weavings[0] : p.weavings;
+          const fabricData: any = Array.isArray(p.fabrics) ? p.fabrics[0] : p.fabrics;
+          const occasionData: any = Array.isArray(p.occasions) ? p.occasions[0] : p.occasions;
+          const zariData: any = Array.isArray(p.zari_specifications) ? p.zari_specifications[0] : p.zari_specifications;
+          const colorData: any = Array.isArray(firstVariant?.colors) ? firstVariant?.colors[0] : firstVariant?.colors;
 
-  // Sort products
-  if (sortParam === 'price-low') {
-    filtered.sort((a, b) => a.priceINR - b.priceINR);
-  } else if (sortParam === 'price-high') {
-    filtered.sort((a, b) => b.priceINR - a.priceINR);
-  } else if (sortParam === 'newest') {
-    filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-  } else if (sortParam === 'popularity') {
-    filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-  } else {
-    // featured: bestsellers first
-    filtered.sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0));
+          return {
+            id: p.id,
+            slug: p.slug,
+            title: p.title,
+            weave: weaveData?.name || '',
+            fabric: fabricData?.name || '',
+            occasion: occasionData?.name || '',
+            priceINR: Math.round(p.base_selling_price_paise / 100),
+            originalPriceINR: Math.round(p.base_mrp_paise / 100),
+            pricePaise: p.base_selling_price_paise,
+            mrpPaise: p.base_mrp_paise,
+            color: colorData?.name || '',
+            colorHex: colorData?.hex_code || '#000000',
+            images: firstVariant?.product_variant_media?.map((m: any) => m.url) || [],
+            zariGrade: zariData?.name || '',
+            description: p.description,
+            inStock: true,
+          };
+        });
+
+        return NextResponse.json({ products: formattedProducts, source: 'database' });
+      }
+    } catch (e) {
+      console.warn('[Products API] Falling back to static catalog:', e);
+    }
   }
 
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / limitParam));
-  const validPage = Math.min(Math.max(1, pageParam), totalPages);
-  const startIndex = (validPage - 1) * limitParam;
-  const paginatedProducts = filtered.slice(startIndex, startIndex + limitParam);
+  // Fallback to static mock products if DB isn't populated yet
+  let filtered = [...mockProducts];
+  if (weave) filtered = filtered.filter(p => p.weave.toLowerCase().includes(weave.toLowerCase()));
+  if (fabric) filtered = filtered.filter(p => p.fabric.toLowerCase().includes(fabric.toLowerCase()));
+  if (occasion) filtered = filtered.filter(p => p.occasion.toLowerCase().includes(occasion.toLowerCase()));
+  if (color) filtered = filtered.filter(p => p.color.toLowerCase().includes(color.toLowerCase()));
+  if (search) filtered = filtered.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
 
-  return NextResponse.json({
-    products: paginatedProducts,
-    total,
-    page: validPage,
-    totalPages,
-    limit: limitParam,
-    counts,
-  });
+  return NextResponse.json({ products: filtered, source: 'mock_fallback' });
 }

@@ -578,13 +578,8 @@ export default function InventoryMatrixPage() {
             <div className="flex items-center gap-1.5 overflow-x-auto pt-1">
               {[
                 { key: 'ALL', label: 'All Items', count: inventory.length },
-                { key: 'LOW_STOCK', label: 'Low Stock Triggered', count: kpis.lowStockCount },
-                { key: 'OUT_OF_STOCK', label: 'Zero Stock / Vault', count: kpis.outOfStockCount },
-                {
-                  key: 'SINGLE_PIECE',
-                  label: 'Single-Piece Luxury (1 Unit)',
-                  count: inventory.filter((i) => i.physicalStock === 1).length,
-                },
+                { key: 'LOW_STOCK', label: 'Low Stock (≤ 3)', count: kpis.lowStockCount },
+                { key: 'OUT_OF_STOCK', label: 'Out of Stock', count: kpis.outOfStockCount },
               ].map((seg) => (
                 <button
                   key={seg.key}
@@ -611,18 +606,16 @@ export default function InventoryMatrixPage() {
 
           {/* Stock Table */}
           <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
+            <div className="overflow-x-auto max-w-full">
+              <table className="min-w-[900px] w-full text-left text-xs font-sans">
                 <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[10px] uppercase">
                   <tr>
                     <th className="p-3.5">Saree SKU & Masterpiece</th>
-                    <th className="p-3.5">Bin Location</th>
-                    <th className="p-3.5">Loom Batch #</th>
                     <th className="p-3.5 text-center">Physical Stock</th>
-                    <th className="p-3.5 text-center">Reserved</th>
+                    <th className="p-3.5 text-center">Reserved Stock</th>
                     <th className="p-3.5 text-center">Available to Sell (ATS)</th>
-                    <th className="p-3.5 text-center">Reorder Point</th>
-                    <th className="p-3.5 text-right">Quick Stock Delta</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 text-right">Stock Adjustment</th>
                   </tr>
                 </thead>
 

@@ -244,7 +244,7 @@ export default function StorefrontDisplayManagerPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1F1B16] font-sans">
-              Storefront Display & Content Manager
+              Homepage Content
             </h1>
             <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
               <LayoutTemplate className="w-3 h-3 text-[#7A1C30]" />
@@ -252,7 +252,7 @@ export default function StorefrontDisplayManagerPage() {
             </span>
           </div>
           <p className="text-xs text-stone-500 font-mono mt-0.5">
-            Hero Promo Carousel, Marquee Offer Ticker & Homepage Category Curations
+            Hero Banners, Single Active Marquee & Category Curations
           </p>
         </div>
 

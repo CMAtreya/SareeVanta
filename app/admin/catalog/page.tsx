@@ -205,9 +205,7 @@ export default function AdminCatalogPage() {
           const newStatus =
             validStock === 0
               ? 'DRAFT'
-              : validStock === 1
-              ? 'SINGLE_PIECE'
-              : validStock <= 2
+              : validStock <= 3
               ? 'LOW_STOCK'
               : 'ACTIVE';
           return { ...item, stock: validStock, status: newStatus };
@@ -461,11 +459,9 @@ export default function AdminCatalogPage() {
           <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
             {[
               { key: 'ALL', label: 'All', count: counts.ALL },
-              { key: 'ACTIVE', label: 'Active', count: counts.ACTIVE },
-              { key: 'LOW_STOCK', label: 'Low Stock (<2)', count: counts.LOW_STOCK },
-              { key: 'SINGLE_PIECE', label: 'Single-Piece', count: counts.SINGLE_PIECE },
+              { key: 'ACTIVE', label: 'Published', count: counts.ACTIVE },
+              { key: 'LOW_STOCK', label: 'Low Stock (≤ 3)', count: counts.LOW_STOCK },
               { key: 'DRAFT', label: 'Drafts', count: counts.DRAFT },
-              { key: 'ARCHIVED', label: 'Archived', count: counts.ARCHIVED },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -497,8 +493,8 @@ export default function AdminCatalogPage() {
       {/* 2. DENSE DATA TABLE (Magento-Class Grid)           */}
       {/* ================================================== */}
       <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs font-sans">
+        <div className="overflow-x-auto max-w-full">
+          <table className="min-w-[900px] w-full text-left text-xs font-sans">
             <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[11px] uppercase">
               <tr>
                 <th className="p-3 w-10 text-center">
@@ -587,10 +583,6 @@ export default function AdminCatalogPage() {
                         </div>
                         <div className="text-[10px] font-mono text-slate-500 flex items-center gap-1.5 mt-0.5">
                           <span className="font-bold text-slate-700">{saree.sku}</span>
-                          <span>•</span>
-                          <span className="text-slate-400">{saree.loomId}</span>
-                          <span>•</span>
-                          <span className="text-emerald-700 font-semibold">{saree.silkMarkNumber}</span>
                         </div>
                       </td>
 
@@ -666,9 +658,9 @@ export default function AdminCatalogPage() {
                             +
                           </button>
                         </div>
-                        {saree.stock <= 1 && (
-                          <span className="text-[10px] font-mono text-rose-600 block mt-0.5">
-                            {saree.stock === 0 ? 'Out of Stock' : 'Single-Piece Luxury'}
+                        {saree.stock <= 3 && (
+                          <span className={`text-[10px] font-mono block mt-0.5 ${saree.stock === 0 ? 'text-rose-600 font-bold' : 'text-amber-700 font-semibold'}`}>
+                            {saree.stock === 0 ? 'Out of Stock' : 'Low Stock (≤ 3)'}
                           </span>
                         )}
                       </td>
