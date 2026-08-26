@@ -1,56 +1,44 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
-interface AdminInstagramReel {
-  id: string;
-  url: string;
-  shortcode: string;
-  caption: string;
-  thumbnail_url: string | null;
-  sort_order: number;
-  is_active: boolean;
-  created_at: string;
-}
-
-const dbPath = path.join(process.cwd(), 'lib', 'admin-instagram-reels.json');
-
-// Force dynamic execution for instant real-time sync with admin changes
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const fallbackThumbnails = [
+  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80',
+];
+
 export async function GET() {
   try {
-    let reels: AdminInstagramReel[] = [];
+    const supabase = createClient();
+    const { data: dbReels, error } = await supabase
+      .from('instagram_reels')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
 
-    if (fs.existsSync(dbPath)) {
-      const data = fs.readFileSync(dbPath, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        // Filter ONLY is_active = true and order by sort_order ASC
-        reels = parsed
-          .filter((item: AdminInstagramReel) => item.is_active)
-          .sort((a: AdminInstagramReel, b: AdminInstagramReel) => a.sort_order - b.sort_order);
-      }
+    if (!error && dbReels && dbReels.length > 0) {
+      const formatted = dbReels.map((r: any) => ({
+        id: r.id,
+        url: r.instagram_url,
+        caption: r.caption || '',
+        thumbnail_url: r.thumbnail_storage_path || fallbackThumbnails[0],
+        sort_order: r.display_order || 0,
+        is_active: r.is_active,
+        created_at: r.created_at,
+      }));
+
+      return NextResponse.json(
+        { success: true, data: formatted, timestamp: Date.now() },
+        { headers: { 'Cache-Control': 'no-store, max-age=0' } }
+      );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: reels,
-        timestamp: Date.now(),
-      },
-      {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-        },
-      }
-    );
+    return NextResponse.json({ success: true, data: [] });
   } catch (error) {
     console.error('Error in GET /api/instagram-reels:', error);
-    return NextResponse.json(
-      { success: false, data: [] },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, data: [] }, { status: 500 });
   }
 }

@@ -140,16 +140,16 @@ export default function AccountOrdersPage() {
                   {order.items.map((item, idx) => (
                     <div key={idx} className="flex items-center gap-3 flex-shrink-0">
                       <img
-                        src={item.product.images[0]}
-                        alt={item.product.title}
+                        src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80'}
+                        alt={item.product?.title || 'Heirloom Silk Saree'}
                         className="w-14 h-16 rounded-xl object-cover border border-stone-200 bg-[#FAF3E4]"
                       />
                       <div className="max-w-[200px] truncate">
                         <span className="text-[10px] font-mono uppercase text-[#C87F4A] font-bold block">
-                          {item.product.weave}
+                          {item.product?.weave || 'Mysore Silk'}
                         </span>
                         <span className="text-xs font-editorial font-bold text-[#1F1B16] block truncate">
-                          {item.product.title}
+                          {item.product?.title || 'Heirloom Silk Saree'}
                         </span>
                         <span className="text-[10px] text-stone-500 font-sans block">
                           Qty: {item.quantity} • Pure Silk

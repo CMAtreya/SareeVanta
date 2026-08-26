@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 import {
   Package,
@@ -105,6 +106,25 @@ export default function OrderTrackingPage() {
     };
 
     fetchTracking();
+
+    // Real-time WebSocket telemetry channel
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`order-tracking-${orderId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload) => {
+          if (payload.new && ((payload.new as any).order_number === orderId || (payload.new as any).id === orderId)) {
+            fetchTracking();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [orderId]);
 
   const handleCopyAwb = () => {

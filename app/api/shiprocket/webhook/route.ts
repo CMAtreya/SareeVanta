@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     // Verify webhook header secret if configured
     const requestSecret = request.headers.get('x-shiprocket-token') || request.headers.get('x-api-key');
     if (webhookSecret && requestSecret !== webhookSecret) {
-      console.warn('[Shiprocket Webhook] Invalid token header ignored in testing mode');
+      return NextResponse.json({ error: 'Unauthorized webhook secret token' }, { status: 401 });
     }
 
     // 1. Store event for idempotency

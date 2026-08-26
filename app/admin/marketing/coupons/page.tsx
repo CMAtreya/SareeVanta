@@ -250,36 +250,88 @@ export default function CouponsMarketingPage() {
     setFormCode(`${randomPrefix}${randomNum}`);
   };
 
+  React.useEffect(() => {
+    fetch('/api/admin/coupons')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.coupons && Array.isArray(data.coupons) && data.coupons.length > 0) {
+          const formatted: CouponItem[] = data.coupons.map((c: any) => ({
+            id: c.id,
+            code: c.code,
+            title: `Privilege Coupon ${c.code}`,
+            type: c.discount_type === 'FIXED' ? 'FIXED_AMOUNT' : 'PERCENTAGE',
+            value: Number(c.discount_value),
+            minOrderValue: Math.round((c.min_order_amount_paise || 0) / 100),
+            usageCount: c.times_used || 0,
+            maxUsageLimit: c.usage_limit || 500,
+            limitPerCustomer: 1,
+            revenueGenerated: (c.times_used || 0) * 25000,
+            startDate: '2026-08-01',
+            endDate: '2026-12-31',
+            status: c.is_active ? 'ACTIVE' : 'PAUSED',
+            targetAudience: 'ALL',
+            applicableWeaves: ['ALL'],
+            excludedWeaves: [],
+          }));
+          setCoupons(formatted);
+        }
+      })
+      .catch((err) => console.error('[Coupons API] Error fetching coupons:', err));
+  }, []);
+
   // Handle Create Coupon Submission
-  const handleCreateCoupon = (e: React.FormEvent) => {
+  const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formCode.trim() || !formTitle.trim()) return;
 
-    const newCoupon: CouponItem = {
-      id: `coup-${Date.now()}`,
-      code: formCode.trim().toUpperCase(),
-      title: formTitle.trim(),
-      type: formType,
-      value: formType === 'FREE_SHIPPING' ? 0 : Number(formValue),
-      maxDiscountCap: formType === 'PERCENTAGE' && formMaxCap ? Number(formMaxCap) : undefined,
-      bxgyDetails: formType === 'BUY_X_GET_Y' ? formBxgyDetails : undefined,
-      minOrderValue: Number(formMOV),
-      usageCount: 0,
-      maxUsageLimit: Number(formMaxUsage),
-      limitPerCustomer: formLimitPerCustomer ? 1 : 999,
-      revenueGenerated: 0,
-      startDate: formStartDate,
-      endDate: formEndDate,
-      status: 'ACTIVE',
-      targetAudience: formTargetAudience,
-      applicableWeaves: formApplicableWeaves,
-      excludedWeaves: [],
-    };
+    const newCode = formCode.trim().toUpperCase();
 
-    setCoupons([newCoupon, ...coupons]);
-    setIsCreatorOpen(false);
-    triggerToast(`Promo Coupon ${newCoupon.code} created & activated.`);
-    resetForm();
+    try {
+      const res = await fetch('/api/admin/coupons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: newCode,
+          discount_type: formType === 'FIXED_AMOUNT' ? 'FIXED' : 'PERCENTAGE',
+          discount_value: formValue,
+          min_order_amount_inr: formMOV,
+          is_active: true,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const createdId = data.coupon?.id || `coup-${Date.now()}`;
+
+        const newCoupon: CouponItem = {
+          id: createdId,
+          code: newCode,
+          title: formTitle.trim(),
+          type: formType,
+          value: formValue,
+          maxDiscountCap: formType === 'PERCENTAGE' ? formMaxCap : undefined,
+          bxgyDetails: formType === 'BUY_X_GET_Y' ? formBxgyDetails : undefined,
+          minOrderValue: formMOV,
+          usageCount: 0,
+          maxUsageLimit: formMaxUsage,
+          limitPerCustomer: formLimitPerCustomer ? 1 : 99,
+          revenueGenerated: 0,
+          startDate: formStartDate,
+          endDate: formEndDate,
+          status: 'ACTIVE',
+          targetAudience: formTargetAudience,
+          applicableWeaves: formApplicableWeaves,
+          excludedWeaves: [],
+        };
+
+        setCoupons((prev) => [newCoupon, ...prev]);
+        setIsCreatorOpen(false);
+        triggerToast(`Promo Coupon ${newCoupon.code} created & activated.`);
+        resetForm();
+      }
+    } catch (err) {
+      console.error('[Coupons API] Error creating coupon:', err);
+    }
   };
 
   const resetForm = () => {

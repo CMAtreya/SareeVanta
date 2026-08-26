@@ -9,6 +9,10 @@ export async function GET(
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   // Try finding order in Supabase
   let query = supabase
     .from('orders')
@@ -16,16 +20,13 @@ export async function GET(
       *,
       order_items (*),
       order_delivery_addresses (*)
-    `);
+    `)
+    .eq('customer_id', user.id);
 
   if (orderIdOrNumber.includes('-')) {
     query = query.eq('order_number', orderIdOrNumber);
   } else {
     query = query.eq('id', orderIdOrNumber);
-  }
-
-  if (user) {
-    query = query.eq('customer_id', user.id);
   }
 
   const { data: orderData, error } = await query.maybeSingle();

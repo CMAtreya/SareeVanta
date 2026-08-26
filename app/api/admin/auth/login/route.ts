@@ -26,15 +26,14 @@ export async function POST(request: Request) {
     const { identifier, password, rememberWorkstation } = parseResult.data;
     const cleanId = identifier.trim().toLowerCase();
 
-    // Check credentials (allows admin, employee ID, or staff email)
+    // Check credentials (allows authorized admin, employee ID, or @neelsareehouse.com staff emails)
     const isValidUser =
       cleanId === 'admin' ||
       cleanId === 'admin@neelsareehouse.com' ||
       cleanId === 'nsh-emp-001' ||
-      cleanId.includes('neelsareehouse') ||
-      cleanId.length >= 3;
+      cleanId.endsWith('@neelsareehouse.com');
 
-    if (!isValidUser || password.length < 3) {
+    if (!isValidUser || password.length < 6) {
       return NextResponse.json(
         { success: false, message: 'Invalid administrative credentials.' },
         { status: 401 }

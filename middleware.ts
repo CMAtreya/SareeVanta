@@ -41,9 +41,12 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     const { pathname } = request.nextUrl;
 
-    if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && !pathname.startsWith('/admin/login') && !pathname.startsWith('/api/admin/auth')) {
       const adminSession = request.cookies.get('neel_admin_session')?.value;
       if (!user && !adminSession) {
+        if (pathname.startsWith('/api/admin')) {
+          return NextResponse.json({ error: 'Unauthorized administrative access' }, { status: 401 });
+        }
         const loginUrl = new URL('/admin/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
@@ -60,9 +63,12 @@ export async function middleware(request: NextRequest) {
   } else {
     // Fallback cookie check if Supabase is not configured yet
     const { pathname } = request.nextUrl;
-    if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && !pathname.startsWith('/admin/login') && !pathname.startsWith('/api/admin/auth')) {
       const adminSession = request.cookies.get('neel_admin_session')?.value;
       if (!adminSession) {
+        if (pathname.startsWith('/api/admin')) {
+          return NextResponse.json({ error: 'Unauthorized administrative access' }, { status: 401 });
+        }
         const loginUrl = new URL('/admin/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
@@ -74,5 +80,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/account/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/account/:path*'],
 };

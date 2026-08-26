@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import {
   Search,
   Filter,
@@ -332,69 +333,79 @@ export default function RedesignedAdminOrdersPage() {
 
   // Fetch live orders strictly from API (No mock data fallback)
   useEffect(() => {
-    fetch('/api/admin/orders')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.orders && Array.isArray(data.orders)) {
-          const formatted = data.orders.map((o: any) => {
-            const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
-            const cust = o.customers || {};
-            const items = (o.order_items || []).map((item: any) => ({
-              title: item.product_name_snapshot || 'Heirloom Silk Saree',
-              weave: 'Pure Mulberry Silk',
-              sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
-              color: item.color_name_snapshot || 'Royal Crimson',
-              price: Math.round((item.unit_price_paise || 0) / 100),
-              quantity: item.quantity || 1,
-              image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-            }));
+    const loadOrders = () => {
+      fetch('/api/admin/orders')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.orders && Array.isArray(data.orders)) {
+            const formatted = data.orders.map((o: any) => {
+              const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
+              const cust = o.customers || {};
+              const items = (o.order_items || []).map((item: any) => ({
+                title: item.product_name_snapshot || 'Heirloom Silk Saree',
+                weave: 'Pure Mulberry Silk',
+                sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
+                color: item.color_name_snapshot || 'Royal Crimson',
+                price: Math.round((item.unit_price_paise || 0) / 100),
+                quantity: item.quantity || 1,
+                image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+              }));
 
-            return {
-              id: o.order_number || o.id,
-              db_id: o.id,
-              date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
-              customerName: cust.name || addr.recipient_name || 'Valued Patron',
-              phone: cust.phone || addr.phone || '+91 98860 00000',
-              email: cust.email || 'patron@sareevanta.com',
-              city: addr.city || 'Mysuru',
-              state: addr.state || 'Karnataka',
-              pincode: addr.postal_code || '570001',
-              addressLine1: addr.address_line_1 || 'Heritage Quarter',
-              fulfillmentState: o.order_status === 'PLACED' ? 'TO_PACK' : o.order_status === 'PROCESSING' ? 'READY_TO_SHIP' : o.order_status === 'SHIPPED' ? 'IN_TRANSIT' : o.order_status === 'DELIVERED' ? 'DELIVERED' : 'TO_PACK',
-              paymentGateway: o.payment_status === 'PAID' ? 'Razorpay UPI' : 'Cash on Delivery',
-              paymentStatus: o.payment_status === 'PAID' ? 'PAID' : 'PENDING',
-              subtotalAmount: Math.round((o.subtotal_paise || o.total_paise || 0) / 100),
-              discountAmount: Math.round((o.discount_paise || 0) / 100),
-              shippingFee: 0,
-              totalAmount: Math.round((o.total_paise || 0) / 100),
-              isGiftWrapped: false,
-              items: items.length > 0 ? items : [
-                {
-                  title: 'Royal Wodeyar Mulberry Silk Saree',
-                  weave: 'Mysore Silk Crepe',
-                  sku: 'NSH-SKU-MYS-01',
-                  color: 'Royal Crimson',
-                  price: Math.round((o.total_paise || 0) / 100),
-                  quantity: 1,
-                  image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-                }
-              ],
-              awb: o.shipments?.[0]?.tracking_number || `BD-AIR-${Math.floor(100000 + Math.random() * 900000)}`,
-              courierPartner: 'BlueDart Air Express',
-              silkMarkAuditId: 'CSB-2026-MYS-3319',
-              customerType: 'Registered Patron',
-            };
-          });
-          setOrders(formatted);
-        } else {
-          setOrders([]);
+              return {
+                id: o.order_number || o.id,
+                db_id: o.id,
+                date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
+                customerName: cust.name || addr.recipient_name || 'Valued Patron',
+                phone: cust.phone || addr.phone || '+91 98860 00000',
+                email: cust.email || 'patron@sareevanta.com',
+                city: addr.city || 'Mysuru',
+                state: addr.state || 'Karnataka',
+                pincode: addr.postal_code || '570001',
+                addressLine1: addr.address_line_1 || 'Heritage Quarter',
+                fulfillmentState: o.order_status === 'PLACED' ? 'TO_PACK' : o.order_status === 'PROCESSING' ? 'READY_TO_SHIP' : o.order_status === 'SHIPPED' ? 'IN_TRANSIT' : o.order_status === 'DELIVERED' ? 'DELIVERED' : 'TO_PACK',
+                paymentGateway: o.payment_status === 'PAID' ? 'Razorpay UPI' : 'Cash on Delivery',
+                paymentStatus: o.payment_status === 'PAID' ? 'PAID' : 'PENDING',
+                subtotalAmount: Math.round((o.subtotal_paise || o.total_paise || 0) / 100),
+                discountAmount: Math.round((o.discount_paise || 0) / 100),
+                shippingFee: 0,
+                totalAmount: Math.round((o.total_paise || 0) / 100),
+                isGiftWrapped: false,
+                items: items.length > 0 ? items : [
+                  {
+                    title: 'Royal Wodeyar Mulberry Silk Saree',
+                    weave: 'Mysore Silk Crepe',
+                    sku: 'NSH-SKU-MYS-01',
+                    color: 'Royal Crimson',
+                    price: Math.round((o.total_paise || 0) / 100),
+                    quantity: 1,
+                    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+                  }
+                ],
+              };
+            });
+            setOrders(formatted);
+          }
+        })
+        .catch((err) => console.error('[Admin Orders] Fetch error:', err));
+    };
+
+    loadOrders();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        () => {
+          loadOrders();
         }
-      })
-      .catch((err) => {
-        console.error('Error fetching live admin orders:', err);
-        setOrders([]);
-      })
-      .finally(() => setLoading(false));
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Modals & Drawers

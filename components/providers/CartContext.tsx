@@ -85,9 +85,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const res = await fetch('/api/cart');
           if (res.ok) {
             const data = await res.json();
-            if (data.cart?.items) {
-              const dbItems: CartItem[] = data.cart.items.map((item: any) => {
-                const foundProduct = products.find(p => p.id === item.product_id || p.slug === item.product_id) || products[0];
+            const rawItems = data.items || data.cart?.items || [];
+            if (rawItems.length > 0) {
+              const dbItems: CartItem[] = rawItems.map((item: any) => {
+                const variantData = item.product_variants;
+                const productData = variantData?.products;
+                const foundProduct = products.find(p => p.id === item.product_id || p.slug === item.product_id || p.id === variantData?.id) || {
+                  id: variantData?.id || item.variant_id || item.product_id || 'db-prod',
+                  slug: productData?.slug || 'heirloom-silk-saree',
+                  title: productData?.title || 'Heirloom Silk Saree',
+                  weave: 'Mysore Silk',
+                  fabric: 'Pure Mulberry Silk',
+                  occasion: 'Bridal & Muhurtham',
+                  priceINR: Math.round((variantData?.price_paise || 2850000) / 100),
+                  rating: 4.9,
+                  reviewCount: 12,
+                  color: variantData?.colors?.name || 'Crimson Red',
+                  colorHex: variantData?.colors?.hex_code || '#8B1E28',
+                  images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85'],
+                  zariGrade: 'Tested Pure Zari',
+                  dimensions: '5.5m Pure Silk Saree',
+                  inStock: true,
+                  description: 'Authentic silk saree from Neelsareehouse guild.',
+                  artisanCluster: 'Mysuru Loom Guild',
+                  silkMarkCertified: true,
+                };
+
                 return {
                   product: foundProduct,
                   quantity: item.quantity,
@@ -95,9 +118,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   tailoringExtraINR: item.tailoring_extra_inr || 0,
                 };
               });
-              if (dbItems.length > 0) {
-                setCart(dbItems);
-              }
+              setCart(dbItems);
             }
           }
         } catch (err) {
@@ -392,7 +413,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await supabase.from('cart_items').delete().eq('customer_id', user.id);
+      const { data: userCart } = await supabase.from('carts').select('id').eq('customer_id', user.id).single();
+      if (userCart) {
+        await supabase.from('cart_items').delete().eq('cart_id', userCart.id);
+      }
     }
   };
 

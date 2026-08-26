@@ -58,11 +58,26 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { variant_id, quantity = 1 } = body;
+  let targetVariantId = body.variant_id || body.productId;
 
-  if (!variant_id) {
-    return NextResponse.json({ error: 'variant_id is required' }, { status: 400 });
+  if (!targetVariantId) {
+    return NextResponse.json({ error: 'variant_id or productId is required' }, { status: 400 });
   }
+
+  // If passed string is a product slug or product ID, attempt to resolve first active variant
+  if (!targetVariantId.includes('-') || targetVariantId.length < 30) {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('id, product_variants(id)')
+      .or(`slug.eq.${targetVariantId},id.eq.${targetVariantId}`)
+      .single();
+
+    if (prod && prod.product_variants && prod.product_variants.length > 0) {
+      targetVariantId = prod.product_variants[0].id;
+    }
+  }
+
+  const quantity = body.quantity || 1;
 
   // Ensure cart exists
   let { data: cart } = await supabase
@@ -89,7 +104,7 @@ export async function POST(request: Request) {
     .from('cart_items')
     .upsert({
       cart_id: cart.id,
-      variant_id,
+      variant_id: targetVariantId,
       quantity,
       is_selected: true,
     }, { onConflict: 'cart_id,variant_id' })
@@ -112,16 +127,36 @@ export async function DELETE(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const cartItemId = searchParams.get('id');
+  let cartItemId = searchParams.get('id');
+
+  if (!cartItemId) {
+    try {
+      const body = await request.json();
+      cartItemId = body.id || body.productId || body.variant_id;
+    } catch (e) {}
+  }
 
   if (!cartItemId) {
     return NextResponse.json({ error: 'Cart item ID required' }, { status: 400 });
   }
 
+  // Get active cart for customer
+  const { data: cart } = await supabase
+    .from('carts')
+    .select('id')
+    .eq('customer_id', user.id)
+    .single();
+
+  if (!cart) {
+    return NextResponse.json({ success: true });
+  }
+
+  // Delete item scoped to user's cart
   const { error } = await supabase
     .from('cart_items')
     .delete()
-    .eq('id', cartItemId);
+    .eq('cart_id', cart.id)
+    .or(`id.eq.${cartItemId},variant_id.eq.${cartItemId}`);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

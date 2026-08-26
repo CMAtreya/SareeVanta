@@ -17,9 +17,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Calculate totals
+    // 1. Calculate totals strictly from database prices
     let totalMrpPaise = 0;
     let totalSellingPaise = 0;
+    const verifiedItems: { variant_id: string; quantity: number; unitPrice: number }[] = [];
 
     for (const item of items) {
       const { data: variant } = await supabase
@@ -28,11 +29,21 @@ export async function POST(request: Request) {
         .eq('id', item.variant_id)
         .single();
 
-      const unitPrice = variant?.price_paise || item.unit_price_paise || 100000;
-      const unitMrp = variant?.mrp_paise || item.mrp_paise || unitPrice;
+      if (!variant) {
+        return NextResponse.json({ error: `Invalid or unavailable product variant ID: ${item.variant_id}` }, { status: 400 });
+      }
+
+      const unitPrice = variant.price_paise;
+      const unitMrp = variant.mrp_paise || unitPrice;
 
       totalSellingPaise += unitPrice * item.quantity;
       totalMrpPaise += unitMrp * item.quantity;
+
+      verifiedItems.push({
+        variant_id: item.variant_id,
+        quantity: item.quantity,
+        unitPrice,
+      });
     }
 
     let discountPaise = totalMrpPaise - totalSellingPaise;
@@ -84,25 +95,24 @@ export async function POST(request: Request) {
     }
 
     // 3. Atomically reserve inventory for each item using fn_reserve_inventory_atomic
-    for (const item of items) {
+    for (const item of verifiedItems) {
       await supabase.from('checkout_items').insert({
         checkout_id: session.id,
         variant_id: item.variant_id,
         quantity: item.quantity,
-        unit_price_paise: item.unit_price_paise || 100000,
+        unit_price_paise: item.unitPrice,
       });
 
-      // Call RPC procedure if DB procedure exists
-      try {
-        await supabase.rpc('fn_reserve_inventory_atomic', {
-          p_variant_id: item.variant_id,
-          p_quantity: item.quantity,
-          p_source_type: 'CUSTOMER_CHECKOUT',
-          p_source_id: session.id,
-          p_expiry_minutes: 30,
-        });
-      } catch (e) {
-        console.warn('[Checkout API] Stock reservation RPC non-fatal warning:', e);
+      const { error: reserveError } = await supabase.rpc('fn_reserve_inventory_atomic', {
+        p_variant_id: item.variant_id,
+        p_quantity: item.quantity,
+        p_source_type: 'CUSTOMER_CHECKOUT',
+        p_source_id: session.id,
+        p_expiry_minutes: 30,
+      });
+
+      if (reserveError) {
+        return NextResponse.json({ error: `Stock reservation failed: ${reserveError.message}` }, { status: 400 });
       }
     }
 

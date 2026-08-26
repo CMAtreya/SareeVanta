@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
       if (!error && data && data.length > 0) {
         // Transform database rows into JSON response
-        const formattedProducts = data.map((p: any) => {
+        let formattedProducts = data.map((p: any) => {
           const firstVariant = p.product_variants?.[0];
           const weaveData: any = Array.isArray(p.weavings) ? p.weavings[0] : p.weavings;
           const fabricData: any = Array.isArray(p.fabrics) ? p.fabrics[0] : p.fabrics;
@@ -82,6 +82,11 @@ export async function GET(request: Request) {
             inStock: true,
           };
         });
+
+        if (weave) formattedProducts = formattedProducts.filter(p => p.weave.toLowerCase().includes(weave.toLowerCase()));
+        if (fabric) formattedProducts = formattedProducts.filter(p => p.fabric.toLowerCase().includes(fabric.toLowerCase()));
+        if (occasion) formattedProducts = formattedProducts.filter(p => p.occasion.toLowerCase().includes(occasion.toLowerCase()));
+        if (color) formattedProducts = formattedProducts.filter(p => p.color.toLowerCase().includes(color.toLowerCase()));
 
         return NextResponse.json({ products: formattedProducts, source: 'database' });
       }

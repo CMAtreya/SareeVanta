@@ -23,8 +23,8 @@ export async function POST(request: Request) {
   let isSignatureValid = false;
 
   if (!razorpaySecret || razorpaySecret.includes('your_')) {
-    // Mock testing mode
-    isSignatureValid = true;
+    // Only accept mock signature if payment ID indicates mock test run
+    isSignatureValid = razorpay_payment_id?.startsWith('pay_mock_') || razorpay_order_id?.startsWith('order_mock_') || false;
   } else {
     // Verify HMAC-SHA256 signature
     const expectedSignature = crypto
@@ -98,8 +98,7 @@ export async function POST(request: Request) {
         try {
           await supabase.rpc('fn_convert_reservation_to_order', { p_variant_id: item.variant_id, p_quantity: item.quantity });
         } catch (e) {
-          // fallback direct stock update
-          await supabase.from('inventory').update({ quantity: 0 }).eq('variant_id', item.variant_id);
+          console.error('[Razorpay Verify] Stock reservation conversion failed:', e);
         }
       }
     }
