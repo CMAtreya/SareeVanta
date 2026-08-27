@@ -104,6 +104,22 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [newZariInput, setNewZariInput] = useState('');
   const [isZariDropdownOpen, setIsZariDropdownOpen] = useState(false);
 
+  // Form State: Motif & Heritage Pattern Selection
+  const [patternOptions, setPatternOptions] = useState<string[]>([
+    'Kasuti Diamonds',
+    'Peacock Mayil & Yanai',
+    'Temple Korvai Border',
+    'Floral Kadwa Meenakari',
+    'Asawali Floral Vines',
+    'Ashrafi Bootas',
+    'Jacquard Zari Butta',
+    'Temple Border',
+  ]);
+  const [pattern, setPattern] = useState('Kasuti Diamonds');
+  const [isAddingNewPattern, setIsAddingNewPattern] = useState(false);
+  const [newPatternInput, setNewPatternInput] = useState('');
+  const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
+
   // Form State: Color Variant Management (BFS-1 §6.3 & DSS §4)
   const SAREE_COLOR_PALETTE = [
     { name: 'Royal Crimson', hex: '#8B1E28', code: 'CRM' },
@@ -329,6 +345,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       weave,
       fabric,
       zari: zariSpec,
+      pattern,
       occasion: selectedOccasions[0] || 'Bridal & Heritage',
       initial_stock: Number(stock) || 10,
       images: finalImages,
@@ -822,6 +839,95 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Motif & Heritage Pattern Selection */}
+            <div className="space-y-1.5 relative pt-2 border-t border-slate-100">
+              <label className="block text-xs font-semibold text-slate-700">Heritage Motif & Pattern *</label>
+              {!isAddingNewPattern ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsPatternDropdownOpen(!isPatternDropdownOpen);
+                      setIsFabricDropdownOpen(false);
+                      setIsZariDropdownOpen(false);
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
+                  >
+                    <span className="truncate">{pattern}</span>
+                    <ChevronDown className={`w-4 h-4 text-[#7A1C30] transition-transform ${isPatternDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isPatternDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs max-h-56 overflow-y-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingNewPattern(true);
+                          setIsPatternDropdownOpen(false);
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-xl text-[11px] font-bold text-[#7A1C30] hover:bg-[#F3E7CE] flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Add New Motif Pattern...</span>
+                      </button>
+
+                      {patternOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => {
+                            setPattern(opt);
+                            setIsPatternDropdownOpen(false);
+                            setIsDirty(true);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                            pattern === opt ? 'bg-[#7A1C30] text-white font-bold' : 'text-stone-800 hover:bg-[#F5ECE0]'
+                          }`}
+                        >
+                          <span className="truncate">{opt}</span>
+                          {pattern === opt && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={newPatternInput}
+                    onChange={(e) => setNewPatternInput(e.target.value)}
+                    placeholder="Type custom motif pattern..."
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newPatternInput.trim()) {
+                        const val = newPatternInput.trim();
+                        setPatternOptions([val, ...patternOptions]);
+                        setPattern(val);
+                        setNewPatternInput('');
+                        setIsDirty(true);
+                      }
+                      setIsAddingNewPattern(false);
+                    }}
+                    className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingNewPattern(false)}
+                    className="px-2.5 py-2 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

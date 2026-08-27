@@ -39,6 +39,7 @@ export async function POST(request: Request) {
     fabric,
     zari,
     occasion,
+    pattern,
     weaving_id,
     fabric_id,
     occasion_id,
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
   const finalFabricId = fabric_id || (await getOrInsertId('fabrics', fabric));
   const finalOccasionId = occasion_id || (await getOrInsertId('occasions', occasion));
   const finalZariId = zari_specification_id || (await getOrInsertId('zari_specifications', zari));
+  const finalPatternId = pattern_id || (await getOrInsertId('patterns', pattern));
 
   const baseMrpPaise = Math.round((base_mrp_inr || base_selling_price_inr) * 100);
   const baseSellingPricePaise = Math.round(base_selling_price_inr * 100);
@@ -95,6 +97,7 @@ export async function POST(request: Request) {
         fabric_id: finalFabricId,
         occasion_id: finalOccasionId,
         zari_specification_id: finalZariId,
+        pattern_id: finalPatternId,
         is_published: true,
       })
       .eq('id', productId);
@@ -111,9 +114,9 @@ export async function POST(request: Request) {
         weaving_id: finalWeavingId,
         fabric_id: finalFabricId,
         occasion_id: finalOccasionId,
-        pattern_id: pattern_id || null,
-        border_styling_id: border_styling_id || null,
         zari_specification_id: finalZariId,
+        pattern_id: finalPatternId,
+        border_styling_id: border_styling_id || null,
         is_published: true,
       })
       .select('id')

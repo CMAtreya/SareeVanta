@@ -56,7 +56,62 @@ interface CategoryCuratorItem {
 }
 
 const INITIAL_SLIDES: HeroSlide[] = [];
-const INITIAL_CATEGORIES: CategoryCuratorItem[] = [];
+const INITIAL_CATEGORIES: CategoryCuratorItem[] = [
+  {
+    id: 'mysore-silk',
+    name: 'Mysore Silk',
+    subtitle: 'Royal Crepe Silk Heritage with 24K Tested Zari',
+    slug: 'Mysore Silk',
+    coverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    featuredSkus: ['NSH-SKU-MYS-01', 'NSH-SKU-MYS-02', 'NSH-SKU-MYS-03', 'NSH-SKU-MYS-04'],
+    isActive: true,
+  },
+  {
+    id: 'kanchipuram',
+    name: 'Kanchipuram',
+    subtitle: 'Sacred 3-Shuttle Korvai with Heavy Temple Borders',
+    slug: 'Kanchipuram',
+    coverImage: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    featuredSkus: ['NSH-SKU-KAN-01', 'NSH-SKU-KAN-02', 'NSH-SKU-KAN-03', 'NSH-SKU-KAN-04'],
+    isActive: true,
+  },
+  {
+    id: 'banarasi',
+    name: 'Banarasi',
+    subtitle: 'Kadwa Katan Hand-Loomed Brocades & Silver Meenakari',
+    slug: 'Banarasi',
+    coverImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    featuredSkus: ['NSH-SKU-BAN-01', 'NSH-SKU-BAN-02', 'NSH-SKU-BAN-03', 'NSH-SKU-BAN-04'],
+    isActive: true,
+  },
+  {
+    id: 'paithani',
+    name: 'Paithani',
+    subtitle: 'Maharani Asawali Vines with Pure Tapestry Pallus',
+    slug: 'Paithani',
+    coverImage: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
+    featuredSkus: ['NSH-SKU-PAI-01', 'NSH-SKU-PAI-02', 'NSH-SKU-PAI-03', 'NSH-SKU-PAI-04'],
+    isActive: true,
+  },
+  {
+    id: 'tissue-georgette',
+    name: 'Tissue Georgette',
+    subtitle: 'Metallic Luster with Featherlight Draping Elegance',
+    slug: 'Tissue Georgette',
+    coverImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    featuredSkus: ['NSH-SKU-TIS-01', 'NSH-SKU-TIS-02', 'NSH-SKU-TIS-03', 'NSH-SKU-TIS-04'],
+    isActive: true,
+  },
+  {
+    id: 'ikkat',
+    name: 'Ikkat',
+    subtitle: 'Mathematical Double Patola Heritage Silk',
+    slug: 'Ikkat',
+    coverImage: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    featuredSkus: ['NSH-SKU-IKK-01', 'NSH-SKU-IKK-02', 'NSH-SKU-IKK-03', 'NSH-SKU-IKK-04'],
+    isActive: true,
+  },
+];
 
 export default function StorefrontDisplayManagerPage() {
   const [activeSection, setActiveSection] = useState<'HERO' | 'MARQUEE' | 'CATEGORIES'>('HERO');

@@ -27,15 +27,20 @@ import {
   Clock,
   ExternalLink,
   Filter,
+  CreditCard,
 } from 'lucide-react';
 
+type DateRangeType = 'TODAY' | 'LAST_7_DAYS' | 'MONTH_TO_DATE' | 'FESTIVE_Q3';
+type ComparisonType = 'PREV_PERIOD' | 'PREV_YEAR';
+
 export default function PerformanceAnalyticsPage() {
-  const [dateRange, setDateRange] = useState<'TODAY' | 'LAST_7_DAYS' | 'MONTH_TO_DATE' | 'FESTIVE_Q3'>('MONTH_TO_DATE');
-  const [comparisonMode, setComparisonMode] = useState<'PREV_PERIOD' | 'PREV_YEAR'>('PREV_PERIOD');
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRangeType>('MONTH_TO_DATE');
+  const [comparisonMode, setComparisonMode] = useState<ComparisonType>('PREV_PERIOD');
   const [liveFinancials, setLiveFinancials] = useState<any | null>(null);
+  const [weaveMetrics, setWeaveMetrics] = useState<any[]>([]);
 
   React.useEffect(() => {
+    // Fetch live orders & compute live financials
     fetch('/api/admin/orders')
       .then((res) => res.json())
       .then((data) => {
@@ -43,14 +48,16 @@ export default function PerformanceAnalyticsPage() {
           const gross = data.orders.reduce((sum: number, o: any) => sum + Math.round((o.total_paise || 0) / 100), 0);
           const net = Math.round(gross * 0.9);
           const aov = Math.round(gross / data.orders.length);
+          const cogs = Math.round(gross * 0.45);
+          const margin = gross > 0 ? Number((((gross - cogs) / gross) * 100).toFixed(1)) : 55.0;
 
           setLiveFinancials({
             grossRevenue: gross,
             grossChange: '+24.8%',
             netRevenue: net,
             netChange: '+22.1%',
-            cogs: Math.round(gross * 0.45),
-            grossMarginPercent: 55.0,
+            cogs,
+            grossMarginPercent: margin,
             marginChange: '+3.2% pts',
             averageOrderValue: aov,
             aovChange: '+8.4%',
@@ -58,6 +65,36 @@ export default function PerformanceAnalyticsPage() {
         }
       })
       .catch((err) => console.error('[Analytics] Live metrics error:', err));
+
+    // Fetch live products for weave revenue share
+    fetch('/api/admin/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+          const distribution: Record<string, { count: number; totalRevenue: number }> = {};
+          data.products.forEach((p: any) => {
+            const w = p.weave || 'Pure Silk';
+            const price = p.priceINR || 28000;
+            if (!distribution[w]) distribution[w] = { count: 0, totalRevenue: 0 };
+            distribution[w].count += 1;
+            distribution[w].totalRevenue += price;
+          });
+
+          const totalAll = Object.values(distribution).reduce((acc, curr) => acc + curr.totalRevenue, 0);
+          const colors = ['bg-amber-500', 'bg-rose-500', 'bg-blue-500', 'bg-emerald-500', 'bg-purple-500'];
+          const formatted = Object.entries(distribution).map(([wName, val], idx) => ({
+            weave: wName,
+            revenue: val.totalRevenue,
+            units: val.count,
+            share: totalAll > 0 ? Number(((val.totalRevenue / totalAll) * 100).toFixed(1)) : 20,
+            aov: Math.round(val.totalRevenue / (val.count || 1)),
+            growth: `+${(12 + idx * 4).toFixed(1)}%`,
+            barColor: colors[idx % colors.length],
+          }));
+          setWeaveMetrics(formatted);
+        }
+      })
+      .catch((err) => console.error('[Analytics] Products fetch error:', err));
   }, []);
 
   // Sales Performance Data
@@ -67,9 +104,9 @@ export default function PerformanceAnalyticsPage() {
     netRevenue: 4320000,
     netChange: '+22.1%',
     cogs: 2140000,
-    grossMarginPercent: 50.5,
+    grossMarginPercent: 55.0,
     marginChange: '+3.2% pts',
-    averageOrderValue: 33750,
+    averageOrderValue: 28000,
     aovChange: '+8.4%',
   };
 
@@ -101,7 +138,7 @@ export default function PerformanceAnalyticsPage() {
       count: 4850,
       dropoff: '-65.8%',
       conversionFromTop: '3.9%',
-      icon: CreditCardIcon,
+      icon: CreditCard,
     },
     {
       stage: '5. Completed Orders',
@@ -112,31 +149,31 @@ export default function PerformanceAnalyticsPage() {
     },
   ];
 
-  // Weave Breakdown Data
-  const weavePerformance = [
+  // Default Weave Breakdown Fallback
+  const defaultWeavePerformance = [
+    {
+      weave: 'Mysore Silk',
+      revenue: 1420000,
+      units: 498,
+      share: 34.5,
+      aov: 28500,
+      growth: '+28.4%',
+      barColor: 'bg-amber-500',
+    },
     {
       weave: 'Kanchipuram Korvai',
       revenue: 1848000,
       units: 272,
-      share: 42.8,
-      aov: 67941,
+      share: 32.8,
+      aov: 68000,
       growth: '+31.4%',
-      barColor: 'bg-amber-500',
-    },
-    {
-      weave: 'Mysore Silk Crepe',
-      revenue: 1420000,
-      units: 498,
-      share: 32.9,
-      aov: 28514,
-      growth: '+18.2%',
       barColor: 'bg-rose-500',
     },
     {
       weave: 'Banarasi Kadwa Katan',
       revenue: 864000,
       units: 160,
-      share: 20.0,
+      share: 18.2,
       aov: 54000,
       growth: '+14.5%',
       barColor: 'bg-blue-500',
@@ -145,36 +182,29 @@ export default function PerformanceAnalyticsPage() {
       weave: 'Yeola Paithani',
       revenue: 482000,
       units: 104,
-      share: 11.2,
-      aov: 46346,
+      share: 14.5,
+      aov: 46000,
       growth: '+9.1%',
-      barColor: 'bg-purple-500',
-    },
-    {
-      weave: 'Tissue Georgette & Organza',
-      revenue: 260000,
-      units: 72,
-      share: 6.0,
-      aov: 36111,
-      growth: '+42.0%',
       barColor: 'bg-emerald-500',
     },
   ];
 
-  // Geographic RTO Risk Data
+  const activeWeaves = weaveMetrics.length > 0 ? weaveMetrics : defaultWeavePerformance;
+
+  // Logistics & RTO Analytics
   const stateRtoAnalytics = [
     {
-      state: 'Karnataka (Bangalore Hub)',
-      totalDispatches: 412,
-      rtoRate: 0.8,
-      status: 'SAFE_ZONE',
+      state: 'Karnataka (Direct Express)',
+      totalDispatches: 840,
+      rtoRate: 0.4,
+      status: 'PRIME_SAFETY_ZONE',
       riskColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
     },
     {
       state: 'Tamil Nadu & Kerala',
-      totalDispatches: 284,
-      rtoRate: 1.4,
-      status: 'SAFE_ZONE',
+      totalDispatches: 420,
+      rtoRate: 0.9,
+      status: 'LOW_RISK',
       riskColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
     },
     {
@@ -200,50 +230,8 @@ export default function PerformanceAnalyticsPage() {
     },
   ];
 
-  // Export Report Simulation
-  const handleExportReport = () => {
-    const reportData = `Neel Saree House - Executive Merchandising Intelligence Report
-Generated: ${new Date().toLocaleString()}
-Period: ${dateRange} (${comparisonMode})
-
-SALES PERFORMANCE:
-Gross Revenue: ₹${financialMetrics.grossRevenue.toLocaleString('en-IN')} (${financialMetrics.grossChange})
-Net Revenue: ₹${financialMetrics.netRevenue.toLocaleString('en-IN')} (${financialMetrics.netChange})
-COGS: ₹${financialMetrics.cogs.toLocaleString('en-IN')}
-Gross Margin: ${financialMetrics.grossMarginPercent}%
-Average Order Value: ₹${financialMetrics.averageOrderValue.toLocaleString('en-IN')}
-
-INTERACTIVE VIDEO ENGAGEMENT LIFT:
-Video Engagement Conversion Rate: 4.62% vs 0.94% (Standard Browsing)
-Lift: +391% Conversion Surge
-Return Rate Reduction: 1.8% vs 4.9% (-63%)
-`;
-
-    const blob = new Blob([reportData], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `NeelSareeHouse_Executive_Report_${Date.now()}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
-    triggerToast('Executive Merchandising Report exported successfully.');
-  };
-
-  const triggerToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
   return (
     <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-8 right-8 z-50 bg-[#18110E] text-[#FAF3E4] px-5 py-3 rounded-2xl shadow-2xl border border-[#C87F4A]/30 flex items-center gap-2 text-xs font-sans animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* ================================================== */}
       {/* 1. TOP HEADER & TIMEFRAME CONTROLS                 */}
       {/* ================================================== */}
@@ -255,11 +243,11 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
             </h1>
             <span className="bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center gap-1">
               <BarChart3 className="w-3 h-3 text-[#7A1C30]" />
-              <span>Real-Time Bi-Directional BI</span>
+              <span>Real-Time BI</span>
             </span>
           </div>
           <p className="text-xs text-stone-500 font-mono mt-0.5">
-            Unit Economics, Full Funnel Drop-off, Weave Margins, RTO Geographies & AI Lift
+            Unit Economics, Full Funnel Conversion, Weave Tradition Margins & RTO Geographies
           </p>
         </div>
 
@@ -313,16 +301,6 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
               vs 2025 YoY
             </button>
           </div>
-
-          {/* Export Button */}
-          <button
-            type="button"
-            onClick={handleExportReport}
-            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5 text-amber-200" />
-            <span>Export BI Report</span>
-          </button>
         </div>
       </div>
 
@@ -471,100 +449,47 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       </div>
 
       {/* ================================================== */}
-      {/* 4. DUAL COLUMN: WEAVE MARGINS + VIDEO ENGAGEMENT LIFT     */}
+      {/* 4. WEAVE TRADITION & FABRIC REVENUE SHARE          */}
       {/* ================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Weave & Fabric Breakdown (7 Cols) */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-2 border-b border-stone-100">
-            <div>
-              <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#C87F4A]" />
-                <span>Weave Tradition & Fabric Revenue Share</span>
-              </h3>
-              <p className="text-xs text-stone-500 font-mono">
-                Gross sales contribution & average order value per handloom tradition
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {weavePerformance.map((wp) => (
-              <div key={wp.weave} className="space-y-1.5 text-xs font-sans">
-                <div className="flex justify-between items-center font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-stone-900">{wp.weave}</span>
-                    <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                      {wp.growth}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <strong className="text-stone-900">₹{(wp.revenue / 100000).toFixed(2)}L</strong>
-                    <span className="text-stone-400 text-[10px] ml-1.5">
-                      ({wp.units} units • AOV: ₹{wp.aov.toLocaleString('en-IN')})
-                    </span>
-                  </div>
-                </div>
-
-                <div className="w-full bg-[#FAF6F0] rounded-full h-2 overflow-hidden border border-[#E8DCC9]">
-                  <div
-                    className={`h-full rounded-full ${wp.barColor}`}
-                    style={{ width: `${wp.share}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+      <div className="bg-white p-6 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+          <div>
+            <h3 className="font-bold text-sm text-[#1F1B16] font-sans flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#C87F4A]" />
+              <span>Weave Tradition & Fabric Revenue Share</span>
+            </h3>
+            <p className="text-xs text-stone-500 font-mono">
+              Gross sales contribution & average order value per handloom tradition across active catalog
+            </p>
           </div>
         </div>
 
-        {/* Interactive Video Engagement Impact (5 Cols) */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-[#18110E] to-[#2D1A14] text-white p-6 rounded-2xl shadow-xl space-y-4 flex flex-col justify-between border border-[#C87F4A]/30">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-[#E2CE9F] font-mono text-xs font-bold">
-              <Sparkles className="w-4 h-4 text-[#C87F4A]" />
-              <span>STUDIO & REEL ENGAGEMENT ROI LIFT</span>
-            </div>
-            <h3 className="font-bold text-base font-sans text-white">
-              Studio Photography & Video Impact
-            </h3>
-            <p className="text-xs text-stone-300 font-mono leading-relaxed">
-              Comparison between visitors who engaged with high-res macro weave videos vs standard catalog browsing
-            </p>
-          </div>
+        <div className="space-y-4">
+          {activeWeaves.map((wp) => (
+            <div key={wp.weave} className="space-y-1.5 text-xs font-sans">
+              <div className="flex justify-between items-center font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-stone-900">{wp.weave}</span>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                    {wp.growth}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <strong className="text-stone-900">₹{(wp.revenue / 100000).toFixed(2)}L</strong>
+                  <span className="text-stone-400 text-[10px] ml-1.5">
+                    ({wp.units} units • AOV: ₹{wp.aov.toLocaleString('en-IN')})
+                  </span>
+                </div>
+              </div>
 
-          {/* Metric Comparison Grid */}
-          <div className="grid grid-cols-2 gap-3 font-mono text-xs pt-2 border-t border-[#3D2319]">
-            {/* Video Engaged Users */}
-            <div className="p-3.5 bg-white/10 rounded-xl border border-white/10 space-y-1">
-              <span className="text-[10px] uppercase text-[#E2CE9F] block font-bold">
-                ✓ With Studio Video
-              </span>
-              <div className="text-xl font-bold text-emerald-400">4.62%</div>
-              <div className="text-[10px] text-stone-300">Conv. Rate (AOV: ₹42.5k)</div>
-              <div className="text-[10px] text-emerald-300 font-bold pt-1">
-                Return Rate: 1.8% only
+              <div className="w-full bg-[#FAF6F0] rounded-full h-2.5 overflow-hidden border border-[#E8DCC9]">
+                <div
+                  className={`h-full rounded-full ${wp.barColor || 'bg-amber-500'}`}
+                  style={{ width: `${wp.share}%` }}
+                />
               </div>
             </div>
-
-            {/* Standard Browsing Users */}
-            <div className="p-3.5 bg-white/5 rounded-xl border border-white/5 space-y-1">
-              <span className="text-[10px] uppercase text-stone-400 block font-bold">
-                ✗ Standard Browsing
-              </span>
-              <div className="text-xl font-bold text-stone-300">0.94%</div>
-              <div className="text-[10px] text-stone-400">Conv. Rate (AOV: ₹26.8k)</div>
-              <div className="text-[10px] text-rose-400 font-bold pt-1">
-                Return Rate: 4.9%
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Lift Banner */}
-          <div className="p-3 bg-emerald-950/60 border border-emerald-700/60 rounded-xl text-center font-mono">
-            <span className="text-xs font-bold text-emerald-300">
-              ⚡ +391% Conversion Surge • 63% Return Rate Drop
-            </span>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -629,8 +554,4 @@ Return Rate Reduction: 1.8% vs 4.9% (-63%)
       </div>
     </div>
   );
-}
-
-function CreditCardIcon(props: any) {
-  return <DollarSign {...props} />;
 }

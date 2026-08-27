@@ -47,10 +47,6 @@ export async function GET(request: Request) {
       `)
       .eq('is_published', true);
 
-    if (search) {
-      query = query.ilike('title', `%${search}%`);
-    }
-
     if (priceMin) {
       query = query.gte('base_selling_price_paise', parseInt(priceMin, 10) * 100);
     }
@@ -75,6 +71,7 @@ export async function GET(request: Request) {
         const weaveData: any = Array.isArray(p.weavings) ? p.weavings[0] : p.weavings;
         const fabricData: any = Array.isArray(p.fabrics) ? p.fabrics[0] : p.fabrics;
         const occasionData: any = Array.isArray(p.occasions) ? p.occasions[0] : p.occasions;
+        const patternData: any = Array.isArray(p.patterns) ? p.patterns[0] : p.patterns;
         const zariData: any = Array.isArray(p.zari_specifications) ? p.zari_specifications[0] : p.zari_specifications;
         const allVariantImages = (p.product_variants || [])
           .flatMap((v: any) => (v.product_variant_media || []).map((m: any) => m.url))
@@ -93,6 +90,7 @@ export async function GET(request: Request) {
           weave: weaveData?.name || '',
           fabric: fabricData?.name || '',
           occasion: occasionData?.name || '',
+          pattern: patternData?.name || '',
           priceINR: Math.round(p.base_selling_price_paise / 100),
           originalPriceINR: Math.round(p.base_mrp_paise / 100),
           pricePaise: p.base_selling_price_paise,
@@ -121,6 +119,16 @@ export async function GET(request: Request) {
         if (p.color) counts.colors[p.color] = (counts.colors[p.color] || 0) + 1;
       });
 
+      if (search) {
+        const q = search.toLowerCase();
+        formattedProducts = formattedProducts.filter(p =>
+          p.title.toLowerCase().includes(q) ||
+          p.description.toLowerCase().includes(q) ||
+          p.weave.toLowerCase().includes(q) ||
+          p.fabric.toLowerCase().includes(q) ||
+          (p.pattern && p.pattern.toLowerCase().includes(q))
+        );
+      }
       if (weave) {
         formattedProducts = formattedProducts.filter(p =>
           p.weave.toLowerCase().includes(weave.toLowerCase()) || weave.toLowerCase().includes(p.weave.toLowerCase())
