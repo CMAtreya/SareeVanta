@@ -33,7 +33,6 @@ const profileSchema = z.object({
     .email({ message: 'Please enter a valid email address' }),
   phone: z.string().optional(),
   dob: z.string().optional(),
-  anniversary: z.string().optional(),
   gender: z.enum(['womens_wear', 'mens_gifting', 'unisex']),
 });
 
@@ -59,7 +58,6 @@ export default function AccountProfilePage() {
       email: '',
       phone: '',
       dob: '',
-      anniversary: '',
       gender: 'womens_wear',
     },
   });
@@ -93,7 +91,6 @@ export default function AccountProfilePage() {
             email: user.email || '',
             phone: user.user_metadata?.phone || user.phone || '',
             dob: user.user_metadata?.dob || '',
-            anniversary: user.user_metadata?.anniversary || '',
             gender: 'womens_wear',
           });
         }
@@ -122,7 +119,6 @@ export default function AccountProfilePage() {
           full_name: `${values.firstName} ${values.lastName}`.trim(),
           phone: values.phone,
           dob: values.dob,
-          anniversary: values.anniversary,
         },
       });
 
@@ -310,21 +306,6 @@ export default function AccountProfilePage() {
                 <input
                   type="date"
                   {...register('dob')}
-                  className="w-full text-xs sm:text-sm text-[#1F1B16] focus:outline-none bg-transparent cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Wedding Anniversary Date */}
-            <div>
-              <label className="text-[11px] font-mono uppercase tracking-wider text-stone-700 font-bold block mb-1.5">
-                Wedding Anniversary Date
-              </label>
-              <div className="flex items-center rounded-xl border border-stone-300 focus-within:border-[#C87F4A] focus-within:ring-2 focus-within:ring-[#C87F4A]/20 bg-[#FAF3E4]/30 px-3.5 py-2.5 transition-all">
-                <Gift className="w-4 h-4 text-stone-400 mr-2.5 flex-shrink-0" />
-                <input
-                  type="date"
-                  {...register('anniversary')}
                   className="w-full text-xs sm:text-sm text-[#1F1B16] focus:outline-none bg-transparent cursor-pointer"
                 />
               </div>

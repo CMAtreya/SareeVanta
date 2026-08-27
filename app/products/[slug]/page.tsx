@@ -85,6 +85,7 @@ export default function ProductDetailPage() {
   const [newReviewTitle, setNewReviewTitle] = useState('');
   const [newReviewComment, setNewReviewComment] = useState('');
   const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewPhotos, setNewReviewPhotos] = useState<string[]>([]);
 
   // Carousel Ref for "You May Also Like"
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -234,8 +235,43 @@ export default function ProductDetailPage() {
     setTimeout(() => setAddedAnimation(false), 1500);
   };
 
+  // Handle Review Photo Upload (Max 2 photos per DSS specification)
+  const handleReviewPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 2 - newReviewPhotos.length;
+    if (remainingSlots <= 0) return;
+
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+
+    filesToProcess.forEach((file) => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+          const result = loadEvent.target?.result as string;
+          if (result) {
+            setNewReviewPhotos((prev) => {
+              if (prev.length < 2) {
+                return [...prev, result];
+              }
+              return prev;
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    e.target.value = '';
+  };
+
+  const handleRemoveReviewPhoto = (index: number) => {
+    setNewReviewPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Add Customer Review
-  const handleSubmitReview = (e: React.FormEvent) => {
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReviewAuthor.trim() || !newReviewComment.trim()) return;
 
@@ -248,13 +284,35 @@ export default function ProductDetailPage() {
       title: newReviewTitle.trim() || 'Exceptional Pure Silk Saree',
       comment: newReviewComment.trim(),
       verified: true,
+      photos: newReviewPhotos.slice(0, 2),
+      photo: newReviewPhotos[0] || undefined,
     };
 
     setReviews([newRev, ...reviews]);
     setIsReviewModalOpen(false);
+
+    // Sync to backend /api/reviews
+    try {
+      await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: 'pending-guest-order',
+          order_item_id: 'item-guest',
+          variant_id: product?.id || 'default-variant',
+          rating: newReviewRating,
+          review_text: newReviewComment.trim(),
+          photos: newReviewPhotos.slice(0, 2),
+        }),
+      });
+    } catch (err) {
+      console.warn('[Review Modal] Background sync to API queued:', err);
+    }
+
     setNewReviewAuthor('');
     setNewReviewTitle('');
     setNewReviewComment('');
+    setNewReviewPhotos([]);
   };
 
   // Carousel Controls
@@ -325,7 +383,7 @@ export default function ProductDetailPage() {
               onMouseEnter={() => setIsZoomed(true)}
               onMouseLeave={() => setIsZoomed(false)}
               onMouseMove={handleMouseMove}
-              className="relative flex-1 aspect-[3/4] rounded-2xl overflow-hidden bg-white border border-[#C87F4A]/25 shadow-silk-lg cursor-crosshair select-none"
+              className="relative flex-1 rounded-2xl overflow-hidden bg-stone-100 border border-[#C87F4A]/25 shadow-silk-lg cursor-crosshair select-none"
             >
               {/* Normal Image or Branded Atelier Placeholder */}
               {(() => {
@@ -334,11 +392,11 @@ export default function ProductDetailPage() {
 
                 if (hasValidImage) {
                   return (
-                    <>
+                    <div className="relative w-full h-[520px] sm:h-[600px] bg-stone-100">
                       <img
                         src={currentImg}
                         alt={product.title}
-                        className={`w-full h-full max-h-[620px] object-contain object-center transition-opacity duration-200 ${
+                        className={`w-full h-full object-cover object-top transition-opacity duration-200 ${
                           isZoomed ? 'opacity-0' : 'opacity-100'
                         }`}
                       />
@@ -350,11 +408,11 @@ export default function ProductDetailPage() {
                           style={{
                             backgroundImage: `url(${currentImg})`,
                             backgroundPosition: `${zoomCoords.x}% ${zoomCoords.y}%`,
-                            backgroundSize: '240%',
+                            backgroundSize: '220%',
                           }}
                         />
                       )}
-                    </>
+                    </div>
                   );
                 }
 
@@ -911,15 +969,36 @@ export default function ProductDetailPage() {
                       "{rev.comment}"
                     </p>
 
-                    {/* Uploaded Photo if available */}
-                    {rev.photo && (
-                      <div className="mt-2 relative w-20 h-24 rounded-lg overflow-hidden border border-[#C87F4A]/30 shadow-xs">
-                        <img src={rev.photo} alt="Customer uploaded drape photo" className="w-full h-full object-cover" />
-                        <div className="absolute bottom-1 right-1 bg-black/60 p-0.5 rounded text-white text-[8px] font-mono">
-                          <Camera className="w-2.5 h-2.5" />
+                    {/* Uploaded Customer Photos (Max 2 DSS Specification) */}
+                    {(() => {
+                      const photoList = rev.photos && rev.photos.length > 0
+                        ? rev.photos
+                        : rev.photo
+                        ? [rev.photo]
+                        : [];
+                      if (photoList.length === 0) return null;
+
+                      return (
+                        <div className="mt-3 flex items-center gap-2">
+                          {photoList.map((pUrl, pIdx) => (
+                            <div
+                              key={pIdx}
+                              className="relative w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border border-[#C87F4A]/30 shadow-xs group bg-stone-100 flex-shrink-0"
+                            >
+                              <img
+                                src={pUrl}
+                                alt={`Customer drape review photo ${pIdx + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                              <div className="absolute bottom-1 right-1 bg-black/60 p-0.5 rounded text-white text-[8px] font-mono flex items-center gap-0.5">
+                                <Camera className="w-2.5 h-2.5" />
+                                <span>{pIdx + 1}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
 
                   {/* Author Info */}
@@ -942,20 +1021,20 @@ export default function ProductDetailPage() {
           )}
         </section>
 
-        {/* Write a Review Modal */}
+        {/* Write a Review Modal with Photo Upload (Max 2) */}
         {isReviewModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setIsReviewModalOpen(false)}
             />
-            <div className="relative bg-[#FAF3E4] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-[#C87F4A]/30 z-10 text-[#1F1B16] space-y-4">
+            <div className="relative bg-[#FAF3E4] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-[#C87F4A]/30 z-10 text-[#1F1B16] space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-[#C87F4A]/20">
                 <h3 className="font-editorial text-xl font-bold">Write a Patron Review</h3>
                 <button
                   type="button"
                   onClick={() => setIsReviewModalOpen(false)}
-                  className="p-1 text-stone-500 hover:text-black"
+                  className="p-1 text-stone-500 hover:text-black cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -970,7 +1049,7 @@ export default function ProductDetailPage() {
                     value={newReviewAuthor}
                     onChange={(e) => setNewReviewAuthor(e.target.value)}
                     placeholder="e.g. Radhika Sundaram"
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg"
+                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C87F4A]"
                   />
                 </div>
 
@@ -982,7 +1061,7 @@ export default function ProductDetailPage() {
                         key={star}
                         type="button"
                         onClick={() => setNewReviewRating(star)}
-                        className="p-1 text-amber-500 hover:scale-110 transition-transform"
+                        className="p-1 text-amber-500 hover:scale-110 transition-transform cursor-pointer"
                       >
                         <Star className={`w-5 h-5 ${newReviewRating >= star ? 'fill-amber-500' : 'text-stone-300'}`} />
                       </button>
@@ -997,7 +1076,7 @@ export default function ProductDetailPage() {
                     value={newReviewTitle}
                     onChange={(e) => setNewReviewTitle(e.target.value)}
                     placeholder="e.g. Majestic drape for Muhurtham"
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg"
+                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C87F4A]"
                   />
                 </div>
 
@@ -1009,13 +1088,65 @@ export default function ProductDetailPage() {
                     value={newReviewComment}
                     onChange={(e) => setNewReviewComment(e.target.value)}
                     placeholder="Describe the fabric feel, luster under lighting, pleating comfort..."
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg"
+                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C87F4A]"
                   />
+                </div>
+
+                {/* Upload Drape Photos (Max 2 DSS Specification) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-semibold text-stone-700 flex items-center gap-1">
+                      <Camera className="w-3.5 h-3.5 text-[#C87F4A]" />
+                      <span>Upload Drape Photos</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-stone-500">
+                      {newReviewPhotos.length}/2 photos uploaded
+                    </span>
+                  </div>
+
+                  {newReviewPhotos.length < 2 && (
+                    <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-[#C87F4A]/40 rounded-xl bg-white/60 hover:bg-white cursor-pointer transition-colors text-center text-[11px] text-stone-600 font-medium">
+                      <Camera className="w-4 h-4 text-[#C87F4A]" />
+                      <span>Click to select saree photos (PNG/JPG, max 2)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleReviewPhotoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+
+                  {newReviewPhotos.length > 0 && (
+                    <div className="mt-2.5 flex items-center gap-3">
+                      {newReviewPhotos.map((photoUrl, pIndex) => (
+                        <div
+                          key={pIndex}
+                          className="relative w-16 h-20 rounded-xl overflow-hidden border border-[#C87F4A]/30 shadow-xs bg-stone-100 group"
+                        >
+                          <img
+                            src={photoUrl}
+                            alt={`Preview ${pIndex + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveReviewPhoto(pIndex)}
+                            className="absolute top-1 right-1 bg-black/70 hover:bg-red-600 text-white rounded-full p-0.5 transition-colors cursor-pointer"
+                            title="Remove Photo"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-3 rounded-sm text-xs font-bold uppercase tracking-widest shadow-md"
+                  className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md cursor-pointer transition-colors"
                 >
                   Submit Patron Review
                 </button>

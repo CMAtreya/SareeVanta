@@ -76,9 +76,15 @@ export async function GET(request: Request) {
         const fabricData: any = Array.isArray(p.fabrics) ? p.fabrics[0] : p.fabrics;
         const occasionData: any = Array.isArray(p.occasions) ? p.occasions[0] : p.occasions;
         const zariData: any = Array.isArray(p.zari_specifications) ? p.zari_specifications[0] : p.zari_specifications;
-        const colorData: any = Array.isArray(firstVariant?.colors) ? firstVariant?.colors[0] : firstVariant?.colors;
+        const allVariantImages = (p.product_variants || [])
+          .flatMap((v: any) => (v.product_variant_media || []).map((m: any) => m.url))
+          .filter(Boolean);
 
-        const variantImages = firstVariant?.product_variant_media?.map((m: any) => m.url) || [];
+        const images = allVariantImages.length > 0
+          ? allVariantImages
+          : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop'];
+
+        const colorData: any = Array.isArray(firstVariant?.colors) ? firstVariant?.colors[0] : firstVariant?.colors;
 
         return {
           id: p.id,
@@ -93,22 +99,50 @@ export async function GET(request: Request) {
           mrpPaise: p.base_mrp_paise,
           color: colorData?.name || '',
           colorHex: colorData?.hex_code || '#000000',
-          images: variantImages.filter(Boolean),
+          images,
           zariGrade: zariData?.name || '',
           description: p.description || '',
           inStock: true,
         };
       });
 
-      if (weave) formattedProducts = formattedProducts.filter(p => p.weave.toLowerCase().includes(weave.toLowerCase()));
-      if (fabric) formattedProducts = formattedProducts.filter(p => p.fabric.toLowerCase().includes(fabric.toLowerCase()));
-      if (occasion) formattedProducts = formattedProducts.filter(p => p.occasion.toLowerCase().includes(occasion.toLowerCase()));
+      // Calculate dynamic filter counts across whole published catalog
+      const counts = {
+        weaves: {} as Record<string, number>,
+        fabrics: {} as Record<string, number>,
+        occasions: {} as Record<string, number>,
+        colors: {} as Record<string, number>,
+      };
+
+      formattedProducts.forEach((p: any) => {
+        if (p.weave) counts.weaves[p.weave] = (counts.weaves[p.weave] || 0) + 1;
+        if (p.fabric) counts.fabrics[p.fabric] = (counts.fabrics[p.fabric] || 0) + 1;
+        if (p.occasion) counts.occasions[p.occasion] = (counts.occasions[p.occasion] || 0) + 1;
+        if (p.color) counts.colors[p.color] = (counts.colors[p.color] || 0) + 1;
+      });
+
+      if (weave) {
+        formattedProducts = formattedProducts.filter(p =>
+          p.weave.toLowerCase().includes(weave.toLowerCase()) || weave.toLowerCase().includes(p.weave.toLowerCase())
+        );
+      }
+      if (fabric) {
+        formattedProducts = formattedProducts.filter(p =>
+          p.fabric.toLowerCase().includes(fabric.toLowerCase()) || fabric.toLowerCase().includes(p.fabric.toLowerCase())
+        );
+      }
+      if (occasion) {
+        formattedProducts = formattedProducts.filter(p =>
+          p.occasion.toLowerCase().includes(occasion.toLowerCase()) || occasion.toLowerCase().includes(p.occasion.toLowerCase())
+        );
+      }
       if (color) formattedProducts = formattedProducts.filter(p => p.color.toLowerCase().includes(color.toLowerCase()));
 
       return NextResponse.json({
         products: formattedProducts,
         total: formattedProducts.length,
         totalPages: Math.ceil(formattedProducts.length / limit) || 1,
+        counts,
         source: 'database',
       });
     }

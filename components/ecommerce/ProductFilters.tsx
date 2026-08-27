@@ -192,7 +192,7 @@ export default function ProductFilters({
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-stone-400">
-                    ({count > 0 ? count : 1})
+                    ({count || 0})
                   </span>
                 </label>
               );
@@ -366,7 +366,7 @@ export default function ProductFilters({
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-stone-400">
-                    ({count > 0 ? count : 1})
+                    ({count || 0})
                   </span>
                 </label>
               );
@@ -412,7 +412,7 @@ export default function ProductFilters({
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-stone-400">
-                    ({count > 0 ? count : 1})
+                    ({count || 0})
                   </span>
                 </label>
               );

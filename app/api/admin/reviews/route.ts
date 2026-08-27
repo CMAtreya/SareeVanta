@@ -15,7 +15,7 @@ export async function GET(request: Request) {
       *,
       customers ( name, email, phone ),
       review_photos ( storage_path ),
-      product_variants ( sku, products ( title ) )
+      product_variants ( sku, products ( title ), product_variant_media ( url ) )
     `)
     .order('created_at', { ascending: false });
 
@@ -31,26 +31,33 @@ export async function GET(request: Request) {
   }
 
   const list = dbReviews || [];
-  const formatted = list.map((r: any) => ({
-    id: r.id,
-    customerName: r.customers?.name || r.reviewer_name || 'Patron Buyer',
-    email: r.customers?.email || 'patron@sareevanta.com',
-    customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
-    city: 'Mysuru',
-    state: 'Karnataka',
-    verifiedBuyer: Boolean(r.verified_buyer ?? true),
-    rating: r.rating || 5,
-    reviewTitle: r.title || 'Exquisite Handloom Craftsmanship',
-    reviewText: r.review_text || r.comment || 'Stunning loom weave quality.',
-    sareeTitle: r.product_variants?.products?.title || 'Heirloom Silk Saree',
-    sku: r.product_variants?.sku || 'NSH-SKU-MYS-01',
-    weave: 'Pure Mulberry Silk',
-    mediaUrls: (r.review_photos || []).map((p: any) => p.storage_path).filter(Boolean),
-    createdDate: r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
-    status: r.moderation_status || 'PENDING',
-    upvoteCount: 0,
-    isFeatured: Boolean(r.is_featured),
-  }));
+  const formatted = list.map((r: any) => {
+    const variantMedia = r.product_variants?.product_variant_media || [];
+    const sareeImage = variantMedia[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=400&auto=format&fit=crop';
+
+    return {
+      id: r.id,
+      customerName: r.customers?.name || r.reviewer_name || 'Patron Buyer',
+      email: r.customers?.email || 'patron@sareevanta.com',
+      customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
+      city: 'Mysuru',
+      state: 'Karnataka',
+      verifiedBuyer: Boolean(r.verified_buyer ?? true),
+      rating: r.rating || 5,
+      reviewTitle: r.title || 'Exquisite Handloom Craftsmanship',
+      reviewText: r.review_text || r.comment || 'Stunning loom weave quality.',
+      sareeTitle: r.product_variants?.products?.title || 'Heirloom Silk Saree',
+      sareeImage,
+      productImage: sareeImage,
+      sku: r.product_variants?.sku || 'NSH-SKU-MYS-01',
+      weave: 'Pure Mulberry Silk',
+      mediaUrls: (r.review_photos || []).map((p: any) => p.storage_path).filter(Boolean),
+      createdDate: r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
+      status: r.moderation_status || 'PENDING',
+      upvoteCount: 0,
+      isFeatured: Boolean(r.is_featured),
+    };
+  });
 
   const totalPublished = formatted.filter((r: any) => r.status === 'APPROVED').length;
   const pendingCount = formatted.filter((r: any) => r.status === 'PENDING').length;

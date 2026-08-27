@@ -14,6 +14,7 @@ export interface Review {
   comment: string;
   verified: boolean;
   photo?: string;
+  photos?: string[];
 }
 
 export interface Product {

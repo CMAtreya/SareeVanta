@@ -177,15 +177,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
 
       } else {
-        // Guest user: restore cart & wishlist from localStorage
-        try {
-          const guestCart = localStorage.getItem('sareevanta_guest_cart');
-          if (guestCart) setCart(JSON.parse(guestCart));
-          const guestWishlist = localStorage.getItem('sareevanta_guest_wishlist');
-          if (guestWishlist) setWishlist(JSON.parse(guestWishlist));
-        } catch (err) {
-          console.error('[CartContext] Failed to restore guest storage:', err);
-        }
+        // Unauthenticated guest user
+        setCart([]);
+        setWishlist([]);
       }
     };
 
@@ -197,23 +191,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Save guest cart / wishlist to localStorage whenever modified (when unauthenticated)
-  useEffect(() => {
-    if (!currentUser && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('sareevanta_guest_cart', JSON.stringify(cart));
-      } catch (e) {}
-    }
-  }, [cart, currentUser]);
-
-  useEffect(() => {
-    if (!currentUser && typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('sareevanta_guest_wishlist', JSON.stringify(wishlist));
-      } catch (e) {}
-    }
-  }, [wishlist, currentUser]);
 
   // --------------------------------------------------------------------------
   // 2. FLYING ANIMATION & CART ACTIONS
@@ -275,7 +252,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     sourcePosition?: SourcePosition
   ) => {
     if (!currentUser) {
-      // Save intended cart action so post-login executor can fulfill it
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('pending_cart_action', JSON.stringify({
           product,
@@ -289,17 +265,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 1. Update Cart Data State
+    const maxStock = product.stockCount ?? 5;
+
+    // 1. Update Cart Data State with strict stock count cap (BFS 9.3)
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
+        const cappedQty = Math.min(maxStock, existing.quantity + quantity);
         return prev.map((item) =>
           item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: cappedQty }
             : item
         );
       }
-      return [...prev, { product, quantity, blouseOption, tailoringExtraINR }];
+      const initialQty = Math.min(quantity, maxStock);
+      return [...prev, { product, quantity: initialQty, blouseOption, tailoringExtraINR }];
     });
 
     // 2. Sync to Supabase Database
@@ -335,11 +315,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(productId);
       return;
     }
+
     setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
+      prev.map((item) => {
+        if (item.product.id === productId) {
+          const maxStock = item.product.stockCount ?? 5;
+          const cappedQty = Math.min(quantity, maxStock);
+          return { ...item, quantity: cappedQty };
+        }
+        return item;
+      })
     );
+
     if (currentUser) {
       fetch('/api/cart', {
         method: 'PUT',

@@ -34,29 +34,33 @@ function getShortcode(url: string, fallback?: string): string {
 // Inline Instagram Reel Card rendering the ACTUAL Instagram Reel Video Embed
 function ActualInstagramReelCard({ reel }: { reel: ActiveReel }) {
   const shortcode = getShortcode(reel.url, reel.shortcode);
-  const [replayKey, setReplayKey] = useState(0);
   const [isAudioOn, setIsAudioOn] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Construct embed URL with autoplay, sound toggle & replay key
-  const embedUrl = `https://www.instagram.com/reel/${shortcode}/embed/captioned/?autoplay=1&muted=${isAudioOn ? '0' : '1'}&_rk=${replayKey}`;
-
-  const handleReplayInWebsite = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setReplayKey((prev) => prev + 1);
-  };
+  const embedUrl = `https://www.instagram.com/reel/${shortcode}/embed/captioned/?autoplay=1`;
 
   const handleToggleAudio = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsAudioOn((prev) => !prev);
+
+    try {
+      if (iframeRef.current && iframeRef.current.contentWindow) {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ type: 'unmute', value: !isAudioOn }),
+          '*'
+        );
+      }
+    } catch (err) {
+      // Ignored cross-origin restriction
+    }
   };
 
   return (
     <div className="relative w-[300px] sm:w-[340px] h-[540px] flex-shrink-0 rounded-3xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-2xl snap-start flex flex-col justify-between select-none transition-transform duration-300 hover:scale-[1.01] group/reel">
       {/* Official Instagram Reel Embed Player */}
       <iframe
-        key={replayKey}
+        ref={iframeRef}
         src={embedUrl}
         title={reel.caption || `Instagram Reel ${shortcode}`}
         className="w-full h-full border-0 rounded-3xl bg-[#1F1B16]"
@@ -65,20 +69,8 @@ function ActualInstagramReelCard({ reel }: { reel: ActiveReel }) {
         scrolling="no"
       />
 
-      {/* Website Interactive Overlay Controls (Replay in Site & Audio ON/OFF) */}
-      <div className="absolute bottom-3 left-3 right-3 z-30 flex items-center justify-between pointer-events-auto">
-        {/* Replay Reel directly inside website */}
-        <button
-          type="button"
-          onClick={handleReplayInWebsite}
-          className="px-3 py-1.5 rounded-full bg-[#18110E]/90 hover:bg-[#7A1C30] backdrop-blur-md text-[#FAF3E4] border border-[#C87F4A]/40 text-[11px] font-mono font-bold flex items-center gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer"
-          title="Replay Video Directly in Website"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-[#C87F4A]" />
-          <span>Replay in Site</span>
-        </button>
-
-        {/* Sound Enable / Disable Button */}
+      {/* Website Interactive Controls */}
+      <div className="absolute bottom-3 right-3 z-30 flex items-center justify-end pointer-events-auto">
         <button
           type="button"
           onClick={handleToggleAudio}
@@ -87,7 +79,7 @@ function ActualInstagramReelCard({ reel }: { reel: ActiveReel }) {
               ? 'bg-emerald-700 text-white border-emerald-400'
               : 'bg-[#18110E]/90 text-[#FAF3E4] border-[#C87F4A]/40 hover:bg-[#C87F4A]'
           }`}
-          title={isAudioOn ? 'Mute Audio' : 'Enable Audio'}
+          title={isAudioOn ? 'Mute Audio' : 'Audio Control'}
         >
           {isAudioOn ? (
             <>
@@ -97,7 +89,7 @@ function ActualInstagramReelCard({ reel }: { reel: ActiveReel }) {
           ) : (
             <>
               <VolumeX className="w-3.5 h-3.5 text-stone-300" />
-              <span>Enable Audio</span>
+              <span>Audio OFF</span>
             </>
           )}
         </button>
@@ -114,9 +106,6 @@ export default function InstagramReelsCarousel() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ----------------------------------------------------
-  // 1. FETCH ACTIVE REELS IN REAL TIME FROM SUPABASE
-  // ----------------------------------------------------
   const fetchActiveReels = useCallback(async () => {
     try {
       const res = await fetch(`/api/instagram-reels?_t=${Date.now()}`, {
@@ -149,7 +138,7 @@ export default function InstagramReelsCarousel() {
   }, [fetchActiveReels]);
 
   // ----------------------------------------------------
-  // 2. CONTINUOUS CAROUSEL SCROLL ENGINE
+  // 2. CONTINUOUS AUTO-ROTATING CAROUSEL ENGINE
   // ----------------------------------------------------
   useEffect(() => {
     if (isHovered || reels.length === 0) return;
@@ -157,13 +146,13 @@ export default function InstagramReelsCarousel() {
     autoScrollIntervalRef.current = setInterval(() => {
       if (scrollContainerRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+        if (scrollLeft + clientWidth >= scrollWidth - 15) {
           scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
           scrollContainerRef.current.scrollBy({ left: 340, behavior: 'smooth' });
         }
       }
-    }, 6000);
+    }, 3200);
 
     return () => {
       if (autoScrollIntervalRef.current) {

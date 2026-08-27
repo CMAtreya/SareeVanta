@@ -348,40 +348,59 @@ export default function CartPage() {
                           )}
                         </div>
 
-                        {/* Stepper + Remove Row */}
-                        <div className="flex items-center gap-2">
-                          <div className="inline-flex items-center bg-[#FAF3E4] border border-[#C87F4A]/30 rounded-lg p-0.5 shadow-xs">
-                            <button
-                              type="button"
-                              onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="p-1.5 rounded text-stone-700 hover:text-[#C87F4A] transition-colors"
-                              aria-label="Decrease Quantity"
-                            >
-                              <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="w-7 text-center font-mono font-bold text-xs text-[#1F1B16]">
-                              {item.quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="p-1.5 rounded text-stone-700 hover:text-[#C87F4A] transition-colors"
-                              aria-label="Increase Quantity"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
+                        {/* Stepper + Remove Row with BFS 9.3 Stock Capping */}
+                        {(() => {
+                          const maxStock = item.product.stockCount ?? 5;
+                          const isAtMax = item.quantity >= maxStock;
+                          return (
+                            <div className="flex flex-col items-end gap-1">
+                              <div className="flex items-center gap-2">
+                                <div className="inline-flex items-center bg-[#FAF3E4] border border-[#C87F4A]/30 rounded-lg p-0.5 shadow-xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                    className="p-1.5 rounded text-stone-700 hover:text-[#C87F4A] transition-colors cursor-pointer"
+                                    aria-label="Decrease Quantity"
+                                  >
+                                    <Minus className="w-3 h-3" />
+                                  </button>
+                                  <span className="w-7 text-center font-mono font-bold text-xs text-[#1F1B16]">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={isAtMax}
+                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                    className={`p-1.5 rounded transition-colors ${
+                                      isAtMax
+                                        ? 'opacity-30 cursor-not-allowed text-stone-400 bg-stone-100'
+                                        : 'text-stone-700 hover:text-[#C87F4A] cursor-pointer'
+                                    }`}
+                                    aria-label="Increase Quantity"
+                                    title={isAtMax ? `Max available stock reached (${maxStock})` : 'Increase Quantity'}
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                  </button>
+                                </div>
 
-                          {/* Remove Button */}
-                          <button
-                            type="button"
-                            onClick={() => removeFromCart(item.product.id)}
-                            className="p-2 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                            aria-label={`Remove ${item.product.title}`}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                                {/* Remove Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => removeFromCart(item.product.id)}
+                                  className="p-2 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                                  aria-label={`Remove ${item.product.title}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                              {isAtMax && (
+                                <span className="text-[10px] font-mono font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded">
+                                  Max Stock Limit Reached ({maxStock})
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   );

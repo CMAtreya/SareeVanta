@@ -94,7 +94,29 @@ function ProductsListingContent() {
     router,
   ]);
 
-  // Fetch from GET /api/products
+  // Sync URL searchParams to React filter state whenever searchParams changes
+  useEffect(() => {
+    const w = searchParams.get('weave');
+    const f = searchParams.get('fabric');
+    const o = searchParams.get('occasion');
+    const c = searchParams.get('color');
+    const pMin = searchParams.get('price_min');
+    const pMax = searchParams.get('price_max');
+    const sMark = searchParams.get('silk_mark');
+    const s = searchParams.get('sort') || 'featured';
+    const p = parseInt(searchParams.get('page') || '1', 10);
+
+    setSelectedWeaves(w ? w.split(',').map((item) => item.trim()) : []);
+    setSelectedFabrics(f ? f.split(',').map((item) => item.trim()) : []);
+    setSelectedOccasions(o ? o.split(',').map((item) => item.trim()) : []);
+    setSelectedColors(c ? c.split(',').map((item) => item.trim()) : []);
+    setPriceRange([pMin ? parseInt(pMin, 10) : 10000, pMax ? parseInt(pMax, 10) : 100000]);
+    setSilkMarkOnly(sMark === 'true');
+    setSortBy(s);
+    setCurrentPage(p);
+  }, [searchParams]);
+
+  // Fetch products from GET /api/products
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -130,7 +152,6 @@ function ProductsListingContent() {
         console.error('Error fetching from /api/products, falling back to local dataset', err);
       }
 
-      // Local fallback calculation if API fails
       if (isMounted) {
         let filtered = products.filter((p) => {
           if (selectedWeaves.length > 0 && !selectedWeaves.includes(p.weave)) return false;
@@ -156,7 +177,6 @@ function ProductsListingContent() {
     };
 
     fetchProducts();
-    syncParamsToUrl();
 
     return () => {
       isMounted = false;
@@ -172,7 +192,6 @@ function ProductsListingContent() {
     currentPage,
     gridCols,
     filterParam,
-    syncParamsToUrl,
   ]);
 
   // Clear all filters

@@ -11,3 +11,7 @@
 3. **No Static Mock Fallbacks on Admin & Customer Pages**:
    - **Mistake**: Hardcoded mock arrays initialized in admin pages (e.g. `/admin/customerreviews`) or fallback objects returned from API endpoints instead of querying Supabase directly.
    - **Correction**: Connect every admin management page directly to Supabase REST/API endpoints. If database table is empty, render a clean, branded empty state banner—never display hardcoded fake mock records!
+
+4. **Product Edit Form & Review Thumbnail Image Preservation**:
+   - **Mistake**: `ProductEditorForm` checked static `products.find` first in edit mode, loading static Unsplash mock images and overwriting user uploaded photos upon save. In `GET /api/admin/reviews`, `product_variant_media` was not selected, causing review product thumbnails to render broken.
+   - **Correction**: In form edit components, bypass static mock arrays completely and always fetch live product details, SKUs, and media from `/api/admin/products`. In review APIs, select `product_variant_media` and map `sareeImage` / `productImage` so thumbnails render clearly!

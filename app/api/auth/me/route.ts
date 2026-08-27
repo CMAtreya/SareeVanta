@@ -37,7 +37,6 @@ export async function GET() {
     avatar: meta.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
     memberSince: user.created_at ? new Date(user.created_at).getFullYear().toString() : '2026',
     dob: meta.dob || '',
-    anniversary: meta.anniversary || '',
     gender: meta.gender || 'womens_wear',
     completionPercentage: 90,
   });

@@ -40,7 +40,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   const currentImage =
-    isHovered && product.images.length > 1 ? product.images[1] : product.images[0];
+    (isHovered && product.images?.length > 1 ? product.images[1] : product.images?.[0]) ||
+    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop';
 
   const originalPrice = product.originalPriceINR && product.originalPriceINR > product.priceINR
     ? product.originalPriceINR

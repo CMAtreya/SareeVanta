@@ -449,7 +449,11 @@ export default function HomePage() {
                       href={`/products/${p.slug}`}
                       className="p-3 bg-[#FAF3E4] rounded-xl border border-[#C87F4A]/20 hover:border-[#C87F4A] transition-colors flex items-center gap-2.5"
                     >
-                      <img src={p.images[0]} alt={p.title} className="w-10 h-12 object-cover rounded" />
+                      <img
+                        src={p.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=400&auto=format&fit=crop'}
+                        alt={p.title}
+                        className="w-10 h-12 object-cover rounded bg-stone-100"
+                      />
                       <div className="truncate">
                         <span className="text-xs font-editorial font-bold text-[#1F1B16] block truncate">
                           {p.title}

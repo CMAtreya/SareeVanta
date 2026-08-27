@@ -80,23 +80,31 @@ export async function GET(
 
         const { data: revs } = await supabase
           .from('reviews')
-          .select('id, rating, comment, title, created_at, reviewer_name')
+          .select(`
+            id, rating, review_text, title, created_at, reviewer_name,
+            review_photos ( storage_path )
+          `)
           .eq('product_id', data.id)
           .eq('moderation_status', 'APPROVED');
 
         if (revs && revs.length > 0) {
           reviewCount = revs.length;
-          rating = Number((revs.reduce((acc, r) => acc + (r.rating || 5), 0) / revs.length).toFixed(1));
-          reviewsList = revs.map((r) => ({
-            id: r.id,
-            author: r.reviewer_name || 'Patron',
-            location: 'Verified Buyer',
-            rating: r.rating || 5,
-            date: new Date(r.created_at).toLocaleDateString(),
-            title: r.title || 'Exceptional Pure Silk Saree',
-            comment: r.comment || '',
-            verified: true,
-          }));
+          rating = Number((revs.reduce((acc, r: any) => acc + (r.rating || 5), 0) / revs.length).toFixed(1));
+          reviewsList = revs.map((r: any) => {
+            const photoList = r.review_photos?.map((p: any) => p.storage_path) || [];
+            return {
+              id: r.id,
+              author: r.reviewer_name || 'Patron',
+              location: 'Verified Buyer',
+              rating: r.rating || 5,
+              date: new Date(r.created_at).toLocaleDateString(),
+              title: r.title || 'Exceptional Pure Silk Saree',
+              comment: r.review_text || r.comment || '',
+              verified: true,
+              photos: photoList,
+              photo: photoList[0] || undefined,
+            };
+          });
         }
 
         // Fetch live related products from Supabase

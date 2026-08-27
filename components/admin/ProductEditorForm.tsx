@@ -124,23 +124,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       hex: '#8B1E28',
       sku: `${autoSku}-CRM`,
       stockCount: 3,
-      images: [
-        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=800&auto=format&fit=crop',
-        '',
-      ],
-    },
-    {
-      id: 'var-2',
-      name: 'Peacock Teal',
-      hex: '#005F73',
-      sku: `${autoSku}-TEL`,
-      stockCount: 2,
-      images: [
-        'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=800&auto=format&fit=crop',
-        '',
-        '',
-      ],
+      images: ['', '', ''],
     },
   ]);
 
@@ -195,10 +179,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [status, setStatus] = useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
 
   // Media Images
-  const [images, setImages] = useState<string[]>([
-    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=800&auto=format&fit=crop',
-  ]);
+  const [images, setImages] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
 
   // Save / UI States
@@ -211,85 +192,57 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     async function fetchProductDetails() {
       if (mode !== 'edit' || !productId) return;
 
-      // Check static array first
-      let targetProduct = products.find((p) => p.id === productId);
+      try {
+        const res = await fetch('/api/admin/products');
+        const data = await res.json();
+        if (data.products && Array.isArray(data.products)) {
+          const found = data.products.find((p: any) => p.id === productId || p.slug === productId);
+          if (found) {
+            const mainVariant = found.product_variants?.[0];
+            const dbVariants = found.product_variants || [];
 
-      // If not in static array, fetch live product from API endpoint
-      if (!targetProduct) {
-        try {
-          const res = await fetch('/api/admin/products');
-          const data = await res.json();
-          if (data.products && Array.isArray(data.products)) {
-            const found = data.products.find((p: any) => p.id === productId || p.slug === productId);
-            if (found) {
-              const mainVariant = found.product_variants?.[0];
-              const dbVariants = found.product_variants || [];
+            if (dbVariants.length > 0) {
+              const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
+                const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
+                return {
+                  id: v.id || `var-${vIdx + 1}`,
+                  name: v.colors?.name || 'Royal Crimson',
+                  hex: v.colors?.hex_code || '#8B1E28',
+                  sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
+                  stockCount: v.inventory?.[0]?.quantity || 10,
+                  images: [
+                    vImgs[0] || '',
+                    vImgs[1] || '',
+                    vImgs[2] || '',
+                  ] as [string, string, string],
+                };
+              });
+              setColorVariants(mappedColorVars);
+            }
 
-              if (dbVariants.length > 0) {
-                const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
-                  const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
-                  return {
-                    id: v.id || `var-${vIdx + 1}`,
-                    name: v.colors?.name || 'Royal Crimson',
-                    hex: v.colors?.hex_code || '#8B1E28',
-                    sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
-                    stockCount: v.inventory?.[0]?.quantity || 10,
-                    images: [
-                      vImgs[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
-                      vImgs[1] || '',
-                      vImgs[2] || '',
-                    ] as [string, string, string],
-                  };
-                });
-                setColorVariants(mappedColorVars);
-              }
+            const liveImages = mainVariant?.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [];
 
-              targetProduct = {
-                id: found.id,
-                title: found.title,
-                priceINR: Math.round((found.base_selling_price_paise || 2800000) / 100),
-                originalPriceINR: Math.round((found.base_mrp_paise || 3400000) / 100),
-                weave: found.weavings?.name || 'Mysore Silk',
-                fabric: found.fabrics?.name || '100% Pure Mulberry Silk',
-                zariSpec: found.zari_specifications?.name || 'Pure 24K Tested Zari',
-                description: found.description || '',
-                images: mainVariant?.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [
-                  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
-                ],
-                sku: mainVariant?.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
-                barcode: `890${(found.id || '1000').replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '0')}`,
-              } as any;
+            setTitle(found.title);
+            setDescription(found.description || '');
+            setWeave(found.weavings?.name || 'Mysore Silk');
+            if (found.fabrics?.name) setFabric(found.fabrics.name);
+            if (found.zari_specifications?.name) setZariSpec(found.zari_specifications.name);
+            setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
+            setMrp(String(Math.round((found.base_mrp_paise || 0) / 100)));
+            setCostPrice(String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
+
+            const fixedSku = mainVariant?.sku || `NSH-SKU-${found.id.slice(0, 6).toUpperCase()}`;
+            const fixedBarcode = `890${found.id.replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '5')}`;
+            setSku(fixedSku);
+            setBarcode(fixedBarcode);
+
+            if (liveImages.length > 0) {
+              setImages(liveImages);
             }
           }
-        } catch (err) {
-          console.error('[ProductEditorForm] Error fetching product for edit:', err);
         }
-      }
-
-      if (targetProduct) {
-        setTitle(targetProduct.title);
-        setDescription(
-          targetProduct.description ||
-            `${targetProduct.title} handcrafted in pure mulberry silk with authentic zari borders.`
-        );
-        setWeave(targetProduct.weave || 'Mysore Silk');
-        if ((targetProduct as any).fabric) setFabric((targetProduct as any).fabric);
-        if ((targetProduct as any).zariSpec) setZariSpec((targetProduct as any).zariSpec);
-        setSellingPrice(String(targetProduct.priceINR));
-        setMrp(String(targetProduct.originalPriceINR || Math.round(targetProduct.priceINR * 1.18)));
-        setCostPrice(String(Math.round(targetProduct.priceINR * 0.65)));
-
-        // PERMANENT SKU & BARCODE — Fixed and preserved once assigned!
-        const fixedSku = (targetProduct as any).sku || `NSH-SKU-${targetProduct.id.slice(0, 6).toUpperCase()}`;
-        const fixedBarcode =
-          (targetProduct as any).barcode ||
-          `890${targetProduct.id.replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '5')}`;
-        setSku(fixedSku);
-        setBarcode(fixedBarcode);
-
-        if (targetProduct.images?.length) {
-          setImages(targetProduct.images);
-        }
+      } catch (err) {
+        console.error('[ProductEditorForm] Error fetching live product for edit:', err);
       }
     }
 
@@ -581,7 +534,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   placeholder="18500"
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
                 />
-                <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">Admin Only</span>
+                <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">
+                  {costPrice ? `₹${Number(costPrice).toLocaleString('en-IN')}` : 'Admin Only'}
+                </span>
               </div>
 
               <div>
@@ -596,6 +551,11 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   placeholder="34000"
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900"
                 />
+                {mrp && (
+                  <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">
+                    ₹{Number(mrp).toLocaleString('en-IN')}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -611,11 +571,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   placeholder="28000"
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900"
                 />
-                {discountPercent > 0 && (
-                  <span className="text-[10px] text-emerald-700 font-bold font-mono mt-0.5 block">
-                    {discountPercent}% Discount
-                  </span>
-                )}
+                <div className="flex items-center justify-between text-[10px] font-mono mt-0.5">
+                  {sellingPrice && (
+                    <span className="text-[#7A1C30] font-bold">
+                      ₹{Number(sellingPrice).toLocaleString('en-IN')}
+                    </span>
+                  )}
+                  {discountPercent > 0 && (
+                    <span className="text-emerald-700 font-bold">
+                      {discountPercent}% Discount
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>
