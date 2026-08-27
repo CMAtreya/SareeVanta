@@ -396,7 +396,7 @@ export default function AdminInstagramReelsPage() {
                       Choose custom image file or paste URL below
                     </span>
                     <span className="text-[10px] text-stone-400 block">
-                      Falls back to elegant play-button placeholder if omitted
+                      Automatically uses Instagram video first-frame poster if omitted
                     </span>
                   </label>
                 </div>
@@ -572,8 +572,8 @@ export default function AdminInstagramReelsPage() {
                   {/* Reel Details */}
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs font-bold text-[#1F1B16]">
-                        {reel.shortcode}
+                      <span className="font-mono text-xs font-bold text-[#C87F4A]">
+                        Reel #{index + 1}
                       </span>
                       <span
                         className={`text-[9px] font-mono uppercase px-2 py-0.5 rounded-full font-bold border ${

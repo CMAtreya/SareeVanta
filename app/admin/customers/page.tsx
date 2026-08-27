@@ -226,7 +226,7 @@ export default function CustomerDirectoryPage() {
                   <span className="flex items-center gap-1.5 text-stone-500">
                     <span>Last Order</span>
                   </span>
-                  <span className="text-stone-700 font-semibold">{customer.lastOrderDate || customer.lastActive || 'Registered Recently'}</span>
+                  <span className="text-stone-700 font-semibold">{customer.totalOrders > 0 ? (customer.lastOrderDate || customer.lastActive) : 'N/A'}</span>
                 </div>
               </div>
             </div>

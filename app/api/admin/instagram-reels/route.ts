@@ -73,7 +73,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const resolvedThumbnail = thumbnail_url && thumbnail_url.trim() ? thumbnail_url.trim() : fallbackThumbnails[0];
+    const autoInstagramFrame = `https://instagram.com/p/${shortcode}/media/?size=l`;
+    const resolvedThumbnail = thumbnail_url && thumbnail_url.trim() ? thumbnail_url.trim() : autoInstagramFrame;
 
     const { data: newReel, error } = await supabase
       .from('instagram_reels')
