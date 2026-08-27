@@ -58,8 +58,12 @@ interface CatalogSaree {
   silkMarkNumber: string;
 }
 
+// Global in-memory cache for instant 0ms back-navigation and persistence
+let adminCatalogCache: CatalogSaree[] | null = null;
+
 export default function AdminCatalogPage() {
-  const [catalog, setCatalog] = useState<CatalogSaree[]>([]);
+  const [catalog, setCatalog] = useState<CatalogSaree[]>(adminCatalogCache || []);
+  const [isLoading, setIsLoading] = useState(!adminCatalogCache);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'SINGLE_PIECE' | 'DRAFT' | 'ARCHIVED'
@@ -109,10 +113,12 @@ export default function AdminCatalogPage() {
               silkMarkNumber: `CSB-2026-MYS-${1000 + idx}`,
             };
           });
+          adminCatalogCache = formatted;
           setCatalog(formatted);
         }
       })
-      .catch((err) => console.error('Error loading live catalog products:', err));
+      .catch((err) => console.error('Error loading live catalog products:', err))
+      .finally(() => setIsLoading(false));
   }, []);
 
   // Modals
@@ -568,7 +574,21 @@ export default function AdminCatalogPage() {
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-slate-700 font-sans">
-              {filteredCatalog.length === 0 ? (
+              {isLoading ? (
+                [...Array(6)].map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-slate-100">
+                    <td className="p-3 text-center"><div className="w-4 h-4 bg-stone-200 rounded mx-auto" /></td>
+                    <td className="p-3"><div className="w-9 h-12 bg-stone-200 rounded" /></td>
+                    <td className="p-3 space-y-1.5"><div className="w-36 h-3.5 bg-stone-300 rounded" /><div className="w-24 h-2.5 bg-stone-200 rounded" /></td>
+                    <td className="p-3 space-y-1.5"><div className="w-28 h-3 bg-stone-200 rounded" /><div className="w-20 h-2.5 bg-stone-200 rounded" /></td>
+                    <td className="p-3"><div className="w-24 h-3 bg-stone-200 rounded" /></td>
+                    <td className="p-3"><div className="w-16 h-3 bg-stone-300 rounded" /></td>
+                    <td className="p-3"><div className="w-20 h-6 bg-stone-200 rounded" /></td>
+                    <td className="p-3 text-center"><div className="w-8 h-4 bg-stone-200 rounded-full mx-auto" /></td>
+                    <td className="p-3 text-right"><div className="w-12 h-4 bg-stone-200 rounded ml-auto" /></td>
+                  </tr>
+                ))
+              ) : filteredCatalog.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="p-12 text-center text-slate-400 font-mono text-xs">
                     No sarees match your catalog query.

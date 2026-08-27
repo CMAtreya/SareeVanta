@@ -729,37 +729,62 @@ export default function RedesignedAdminOrdersPage() {
                             <button
                               type="button"
                               onClick={() => handleUpdateStatus(order.id, 'READY_TO_SHIP')}
-                              className="px-3 py-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-2xs"
+                              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer flex items-center gap-1"
                             >
-                              Start Processing →
+                              <span>Pack Saree & Silk Mark →</span>
                             </button>
                           )}
                           {order.fulfillmentState === 'READY_TO_SHIP' && (
                             <button
                               type="button"
                               onClick={() => handleUpdateStatus(order.id, 'IN_TRANSIT')}
-                              className="px-3 py-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs"
+                              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-colors shadow-2xs cursor-pointer flex items-center gap-1"
                             >
-                              Create Pickup Request →
+                              <span>Dispatch & Shiprocket AWB →</span>
                             </button>
                           )}
                           {(order.fulfillmentState === 'IN_TRANSIT' || order.fulfillmentState === 'OUT_FOR_DELIVERY') && (
-                            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold font-mono">
-                              <span>In Transit (AWB Active)</span>
+                            <div className="flex flex-col gap-1">
+                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold font-mono">
+                                <span>In Transit (AWB Active)</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors cursor-pointer text-left inline-flex items-center gap-1"
+                              >
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>Mark Delivered ✓</span>
+                              </button>
                             </div>
                           )}
                           {order.fulfillmentState === 'DELIVERED' && (
                             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold font-mono">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                               <span>Delivered</span>
                             </div>
                           )}
                           {order.fulfillmentState === 'CANCELLED' && (
                             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-bold font-mono">
-                              <X className="w-3 h-3 text-rose-600" />
+                              <X className="w-3.5 h-3.5 text-rose-600" />
                               <span>Cancelled</span>
                             </div>
                           )}
+
+                          {/* Quick Manual Override Dropdown */}
+                          <div className="pt-0.5">
+                            <select
+                              value={order.fulfillmentState}
+                              onChange={(e) => handleUpdateStatus(order.id, e.target.value as any)}
+                              className="text-[10px] font-mono text-slate-500 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 hover:border-slate-400 focus:outline-none cursor-pointer"
+                            >
+                              <option value="TO_PACK">1. To Pack (Unfulfilled)</option>
+                              <option value="READY_TO_SHIP">2. Ready to Ship (Packed)</option>
+                              <option value="IN_TRANSIT">3. In Transit (Dispatched)</option>
+                              <option value="DELIVERED">4. Delivered</option>
+                              <option value="CANCELLED">5. Cancelled</option>
+                            </select>
+                          </div>
                         </div>
                       </td>
 

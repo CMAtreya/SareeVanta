@@ -15,7 +15,7 @@ export async function GET(request: Request) {
       *,
       customers ( name, email, phone ),
       review_photos ( storage_path ),
-      product_variants ( sku, products ( title ), product_variant_media ( url ) )
+      products ( title, slug, weavings(name), product_variants ( sku, product_variant_media ( url ) ) )
     `)
     .order('created_at', { ascending: false });
 
@@ -32,26 +32,42 @@ export async function GET(request: Request) {
 
   const list = dbReviews || [];
   const formatted = list.map((r: any) => {
-    const variantMedia = r.product_variants?.product_variant_media || [];
+    const productData = r.products;
+    const firstVariant = productData?.product_variants?.[0];
+    const variantMedia = firstVariant?.product_variant_media || [];
     const sareeImage = variantMedia[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=400&auto=format&fit=crop';
+    const headline = r.title || (r.rating >= 4 ? 'Exceptional Pure Silk Quality' : 'Authentic Handloom Drape');
+    const comment = r.review_text || r.comment || 'Luster and drape comfort is truly extraordinary.';
 
     return {
       id: r.id,
-      customerName: r.customers?.name || r.reviewer_name || 'Patron Buyer',
-      email: r.customers?.email || 'patron@sareevanta.com',
+      orderId: r.order_id ? r.order_id.slice(-6).toUpperCase() : 'NSH-ORD',
+      customerName: r.customers?.name || r.reviewer_name || 'Customer Buyer',
+      customerEmail: r.customers?.email || 'customer@neelsareehouse.com',
+      email: r.customers?.email || 'customer@neelsareehouse.com',
+      customerPhone: r.customers?.phone || '',
       customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
       city: 'Mysuru',
       state: 'Karnataka',
+      isVerifiedBuyer: Boolean(r.verified_buyer ?? true),
       verifiedBuyer: Boolean(r.verified_buyer ?? true),
       rating: r.rating || 5,
-      reviewTitle: r.title || 'Exquisite Handloom Craftsmanship',
-      reviewText: r.review_text || r.comment || 'Stunning loom weave quality.',
-      sareeTitle: r.product_variants?.products?.title || 'Heirloom Silk Saree',
+      headline,
+      reviewTitle: headline,
+      comment,
+      reviewText: comment,
+      productSlug: productData?.slug || 'saree',
+      sareeTitle: productData?.title || 'Heirloom Silk Saree',
+      sareeSku: firstVariant?.sku || 'NSH-SKU-MYS-01',
+      sku: firstVariant?.sku || 'NSH-SKU-MYS-01',
+      sareeWeave: productData?.weavings?.name || 'Pure Mulberry Silk',
+      weave: productData?.weavings?.name || 'Pure Mulberry Silk',
+      sareeThumbnail: sareeImage,
       sareeImage,
       productImage: sareeImage,
-      sku: r.product_variants?.sku || 'NSH-SKU-MYS-01',
-      weave: 'Pure Mulberry Silk',
       mediaUrls: (r.review_photos || []).map((p: any) => p.storage_path).filter(Boolean),
+      sentiment: r.rating >= 4 ? 'POSITIVE' : r.rating === 3 ? 'NEUTRAL' : 'NEGATIVE',
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
       createdDate: r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
       status: r.moderation_status || 'PENDING',
       upvoteCount: 0,

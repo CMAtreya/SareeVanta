@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,13 +93,37 @@ export default function Header() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Auto-rotate announcement bar
+  const [liveMarqueeText, setLiveMarqueeText] = useState<string | null>(null);
+
+  // Fetch live published marquee announcement from database
+  useEffect(() => {
+    fetch('/api/admin/marquee')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.activeMarquee?.message_text && data.activeMarquee.is_active !== false) {
+          setLiveMarqueeText(data.activeMarquee.message_text);
+        }
+      })
+      .catch((err) => console.error('[Header] Marquee fetch error:', err));
+  }, []);
+
+  const dynamicAnnouncements = useMemo(() => {
+    if (liveMarqueeText) {
+      return [
+        { id: 0, content: <span className="font-bold text-amber-200">{liveMarqueeText}</span> },
+        ...announcements,
+      ];
+    }
+    return announcements;
+  }, [liveMarqueeText]);
+
+  // Rotate announcement bar every 4.5 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+      setAnnouncementIndex((prev) => (prev + 1) % dynamicAnnouncements.length);
     }, 4500);
     return () => clearInterval(timer);
-  }, []);
+  }, [dynamicAnnouncements.length]);
 
   // Auto-rotate search placeholder phrases (scrolling name only)
   useEffect(() => {
@@ -140,11 +164,11 @@ export default function Header() {
   }, []);
 
   const prevAnnouncement = () => {
-    setAnnouncementIndex((prev) => (prev - 1 + announcements.length) % announcements.length);
+    setAnnouncementIndex((prev) => (prev - 1 + dynamicAnnouncements.length) % dynamicAnnouncements.length);
   };
 
   const nextAnnouncement = () => {
-    setAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+    setAnnouncementIndex((prev) => (prev + 1) % dynamicAnnouncements.length);
   };
 
   const handleMouseEnter = (menuKey: string) => {
@@ -175,7 +199,7 @@ export default function Header() {
           <button
             type="button"
             onClick={prevAnnouncement}
-            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0"
+            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0 cursor-pointer"
             aria-label="Previous announcement"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -191,7 +215,7 @@ export default function Header() {
                 transition={{ duration: 0.28, ease: 'easeInOut' }}
                 className="truncate font-medium text-stone-100"
               >
-                {announcements[announcementIndex].content}
+                {dynamicAnnouncements[announcementIndex]?.content || announcements[0].content}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -199,7 +223,7 @@ export default function Header() {
           <button
             type="button"
             onClick={nextAnnouncement}
-            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0"
+            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0 cursor-pointer"
             aria-label="Next announcement"
           >
             <ChevronRight className="w-4 h-4" />

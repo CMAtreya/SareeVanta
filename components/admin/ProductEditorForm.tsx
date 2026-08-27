@@ -74,16 +74,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   // Form State: Weaving & Fabric Specs
   const [weave, setWeave] = useState('Mysore Silk');
   const [fabricOptions, setFabricOptions] = useState<string[]>([
-    '100% Pure Mulberry Silk',
-    'Pure Mysore Crepe Silk',
-    'Kanchipuram Heavy Silk',
-    'Pure Katan Banarasi Silk',
-    'Tussar Georgette Silk',
-    'Chanderi Silk Cotton',
-    'Yeola Paithani Silk',
-    'Patan Double Ikkat Patola',
+    'Pure Mulberry Silk',
+    'Soft Silk',
+    'Raw Silk',
+    'Crepe Silk',
+    'Georgette',
+    'Tissue Silk',
+    'Tussar Silk',
+    'Organza',
+    'Pure Katan Silk',
+    'Chanderi Silk',
   ]);
-  const [fabric, setFabric] = useState('100% Pure Mulberry Silk');
+  const [fabric, setFabric] = useState('Pure Mulberry Silk');
   const [isAddingNewFabric, setIsAddingNewFabric] = useState(false);
   const [newFabricInput, setNewFabricInput] = useState('');
   const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false);
@@ -314,8 +316,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   // Save / Publish Action
   const handleSave = async (targetStatus: 'PUBLISHED' | 'DRAFT') => {
     setIsSaving(true);
-    const variantUploadedImages = colorVariants.flatMap((v) => v.images || []).filter(Boolean);
-    const combinedImages = Array.from(new Set([...variantUploadedImages, ...images.filter(Boolean)]));
+    const variantUploadedImages = colorVariants.flatMap((v) => v.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5);
+    const finalImages = (variantUploadedImages.length > 0 ? variantUploadedImages : images.filter((url) => typeof url === 'string' && url.trim().length > 5)).slice(0, 3);
 
     const updatedProductPayload = {
       title: title.trim() || 'Untitled Saree Creation',
@@ -329,7 +331,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       zari: zariSpec,
       occasion: selectedOccasions[0] || 'Bridal & Heritage',
       initial_stock: Number(stock) || 10,
-      images: combinedImages,
+      images: finalImages,
     };
 
     try {

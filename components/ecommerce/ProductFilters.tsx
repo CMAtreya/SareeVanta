@@ -127,6 +127,18 @@ export default function ProductFilters({
     (silkMarkOnly ? 1 : 0) +
     (priceRange[0] > 10000 || priceRange[1] < 100000 ? 1 : 0);
 
+  const getFacetCount = (dict: Record<string, number> | undefined, key: string): number => {
+    if (!dict) return 0;
+    if (dict[key] !== undefined) return dict[key];
+    const lowerKey = key.toLowerCase();
+    for (const [k, v] of Object.entries(dict)) {
+      if (k.toLowerCase() === lowerKey || k.toLowerCase().includes(lowerKey) || lowerKey.includes(k.toLowerCase())) {
+        return v;
+      }
+    }
+    return 0;
+  };
+
   const FilterBody = (
     <div className="space-y-5 text-[#1F1B16]">
       {/* 1. Header & Reset Bar */}
@@ -147,22 +159,22 @@ export default function ProductFilters({
           <button
             type="button"
             onClick={onClearAll}
-            className="text-[11px] text-[#C87F4A] hover:text-[#773D21] font-sans font-semibold flex items-center gap-1 transition-colors"
+            className="text-[11px] text-[#C87F4A] hover:text-[#773D21] font-sans font-semibold flex items-center gap-1 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>Clear All</span>
+            <span>Reset All</span>
           </button>
         )}
       </div>
 
-      {/* 2. Weave Filter Section (Flipkart / Amazon style with item counts) */}
+      {/* 2. Traditional Weave Categories with Dynamic Counts */}
       <div className="border-b border-[#C87F4A]/15 pb-4">
         <button
           type="button"
           onClick={() => toggleSection('weaves')}
-          className="flex items-center justify-between w-full py-1 text-xs uppercase tracking-wider font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors"
+          className="flex items-center justify-between w-full py-1 text-xs uppercase tracking-wider font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors cursor-pointer"
         >
-          <span>Weave Tradition</span>
+          <span>Heritage Weave</span>
           {openSections.weaves ? (
             <ChevronUp className="w-3.5 h-3.5 text-[#C87F4A]" />
           ) : (
@@ -173,7 +185,7 @@ export default function ProductFilters({
         {openSections.weaves && (
           <div className="mt-2.5 space-y-1.5 pl-0.5">
             {weaveCategories.map((cat) => {
-              const count = counts?.weaves?.[cat.name] || 0;
+              const count = getFacetCount(counts?.weaves, cat.name);
               const isChecked = selectedWeaves.includes(cat.name);
               return (
                 <label
@@ -347,7 +359,7 @@ export default function ProductFilters({
         {openSections.fabrics && (
           <div className="mt-2.5 space-y-1.5 pl-0.5 max-h-48 overflow-y-auto pr-1">
             {fabricFilters.map((fabric, idx) => {
-              const count = counts?.fabrics?.[fabric] || 0;
+              const count = getFacetCount(counts?.fabrics, fabric);
               const isChecked = selectedFabrics.includes(fabric);
               return (
                 <label
@@ -380,7 +392,7 @@ export default function ProductFilters({
         <button
           type="button"
           onClick={() => toggleSection('occasions')}
-          className="flex items-center justify-between w-full py-1 text-xs uppercase tracking-wider font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors"
+          className="flex items-center justify-between w-full py-1 text-xs uppercase tracking-wider font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors cursor-pointer"
         >
           <span>Occasion</span>
           {openSections.occasions ? (
@@ -393,7 +405,7 @@ export default function ProductFilters({
         {openSections.occasions && (
           <div className="mt-2.5 space-y-1.5 pl-0.5">
             {occasionFilters.map((occ, idx) => {
-              const count = counts?.occasions?.[occ] || 0;
+              const count = getFacetCount(counts?.occasions, occ);
               const isChecked = selectedOccasions.includes(occ);
               return (
                 <label

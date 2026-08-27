@@ -86,10 +86,31 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState<Review[]>(initialProduct?.reviewsList || []);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReviewAuthor, setNewReviewAuthor] = useState('');
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
   const [newReviewTitle, setNewReviewTitle] = useState('');
   const [newReviewComment, setNewReviewComment] = useState('');
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewPhotos, setNewReviewPhotos] = useState<string[]>([]);
+
+  // Fetch logged in customer profile name for review prefill
+  useEffect(() => {
+    async function loadCustomer() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          const name = data.user?.name || data.user?.full_name || data.customer?.name || (data.user?.email ? data.user.email.split('@')[0] : '');
+          if (name) {
+            setNewReviewAuthor(name);
+            setIsUserLoggedIn(true);
+          }
+        }
+      } catch (err) {
+        // guest mode
+      }
+    }
+    loadCustomer();
+  }, []);
 
   // Carousel Ref for "You May Also Like"
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -103,10 +124,11 @@ export default function ProductDetailPage() {
       if (data.product) {
         setProduct(data.product);
         setRelatedItems(data.relatedProducts || []);
-        const allAvailableImages = Array.from(
-          new Set([...(data.product.images || []), ...(data.product.colorVariants?.[0]?.images || [])])
-        ).filter((url) => typeof url === 'string' && url.trim().length > 5);
-        setGalleryImages(allAvailableImages.length > 0 ? allAvailableImages : []);
+        const primaryImgs = (data.product.images && data.product.images.length > 0
+          ? data.product.images
+          : data.product.colorVariants?.[0]?.images || []
+        ).filter((url: any) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+        setGalleryImages(primaryImgs);
         setSelectedImageIdx(0);
         if (data.product.reviewsList) {
           setReviews(data.product.reviewsList);
@@ -125,10 +147,11 @@ export default function ProductDetailPage() {
           if (isMounted && data.product) {
             setProduct(data.product);
             setRelatedItems(data.relatedProducts || []);
-            const allAvailableImages = Array.from(
-              new Set([...(data.product.images || []), ...(data.product.colorVariants?.[0]?.images || [])])
-            ).filter((url) => typeof url === 'string' && url.trim().length > 5);
-            setGalleryImages(allAvailableImages.length > 0 ? allAvailableImages : []);
+            const primaryImgs = (data.product.images && data.product.images.length > 0
+              ? data.product.images
+              : data.product.colorVariants?.[0]?.images || []
+            ).filter((url: any) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+            setGalleryImages(primaryImgs);
             setSelectedImageIdx(0);
             if (data.product.reviewsList) {
               setReviews(data.product.reviewsList);
@@ -150,10 +173,8 @@ export default function ProductDetailPage() {
             .filter((p) => p.id !== found.id && (p.weave === found.weave || p.occasion === found.occasion))
             .slice(0, 4);
           setRelatedItems(rel);
-          const allAvailableImages = Array.from(
-            new Set([...(found.images || []), ...(found.colorVariants?.[0]?.images || [])])
-          ).filter((url) => typeof url === 'string' && url.trim().length > 5);
-          setGalleryImages(allAvailableImages.length > 0 ? allAvailableImages : []);
+          const fallbackImgs = (found.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+          setGalleryImages(fallbackImgs);
           setSelectedImageIdx(0);
           if (found.reviewsList) {
             setReviews(found.reviewsList);
@@ -169,14 +190,13 @@ export default function ProductDetailPage() {
     };
   }, [slug]);
 
-  // Color Variant Selection
+  // Color Variant Selection (Strict max 3 photos)
   const handleVariantClick = (idx: number) => {
     setSelectedVariantIndex(idx);
     if (product?.colorVariants && product.colorVariants[idx]) {
-      const variantImgs = (product.colorVariants[idx].images || []).filter((url) => typeof url === 'string' && url.trim().length > 5);
-      const mainImgs = (product.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5);
-      const combined = Array.from(new Set([...variantImgs, ...mainImgs]));
-      setGalleryImages(combined.length > 0 ? combined : galleryImages);
+      const variantImgs = (product.colorVariants[idx].images || []).filter((url) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+      const fallbackImgs = (product.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+      setGalleryImages(variantImgs.length > 0 ? variantImgs : fallbackImgs);
       setSelectedImageIdx(0);
     }
   };
@@ -1047,7 +1067,7 @@ export default function ProductDetailPage() {
             />
             <div className="relative bg-[#FAF3E4] rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-[#C87F4A]/30 z-10 text-[#1F1B16] space-y-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between pb-3 border-b border-[#C87F4A]/20">
-                <h3 className="font-editorial text-xl font-bold">Write a Patron Review</h3>
+                <h3 className="font-editorial text-xl font-bold">Write a Customer Review</h3>
                 <button
                   type="button"
                   onClick={() => setIsReviewModalOpen(false)}
@@ -1059,14 +1079,27 @@ export default function ProductDetailPage() {
 
               <form onSubmit={handleSubmitReview} className="space-y-4 text-xs font-sans">
                 <div>
-                  <label className="font-semibold text-stone-700 block mb-1">Your Name</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-stone-700">Customer Name</label>
+                    {isUserLoggedIn && (
+                      <span className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Verified Account</span>
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     required
+                    readOnly={isUserLoggedIn}
                     value={newReviewAuthor}
                     onChange={(e) => setNewReviewAuthor(e.target.value)}
                     placeholder="e.g. Radhika Sundaram"
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C87F4A]"
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none ${
+                      isUserLoggedIn
+                        ? 'bg-stone-100/90 border-stone-300 text-stone-800 font-semibold cursor-not-allowed'
+                        : 'bg-white border-stone-300 focus:ring-2 focus:ring-[#C87F4A]'
+                    }`}
                   />
                 </div>
 
@@ -1165,7 +1198,7 @@ export default function ProductDetailPage() {
                   type="submit"
                   className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest shadow-md cursor-pointer transition-colors"
                 >
-                  Submit Patron Review
+                  Submit Customer Review
                 </button>
               </form>
             </div>

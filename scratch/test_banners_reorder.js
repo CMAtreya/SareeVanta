@@ -12,13 +12,9 @@ envContent.split('\n').forEach((line) => {
 
 const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-async function checkTaxonomies() {
-  const { data: fabrics } = await supabase.from('fabrics').select('*');
-  const { data: weavings } = await supabase.from('weavings').select('*');
-  const { data: zaris } = await supabase.from('zari_types').select('*');
-  const { data: occasions } = await supabase.from('occasions').select('*');
-  const { data: colors } = await supabase.from('colors').select('*');
-  console.log({ fabrics, weavings, zaris, occasions, colors });
+async function checkBanners() {
+  const { data: slides, error } = await supabase.from('hero_slides').select('id, heading, display_order').order('display_order', { ascending: true });
+  console.log('Hero Slides in DB:', { slides, error });
 }
 
-checkTaxonomies();
+checkBanners();

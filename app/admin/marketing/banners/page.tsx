@@ -137,6 +137,17 @@ export default function StorefrontDisplayManagerPage() {
         }
       })
       .catch((err) => console.error('[Banners API] Fetch error:', err));
+
+    // Fetch live active marquee
+    fetch('/api/admin/marquee')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.activeMarquee) {
+          if (data.activeMarquee.message_text) setMarqueeText(data.activeMarquee.message_text);
+          if (data.activeMarquee.is_active !== undefined) setMarqueeEnabled(Boolean(data.activeMarquee.is_active));
+        }
+      })
+      .catch((err) => console.error('[Marquee API] Fetch error:', err));
   }, []);
 
   // Toggle Slide Active

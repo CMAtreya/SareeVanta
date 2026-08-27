@@ -313,10 +313,10 @@ export default function Customer360ProfilePage({
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5 truncate max-w-[200px]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-1.5 min-w-0">
                   <Mail className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span className="truncate">{customer.email}</span>
+                  <span className="break-all text-slate-800 select-all font-mono text-[11px]">{customer.email}</span>
                 </span>
                 <button
                   type="button"

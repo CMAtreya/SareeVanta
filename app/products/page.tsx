@@ -261,7 +261,7 @@ function ProductsListingContent() {
 
   return (
     <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-6 sm:py-10">
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
         {/* 1. Breadcrumbs Row */}
         <nav className="flex items-center space-x-2 text-xs text-stone-500 font-sans mb-4">
           <Link href="/" className="hover:text-[#C87F4A] transition-colors">
@@ -431,8 +431,8 @@ function ProductsListingContent() {
             {/* Product Grid Area / Shimmer Skeletons / Empty State */}
             {isLoading ? (
               <div
-                className={`grid grid-cols-2 ${
-                  gridCols === 4 ? 'lg:grid-cols-4 sm:grid-cols-3' : 'lg:grid-cols-3 sm:grid-cols-2'
+                className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 ${
+                  gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
                 } gap-4 sm:gap-6`}
               >
                 {[...Array(gridCols === 4 ? 8 : 6)].map((_, sIdx) => (
@@ -448,13 +448,13 @@ function ProductsListingContent() {
                 <h3 className="font-editorial text-2xl font-bold text-[#1F1B16]">
                   No matching sarees found
                 </h3>
-                <p className="text-xs text-stone-500 mt-2 font-sans leading-relaxed">
-                  We couldn't find any sarees matching your selected filters. Try broadening your price range or clearing some attributes.
+                <p className="text-xs text-stone-500 font-sans mt-2 leading-relaxed">
+                  We couldn't find any sarees matching your selected filter combination. Try adjusting or clearing your filters to discover our royal handloom catalog.
                 </p>
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="mt-6 inline-flex items-center gap-2 bg-[#C87F4A] hover:bg-[#B36737] text-white px-7 py-3 rounded-sm text-xs font-sans font-bold uppercase tracking-widest transition-all shadow-md"
+                  className="mt-6 px-6 py-2.5 rounded-full bg-[#7A1C30] hover:bg-[#5E1524] text-white text-xs font-mono font-bold uppercase tracking-wider transition-colors inline-flex items-center gap-2"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset All Filters</span>
@@ -463,8 +463,8 @@ function ProductsListingContent() {
             ) : (
               /* Products Grid: 3-4 columns desktop, 2 columns mobile */
               <div
-                className={`grid grid-cols-2 ${
-                  gridCols === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'
+                className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 ${
+                  gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
                 } gap-4 sm:gap-6`}
               >
                 {apiProducts.map((product) => (
