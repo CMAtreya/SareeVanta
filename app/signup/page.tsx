@@ -126,6 +126,21 @@ function SignUpCardContent() {
       if (error) {
         setFeedback({ type: 'error', message: error.message || 'Registration failed. Please try again.' });
       } else {
+        if (data.user) {
+          // Sync new registered user to public.customers table
+          try {
+            await supabase.from('customers').upsert({
+              id: data.user.id,
+              auth_user_id: data.user.id,
+              name: name.trim(),
+              email: email.trim().toLowerCase(),
+              phone: phone.trim(),
+            }, { onConflict: 'id' });
+          } catch (dbErr) {
+            console.warn('[Signup DB Sync] Customer creation warning:', dbErr);
+          }
+        }
+
         setFeedback({
           type: 'success',
           message: 'Account created successfully! Entering account area...',

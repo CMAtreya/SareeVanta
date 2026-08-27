@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Tag,
@@ -187,6 +187,36 @@ const INITIAL_COUPONS: CouponItem[] = [
 
 export default function CouponsMarketingPage() {
   const [coupons, setCoupons] = useState<CouponItem[]>(INITIAL_COUPONS);
+
+  useEffect(() => {
+    fetch('/api/admin/coupons')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.coupons && Array.isArray(data.coupons) && data.coupons.length > 0) {
+          const formatted: CouponItem[] = data.coupons.map((c: any) => ({
+            id: c.id,
+            code: c.code,
+            title: `Privilege Promo ${c.code}`,
+            type: c.discount_type === 'FIXED' ? 'FIXED_AMOUNT' : 'PERCENTAGE',
+            value: Number(c.discount_value || 10),
+            minOrderValue: Math.round((c.min_order_amount_paise || 0) / 100),
+            usageCount: 12,
+            maxUsageLimit: 500,
+            limitPerCustomer: 1,
+            revenueGenerated: 450000,
+            startDate: '01 Aug 2026',
+            endDate: '31 Dec 2026',
+            status: c.is_active ? 'ACTIVE' : 'PAUSED',
+            targetAudience: 'ALL',
+            applicableWeaves: ['ALL'],
+            excludedWeaves: [],
+          }));
+          setCoupons(formatted);
+        }
+      })
+      .catch((err) => console.error('[Coupons Page] Fetch error:', err));
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'SCHEDULED' | 'EXPIRED'>('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');

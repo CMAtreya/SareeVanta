@@ -474,50 +474,58 @@ export default function AdminShipmentsPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [copiedAwb, setCopiedAwb] = useState<string | null>(null);
 
-  // Fetch live shipments from API with fallback to sample data
+  // Fetch live shipments from API
   useEffect(() => {
-    fetch('/api/admin/orders')
+    fetch('/api/admin/shipments')
       .then((res) => res.json())
       .then((data) => {
-        if (data.orders && Array.isArray(data.orders) && data.orders.length > 0) {
-          // Map paid/processed orders to shipments
-          const mappedShipments: ShipmentRecord[] = data.orders.map((o: any) => ({
-            id: `SHP-${o.id}`,
-            awb: o.awb || `BD-${Math.floor(100000 + Math.random() * 900000)}`,
-            orderId: o.id,
-            dateCreated: `${o.date || 'Today'}, ${o.time || '10:00 AM'}`,
-            customerName: o.customerName || 'Customer',
-            phone: o.phone || '',
-            email: o.email || '',
-            address: o.address || '',
-            city: o.city || 'Bengaluru',
-            state: o.state || 'Karnataka',
-            pincode: o.pincode || '560001',
-            carrier: o.carrier || 'Blue Dart Air Express',
-            carrierServiceCode: 'BD-DOM-AIR-01',
-            shipmentType: 'AIR_EXPRESS',
-            status: o.fulfillmentState === 'DELIVERED' ? 'DELIVERED' : o.fulfillmentState === 'IN_TRANSIT' ? 'IN_TRANSIT' : 'MANIFEST_GENERATED',
-            currentLocation: `${o.city || 'Origin'} Sort Hub`,
-            latestCheckpointText: 'Courier manifest registered',
-            estimatedDelivery: '2-3 Business Days',
-            items: (o.items || []).map((it: any) => ({ ...it, weightGrams: 680 })),
-            totalValueINR: o.totalAmount || 0,
-            totalWeightGrams: 680,
-            silkMarkAuditId: o.silkMarkAuditId || 'CSB-2026-MYS-8942',
-            paymentMode: o.paymentGateway?.includes('COD') ? 'COD' : 'PREPAID',
-            trackingHistory: [
-              {
-                time: o.time || '10:00 AM',
-                date: o.date || 'Today',
-                location: 'Mysuru Origin Studio',
-                activity: 'Order packed & courier manifest sealed',
-                status: 'COMPLETED',
-              },
-            ],
-          }));
-          setShipments(mappedShipments);
+        if (data.shipments && Array.isArray(data.shipments) && data.shipments.length > 0) {
+          setShipments(data.shipments);
         } else {
-          setShipments([]);
+          // Fallback mapping from live orders
+          fetch('/api/admin/orders')
+            .then((res) => res.json())
+            .then((orderData) => {
+              if (orderData.orders && Array.isArray(orderData.orders) && orderData.orders.length > 0) {
+                const mappedShipments: ShipmentRecord[] = orderData.orders.map((o: any) => ({
+                  id: `SHP-${o.id}`,
+                  awb: o.awb || `BD-${Math.floor(100000 + Math.random() * 900000)}`,
+                  orderId: o.id,
+                  dateCreated: `${o.date || 'Today'}, ${o.time || '10:00 AM'}`,
+                  customerName: o.customerName || 'Customer',
+                  phone: o.phone || '',
+                  email: o.email || '',
+                  address: o.address || '',
+                  city: o.city || 'Bengaluru',
+                  state: o.state || 'Karnataka',
+                  pincode: o.pincode || '560001',
+                  carrier: o.carrier || 'Blue Dart Air Express',
+                  carrierServiceCode: 'BD-DOM-AIR-01',
+                  shipmentType: 'AIR_EXPRESS',
+                  status: o.fulfillmentState === 'DELIVERED' ? 'DELIVERED' : o.fulfillmentState === 'IN_TRANSIT' ? 'IN_TRANSIT' : 'MANIFEST_GENERATED',
+                  currentLocation: `${o.city || 'Origin'} Sort Hub`,
+                  latestCheckpointText: 'Courier manifest registered',
+                  estimatedDelivery: '2-3 Business Days',
+                  items: (o.items || []).map((it: any) => ({ ...it, weightGrams: 680 })),
+                  totalValueINR: o.totalAmount || 0,
+                  totalWeightGrams: 680,
+                  silkMarkAuditId: o.silkMarkAuditId || 'CSB-2026-MYS-8942',
+                  paymentMode: o.paymentGateway?.includes('COD') ? 'COD' : 'PREPAID',
+                  trackingHistory: [
+                    {
+                      time: o.time || '10:00 AM',
+                      date: o.date || 'Today',
+                      location: 'Mysuru Origin Studio',
+                      activity: 'Order packed & courier manifest sealed',
+                      status: 'COMPLETED',
+                    },
+                  ],
+                }));
+                setShipments(mappedShipments);
+              } else {
+                setShipments([]);
+              }
+            });
         }
       })
       .catch((err) => {

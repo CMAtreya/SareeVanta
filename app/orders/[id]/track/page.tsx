@@ -109,8 +109,10 @@ export default function OrderTrackingPage() {
 
     // Real-time WebSocket telemetry channel
     const supabase = createClient();
-    const channel = supabase
-      .channel(`order-tracking-${orderId}`)
+    const channelId = `order-tracking-${orderId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const channel = supabase.channel(channelId);
+
+    channel
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },

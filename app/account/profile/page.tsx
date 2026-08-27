@@ -115,6 +115,8 @@ export default function AccountProfilePage() {
     setIsSaving(true);
     try {
       const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
       const { error } = await supabase.auth.updateUser({
         data: {
           full_name: `${values.firstName} ${values.lastName}`.trim(),
@@ -125,6 +127,20 @@ export default function AccountProfilePage() {
       });
 
       if (!error) {
+        // Sync profile changes to public.customers table
+        if (user) {
+          try {
+            await supabase.from('customers').upsert({
+              id: user.id,
+              auth_user_id: user.id,
+              name: `${values.firstName} ${values.lastName}`.trim(),
+              phone: values.phone,
+              email: user.email || values.email,
+            }, { onConflict: 'id' });
+          } catch (dbErr) {
+            console.warn('[Profile DB Sync] Warning:', dbErr);
+          }
+        }
         showToast('Your profile has been saved successfully.');
       } else {
         showToast(error.message || 'Failed to update profile.');

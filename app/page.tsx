@@ -62,21 +62,47 @@ export default function HomePage() {
     },
   ];
 
+  const [liveHeroSlides, setLiveHeroSlides] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/banners')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.slides && Array.isArray(data.slides) && data.slides.length > 0) {
+          const activeOnly = data.slides.filter((s: any) => s.is_active);
+          if (activeOnly.length > 0) {
+            const formatted = activeOnly.map((s: any, idx: number) => ({
+              id: s.id || idx + 1,
+              tag: s.badge_text || 'Heritage Handloom Collection',
+              title: s.heading,
+              subtitle: s.tagline || '100% Pure Silk Mark Certified',
+              link: '/products',
+              ctaText: s.cta_text || 'Explore Collection',
+              image: s.desktop_image_path,
+            }));
+            setLiveHeroSlides(formatted);
+          }
+        }
+      })
+      .catch((err) => console.error('[Homepage Hero] Error fetching banners:', err));
+  }, []);
+
+  const activeSlides = liveHeroSlides || heroSlides;
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [heroSlides.length]);
+  }, [activeSlides.length]);
 
   const handlePrevSlide = () => {
-    setCurrentSlide((prev) => (prev === 0 ? heroSlides.length - 1 : prev - 1));
+    setCurrentSlide((prev) => (prev === 0 ? activeSlides.length - 1 : prev - 1));
   };
 
   const handleNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
   };
 
   // ----------------------------------------------------
@@ -126,7 +152,7 @@ export default function HomePage() {
       {/* ==================================================== */}
       <section className="relative w-full overflow-hidden bg-[#1F1B16] text-[#FAF3E4]">
         <div className="relative w-full h-[420px] sm:h-[520px] md:h-[580px] lg:h-[640px]">
-          {heroSlides.map((slide, idx) => (
+          {activeSlides.map((slide, idx) => (
             <div
               key={slide.id}
               className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${

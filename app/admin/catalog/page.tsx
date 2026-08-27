@@ -179,6 +179,7 @@ export default function AdminCatalogPage() {
     silkMarkNumber: 'CSB-2026-MYS-889',
     hsnCode: '5007.20.10',
     hasAiAvatar: true,
+    image: '',
   });
 
   // Filter Counts
@@ -344,7 +345,12 @@ export default function AdminCatalogPage() {
   };
 
   // Bulk Delete
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
+    try {
+      await fetch(`/api/admin/products?ids=${selectedIds.join(',')}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('[Catalog] Error deleting products:', err);
+    }
     setCatalog((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
     setSelectedIds([]);
   };
@@ -395,39 +401,61 @@ export default function AdminCatalogPage() {
   };
 
   // Create New Saree
-  const handleCreateNewSaree = (e: React.FormEvent) => {
+  const handleCreateNewSaree = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSareeForm.title.trim()) return;
 
-    const newId = `saree-custom-${Date.now()}`;
+    const title = newSareeForm.title.trim();
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const priceINR = Number(newSareeForm.priceINR);
+    const originalPriceINR = Number(newSareeForm.originalPriceINR);
     const newSku = `NSH-SKU-${newSareeForm.weave.substring(0, 3).toUpperCase()}-${Math.floor(
       100 + Math.random() * 900
     )}`;
 
-    const newItem: CatalogSaree = {
-      id: newId,
-      title: newSareeForm.title.trim(),
-      slug: newSareeForm.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      sku: newSku,
-      loomId: `LOOM-KA-${Math.floor(30 + Math.random() * 20)}`,
-      hsnCode: newSareeForm.hsnCode,
-      weave: newSareeForm.weave,
-      fabric: newSareeForm.fabric,
-      zariType: newSareeForm.zariType,
-      priceINR: Number(newSareeForm.priceINR),
-      originalPriceINR: Number(newSareeForm.originalPriceINR),
-      stock: Number(newSareeForm.stock),
-      hasAiAvatar: newSareeForm.hasAiAvatar,
-      isActive: true,
-      status: Number(newSareeForm.stock) === 1 ? 'SINGLE_PIECE' : 'ACTIVE',
-      images: [
-        'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-      ],
-      silkMarkNumber: newSareeForm.silkMarkNumber,
-    };
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          slug,
+          description: `${newSareeForm.weave} woven in pure silk with ${newSareeForm.zariType}.`,
+          base_mrp_inr: originalPriceINR,
+          base_selling_price_inr: priceINR,
+          sku: newSku,
+          initial_stock: Number(newSareeForm.stock) || 10,
+        }),
+      });
 
-    setCatalog((prev) => [newItem, ...prev]);
-    setIsNewSareeModalOpen(false);
+      const data = await res.json();
+      const newId = data.product_id || `saree-custom-${Date.now()}`;
+
+      const newItem: CatalogSaree = {
+        id: newId,
+        title,
+        slug,
+        sku: newSku,
+        loomId: `LOOM-KA-${Math.floor(30 + Math.random() * 20)}`,
+        hsnCode: newSareeForm.hsnCode,
+        weave: newSareeForm.weave,
+        fabric: newSareeForm.fabric,
+        zariType: newSareeForm.zariType as any,
+        priceINR,
+        originalPriceINR,
+        stock: Number(newSareeForm.stock) || 10,
+        hasAiAvatar: true,
+        isActive: true,
+        status: 'ACTIVE',
+        images: [newSareeForm.image || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop'],
+        silkMarkNumber: newSareeForm.silkMarkNumber,
+      };
+
+      setCatalog((prev) => [newItem, ...prev]);
+      setIsNewSareeModalOpen(false);
+    } catch (err) {
+      console.error('[Catalog] Error creating product:', err);
+    }
   };
 
   return (
@@ -1343,6 +1371,36 @@ export default function AdminCatalogPage() {
                     }
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-slate-900"
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">
+                  Upload Saree Photo (File / Asset)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNewSareeForm({ ...newSareeForm, image: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                  />
+                  {newSareeForm.image && (
+                    <img
+                      src={newSareeForm.image}
+                      alt="Preview"
+                      className="w-10 h-12 object-cover rounded-lg border border-slate-300"
+                    />
+                  )}
                 </div>
               </div>
 

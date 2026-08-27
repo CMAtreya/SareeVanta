@@ -176,7 +176,7 @@ export default function StorefrontDisplayManagerPage() {
   const [categories, setCategories] = useState<CategoryCuratorItem[]>(INITIAL_CATEGORIES);
 
   // Reorder Slide
-  const moveSlide = (index: number, direction: 'UP' | 'DOWN') => {
+  const moveSlide = async (index: number, direction: 'UP' | 'DOWN') => {
     const newIndex = direction === 'UP' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= slides.length) return;
     const updated = [...slides];
@@ -185,6 +185,17 @@ export default function StorefrontDisplayManagerPage() {
     updated[newIndex] = temp;
     setSlides(updated);
     triggerToast('Slide order updated.');
+
+    try {
+      const reorderPayload = updated.map((s, idx) => ({ id: s.id, display_order: idx + 1 }));
+      await fetch('/api/admin/banners', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reorder: reorderPayload }),
+      });
+    } catch (err) {
+      console.error('[Banners API] Reorder error:', err);
+    }
   };
 
   // Reorder Category
@@ -197,28 +208,88 @@ export default function StorefrontDisplayManagerPage() {
     updated[newIndex] = temp;
     setCategories(updated);
     triggerToast('Homepage category tile sequence updated.');
+    // Fetch live hero slides from database API
   };
 
+  React.useEffect(() => {
+    fetch('/api/admin/banners')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.slides && Array.isArray(data.slides) && data.slides.length > 0) {
+          const formatted: HeroSlide[] = data.slides.map((s: any) => ({
+            id: s.id,
+            title: s.heading,
+            subtitle: s.tagline || '',
+            ctaText: s.cta_text || 'Explore Collection',
+            destinationUrl: '/products',
+            desktopImage: s.desktop_image_path,
+            mobileImage: s.mobile_image_path || s.desktop_image_path,
+            badgeText: s.badge_text || '',
+            startDate: '2026-08-01',
+            endDate: '2026-12-31',
+            isActive: Boolean(s.is_active),
+          }));
+          setSlides(formatted);
+        }
+      })
+      .catch((err) => console.error('[Banners API] Fetch error:', err));
+  }, []);
+
   // Toggle Slide Active
-  const toggleSlideActive = (id: string) => {
+  const toggleSlideActive = async (id: string) => {
+    const slide = slides.find((s) => s.id === id);
+    const newActiveState = slide ? !slide.isActive : false;
+
     setSlides((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, isActive: !s.isActive } : s))
+      prev.map((s) => (s.id === id ? { ...s, isActive: newActiveState } : s))
     );
+
+    try {
+      await fetch('/api/admin/banners', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slide_id: id, is_active: newActiveState }),
+      });
+    } catch (err) {
+      console.error('[Banners API] Patch error:', err);
+    }
     triggerToast('Slide visibility status updated.');
   };
 
-  // Save Slide Edits
-  const handleSaveSlide = (e: React.FormEvent) => {
+  // Save Slide Edits / Create Slide
+  const handleSaveSlide = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSlide) return;
 
-    if (slides.some((s) => s.id === editingSlide.id)) {
-      setSlides((prev) => prev.map((s) => (s.id === editingSlide.id ? editingSlide : s)));
-      triggerToast(`Slide "${editingSlide.title}" updated.`);
-    } else {
-      setSlides([...slides, editingSlide]);
-      triggerToast(`New hero banner added to carousel.`);
+    try {
+      const res = await fetch('/api/admin/banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          heading: editingSlide.title,
+          tagline: editingSlide.subtitle,
+          badge_text: editingSlide.badgeText,
+          cta_text: editingSlide.ctaText,
+          desktop_image_path: editingSlide.desktopImage,
+          mobile_image_path: editingSlide.mobileImage,
+          is_active: editingSlide.isActive,
+        }),
+      });
+
+      const data = await res.json();
+      const savedId = data.slide?.id || editingSlide.id;
+
+      if (slides.some((s) => s.id === editingSlide.id)) {
+        setSlides((prev) => prev.map((s) => (s.id === editingSlide.id ? { ...editingSlide, id: savedId } : s)));
+        triggerToast(`Slide "${editingSlide.title}" updated.`);
+      } else {
+        setSlides([...slides, { ...editingSlide, id: savedId }]);
+        triggerToast(`New hero banner added to carousel.`);
+      }
+    } catch (err) {
+      console.error('[Banners API] Save error:', err);
     }
+
     setEditingSlide(null);
   };
 
@@ -600,7 +671,22 @@ export default function StorefrontDisplayManagerPage() {
           <div className="pt-3 border-t border-slate-100 flex justify-end">
             <button
               type="button"
-              onClick={() => triggerToast('Marquee settings published to storefront.')}
+              onClick={async () => {
+                try {
+                  await fetch('/api/admin/marquee', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      message_text: marqueeText,
+                      is_active: marqueeEnabled,
+                    }),
+                  });
+                  triggerToast('Marquee settings published to database & storefront.');
+                } catch (err) {
+                  console.error('[Marquee API] Error saving marquee:', err);
+                  triggerToast('Marquee settings updated.');
+                }
+              }}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
             >
               <Save className="w-3.5 h-3.5" />

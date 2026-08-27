@@ -101,3 +101,25 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ success: true, product_id: product.id });
 }
+
+export async function DELETE(request: Request) {
+  const supabase = createAdminClient();
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const ids = searchParams.get('ids');
+
+  if (ids) {
+    const idList = ids.split(',').filter(Boolean);
+    const { error } = await supabase.from('products').delete().in('id', idList);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, deletedCount: idList.length });
+  }
+
+  if (id) {
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: true });
+  }
+
+  return NextResponse.json({ error: 'id or ids query parameter is required' }, { status: 400 });
+}

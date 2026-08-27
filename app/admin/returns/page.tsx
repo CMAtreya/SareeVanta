@@ -205,7 +205,7 @@ export default function ReverseLogisticsPage() {
 
   // Fetch live return claims strictly from API (No mock data fallback)
   useEffect(() => {
-    fetch('/api/returns')
+    fetch('/api/admin/returns')
       .then((res) => res.json())
       .then((data) => {
         if (data.claims && Array.isArray(data.claims)) {

@@ -209,7 +209,7 @@ export default function AdminInstagramReelsPage() {
     setReels((prev) => prev.filter((r) => r.id !== targetId));
 
     try {
-      const res = await fetch(`/api/admin/instagram-reels/${encodeURIComponent(targetId)}`, {
+      const res = await fetch(`/api/admin/instagram-reels?id=${encodeURIComponent(targetId)}`, {
         method: 'DELETE',
       });
       const data = await res.json();

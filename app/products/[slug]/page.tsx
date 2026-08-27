@@ -140,7 +140,8 @@ export default function ProductDetailPage() {
   const handleVariantClick = (idx: number) => {
     setSelectedVariantIndex(idx);
     if (product.colorVariants && product.colorVariants[idx]) {
-      setGalleryImages(product.colorVariants[idx].images);
+      const variantImgs = product.colorVariants[idx].images;
+      setGalleryImages(variantImgs && variantImgs.length > 0 ? variantImgs : product.images);
       setSelectedImageIdx(0);
     }
   };

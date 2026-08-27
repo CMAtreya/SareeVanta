@@ -392,8 +392,10 @@ export default function RedesignedAdminOrdersPage() {
     loadOrders();
 
     const supabase = createClient();
-    const channel = supabase
-      .channel('admin-orders-realtime')
+    const channelId = `admin-orders-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const channel = supabase.channel(channelId);
+
+    channel
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'orders' },
@@ -428,6 +430,98 @@ export default function RedesignedAdminOrdersPage() {
     navigator.clipboard.writeText(id);
     setCopiedOrderId(id);
     setTimeout(() => setCopiedOrderId(null), 2000);
+  };
+
+  // Manual In-Store Showroom Order Submission
+  const handleCreateManualOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustName.trim() || !newCustPhone.trim()) return;
+
+    const amount = Number(newOrderAmount) || 28500;
+    const isCod = newOrderPayment?.includes('COD');
+
+    try {
+      const res = await fetch('/api/checkout/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subtotal: amount,
+          discount: 0,
+          total: amount,
+          paymentMethod: isCod ? 'cod' : 'online',
+          shippingAddress: {
+            recipient_name: newCustName.trim(),
+            phone: newCustPhone.trim(),
+            address_line_1: newCustAddress || 'Devaraja Market Silk Corridor',
+            city: newCustCity || 'Mysuru',
+            state: 'Karnataka',
+            postal_code: newCustPincode || '570001',
+          },
+          items: [
+            {
+              product: {
+                title: `${newOrderWeave} Heirloom Saree`,
+                sku: `NSH-SKU-${newOrderWeave.substring(0, 3).toUpperCase()}-01`,
+                price: amount,
+                color: 'Royal Gold',
+              },
+              quantity: 1,
+            },
+          ],
+        }),
+      });
+
+      const data = await res.json();
+      setIsNewOrderModalOpen(false);
+      setNewCustName('');
+      setNewCustPhone('');
+
+      // Refresh live order ledger
+      fetch('/api/admin/orders')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.orders && Array.isArray(d.orders)) {
+            const formatted = d.orders.map((o: any) => {
+              const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
+              const cust = o.customers || {};
+              const items = (o.order_items || []).map((item: any) => ({
+                title: item.product_name_snapshot || 'Heirloom Silk Saree',
+                weave: 'Pure Mulberry Silk',
+                sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
+                color: item.color_name_snapshot || 'Royal Crimson',
+                price: Math.round((item.unit_price_paise || 0) / 100),
+                quantity: item.quantity || 1,
+                image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+              }));
+
+              return {
+                id: o.order_number || o.id,
+                db_id: o.id,
+                date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
+                customerName: cust.name || addr.recipient_name || 'Valued Patron',
+                phone: cust.phone || addr.phone || '+91 98860 00000',
+                email: cust.email || 'patron@sareevanta.com',
+                city: addr.city || 'Mysuru',
+                state: addr.state || 'Karnataka',
+                pincode: addr.postal_code || '570001',
+                addressLine1: addr.address_line_1 || 'Heritage Quarter',
+                fulfillmentState: o.order_status === 'PLACED' ? 'TO_PACK' : o.order_status === 'PROCESSING' ? 'READY_TO_SHIP' : o.order_status === 'SHIPPED' ? 'IN_TRANSIT' : o.order_status === 'DELIVERED' ? 'DELIVERED' : 'TO_PACK',
+                paymentGateway: o.payment_status === 'PAID' ? 'Razorpay UPI' : 'Cash on Delivery',
+                paymentStatus: o.payment_status === 'PAID' ? 'PAID' : 'PENDING',
+                subtotalAmount: Math.round((o.subtotal_paise || o.total_paise || 0) / 100),
+                discountAmount: Math.round((o.discount_paise || 0) / 100),
+                shippingFee: 0,
+                totalAmount: Math.round((o.total_paise || 0) / 100),
+                isGiftWrapped: false,
+                items,
+              };
+            });
+            setOrders(formatted);
+          }
+        });
+    } catch (err) {
+      console.error('[Admin Manual Order] Error creating order:', err);
+    }
   };
 
   // Status Change Handler
@@ -529,56 +623,6 @@ export default function RedesignedAdminOrdersPage() {
 
     return { totalRevenue, count, toPackCount, readyCount, deliveredCount, giftCount, aov };
   }, [orders]);
-
-  // Create Manual Order
-  const handleCreateManualOrder = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCustName || !newCustPhone || !newOrderAmount) return;
-
-    const newOrder: OrderRecord = {
-      id: `NSH-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: '23 Aug 2026',
-      time: 'Just now',
-      customerName: newCustName.trim(),
-      city: newCustCity.trim() || 'Mysuru',
-      state: 'Karnataka',
-      pincode: newCustPincode.trim() || '570001',
-      address: newCustAddress.trim() || 'Showroom Walk-in Order, Mysuru',
-      phone: newCustPhone.trim(),
-      email: `${newCustName.toLowerCase().replace(/\s+/g, '.')}@patron.com`,
-      items: [
-        {
-          title: `Handloom ${newOrderWeave} Heritage Saree`,
-          weave: newOrderWeave,
-          sku: `NSH-SKU-${newOrderWeave.slice(0, 3).toUpperCase()}-99`,
-          price: Number(newOrderAmount),
-          qty: 1,
-          image:
-            'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-          zari: '24K Tested Pure Zari',
-        },
-      ],
-      subtotalINR: Number(newOrderAmount),
-      discountINR: 0,
-      taxINR: Math.round(Number(newOrderAmount) * 0.05),
-      totalAmount: Number(newOrderAmount),
-      paymentGateway: newOrderPayment,
-      paymentStatus: 'PAID',
-      fulfillmentState: 'TO_PACK',
-      awb: `BD-MYS-${Math.floor(100000 + Math.random() * 900000)}`,
-      carrier: 'Blue Dart Air Express',
-      isGiftWrapped: false,
-      silkMarkAuditId: `CSB-2026-MYS-${Math.floor(1000 + Math.random() * 9000)}`,
-      customerType: 'VIP Patron',
-    };
-
-    setOrders([newOrder, ...orders]);
-    setIsNewOrderModalOpen(false);
-    setNewCustName('');
-    setNewCustPhone('');
-    setNewCustCity('');
-    setNewCustAddress('');
-  };
 
   return (
     <div className="space-y-6 pb-20 text-slate-900 font-sans">

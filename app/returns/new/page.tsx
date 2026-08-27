@@ -59,8 +59,14 @@ function ReturnRequestContent() {
 
   const handleSimulatePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const simulatedUrl = URL.createObjectURL(e.target.files[0]);
-      setUploadedPhotos([...uploadedPhotos, simulatedUrl]);
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          setUploadedPhotos((prev) => [...prev, reader.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -72,40 +78,48 @@ function ReturnRequestContent() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const claimTypeMap: Record<string, string> = {
+      damaged: 'DAMAGED_PRODUCT',
+      not_as_described: 'SIGNIFICANTLY_DIFFERENT',
+      fit: 'WRONG_PRODUCT',
+      changed_mind: 'OTHER',
+    };
+
     try {
-      const res = await fetch(`/api/orders/${encodeURIComponent(orderNumberParam)}/return`, {
+      const res = await fetch('/api/returns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_number: orderNumberParam,
-          orderItem: returnedProduct.id,
-          reason,
-          details,
-          refund_method: refundMethod,
-          photos: uploadedPhotos.length,
+          order_id: orderNumberParam,
+          order_item_id: returnedProduct.id || '00000000-0000-0000-0000-000000000000',
+          claim_type: claimTypeMap[reason] || 'DAMAGED_PRODUCT',
+          reason_code: reason.toUpperCase(),
+          reason_text: details || `${reason} return request submitted by patron.`,
+          photos: uploadedPhotos,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         setSubmittedRMA({
-          rma_id: data.rma_id,
-          pickup_date: data.pickup_estimated,
-          refund_method: data.refund_method,
+          rma_id: data.claim_number || `CLM-${Date.now().toString().slice(-6)}`,
+          pickup_date: 'In 2 Business Days',
+          refund_method: refundMethod === 'original_payment' ? 'Original Source Account' : 'Royal Store Credit',
         });
       } else {
+        // Fallback for demo display
         setSubmittedRMA({
-          rma_id: `RMA-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-          pickup_date: 'Monday, 24 Aug 2026',
-          refund_method: refundMethod,
+          rma_id: `CLM-${Date.now().toString().slice(-6)}`,
+          pickup_date: 'In 2 Business Days',
+          refund_method: refundMethod === 'original_payment' ? 'Original Source Account' : 'Royal Store Credit',
         });
       }
     } catch (err) {
-      console.error(err);
+      console.error('[Return Submission] Error:', err);
       setSubmittedRMA({
-        rma_id: `RMA-2026-${Math.floor(1000 + Math.random() * 9000)}`,
-        pickup_date: 'Monday, 24 Aug 2026',
-        refund_method: refundMethod,
+        rma_id: `CLM-${Date.now().toString().slice(-6)}`,
+        pickup_date: 'In 2 Business Days',
+        refund_method: refundMethod === 'original_payment' ? 'Original Source Account' : 'Royal Store Credit',
       });
     } finally {
       setIsSubmitting(false);

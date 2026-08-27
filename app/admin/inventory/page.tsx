@@ -250,7 +250,7 @@ export default function InventoryMatrixPage() {
             loomBatch: `LOOM-KA-MYS-${10 + idx}`,
             costPrice: 20000,
             retailPrice: 28500,
-            physicalStock: inv.physical_quantity ?? 1,
+            physicalStock: inv.quantity ?? inv.physical_quantity ?? 1,
             reservedStock: inv.reserved_quantity ?? 0,
             reorderPoint: 2,
             silkMarkAuditId: `CSB-2026-MYS-${3310 + idx}`,

@@ -56,14 +56,13 @@ export async function POST(request: Request) {
           console.error('[Checkout API] Error inserting order items:', itemsErr);
         }
 
-        // Deduct inventory quantities and log reservation records
+        // Deduct inventory quantities atomically to prevent overselling race conditions
         for (const item of items) {
           const sku = item.product?.sku;
           const qty = item.quantity || 1;
 
           if (sku) {
             try {
-              // Fetch matching variant ID
               const { data: variant } = await adminSupabase
                 .from('product_variants')
                 .select('id')
@@ -71,22 +70,30 @@ export async function POST(request: Request) {
                 .maybeSingle();
 
               if (variant) {
-                // Fetch current inventory
-                const { data: inv } = await adminSupabase
-                  .from('inventory')
-                  .select('id, physical_quantity, reserved_quantity')
-                  .eq('variant_id', variant.id)
-                  .maybeSingle();
+                // Try Postgres atomic RPC first
+                const { error: rpcErr } = await adminSupabase.rpc('fn_convert_reservation_to_order', {
+                  p_variant_id: variant.id,
+                  p_quantity: qty,
+                });
 
-                if (inv) {
-                  const newQty = Math.max(0, inv.physical_quantity - qty);
-                  await adminSupabase
+                if (rpcErr) {
+                  // Fallback atomic update
+                  const { data: inv } = await adminSupabase
                     .from('inventory')
-                    .update({
-                      physical_quantity: newQty,
-                      updated_at: new Date().toISOString(),
-                    })
-                    .eq('id', inv.id);
+                    .select('quantity')
+                    .eq('variant_id', variant.id)
+                    .maybeSingle();
+
+                  if (inv && inv.quantity >= qty) {
+                    await adminSupabase
+                      .from('inventory')
+                      .update({
+                        quantity: Math.max(0, inv.quantity - qty),
+                        updated_at: new Date().toISOString(),
+                      })
+                      .eq('variant_id', variant.id)
+                      .gte('quantity', qty); // Atomic condition guard
+                  }
                 }
               }
             } catch (e) {

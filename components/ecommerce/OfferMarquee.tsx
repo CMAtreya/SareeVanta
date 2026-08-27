@@ -1,14 +1,28 @@
-'use client';
-
+import React, { useState, useEffect } from 'react';
 import { Sparkles, X } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 
 export default function OfferMarquee() {
   const { isMarqueeDismissed, setIsMarqueeDismissed } = useCart();
+  const [liveMessages, setLiveMessages] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/marquee')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {
+          const activeOnly = data.messages.filter((m: any) => m.is_active).map((m: any) => m.message_text);
+          if (activeOnly.length > 0) {
+            setLiveMessages(activeOnly);
+          }
+        }
+      })
+      .catch((err) => console.error('[OfferMarquee] Error fetching marquee messages:', err));
+  }, []);
 
   if (isMarqueeDismissed) return null;
 
-  const messages = [
+  const defaultMessages = [
     '✦ FESTIVE WEAVE EDIT NOW LIVE',
     '✦ FREE INSURED EXPRESS SHIPPING ON ORDERS ABOVE ₹10,000',
     '✦ 100% KARNATAKA MULBERRY SILK MARK CERTIFIED',
@@ -16,6 +30,8 @@ export default function OfferMarquee() {
     '✦ SAYYAJI RAO RD MYSURU FLAGSHIP SALON OPEN 10:30 AM – 8:30 PM',
     '✦ WORLDWIDE EXPRESS DELIVERY TO 45+ COUNTRIES',
   ];
+
+  const messages = liveMessages || defaultMessages;
 
   return (
     <div className="relative bg-[#C87F4A] text-[#FAF3E4] py-1.5 px-4 overflow-hidden z-50 border-b border-[#FAF3E4]/15 w-full">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Layers,
@@ -143,48 +143,91 @@ export default function CollectionsTaxonomyPage() {
     );
   };
 
+  // Fetch live collections from database API
+  useEffect(() => {
+    fetch('/api/admin/collections')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.collections && Array.isArray(data.collections) && data.collections.length > 0) {
+          const formatted: SareeCollection[] = data.collections.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            slug: c.slug,
+            tagline: c.tagline || '',
+            description: c.description || '',
+            coverImage: c.image_url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+            badge: c.badge || 'Festive 2026',
+            assignedSkuCount: 12,
+            isFeaturedOnHomepage: Boolean(c.is_active),
+            status: c.is_active ? 'ACTIVE' : 'DRAFT',
+            assignedSkus: [],
+          }));
+          setCollections(formatted);
+        }
+      })
+      .catch((err) => console.error('[Collections API] Fetch error:', err));
+  }, []);
+
   // Action: Save Collection
-  const handleSaveCollection = (e: React.FormEvent) => {
+  const handleSaveCollection = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!colTitle.trim() || !colSlug.trim()) return;
 
-    if (editingCollection) {
-      setCollections((prev) =>
-        prev.map((c) =>
-          c.id === editingCollection.id
-            ? {
-                ...c,
-                title: colTitle.trim(),
-                slug: colSlug.trim(),
-                tagline: colTagline.trim(),
-                description: colDesc.trim(),
-                coverImage: colCover.trim() || c.coverImage,
-                badge: colBadge.trim(),
-                isFeaturedOnHomepage: colFeatured,
-              }
-            : c
-        )
-      );
-      triggerToast(`Collection "${colTitle}" updated.`);
-    } else {
-      const newCol: SareeCollection = {
-        id: `col-${Date.now()}`,
-        title: colTitle.trim(),
-        slug: colSlug.trim(),
-        tagline: colTagline.trim(),
-        description: colDesc.trim(),
-        coverImage:
-          colCover.trim() ||
-          'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop',
-        badge: colBadge.trim(),
-        assignedSkuCount: 4,
-        isFeaturedOnHomepage: colFeatured,
-        status: 'ACTIVE',
-        validDateRange: 'Festive 2026',
-        assignedSkus: ['NSH-SKU-MYS-01'],
-      };
-      setCollections((prev) => [newCol, ...prev]);
-      triggerToast(`Collection "${colTitle}" created and published.`);
+    try {
+      const res = await fetch('/api/admin/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: colTitle.trim(),
+          slug: colSlug.trim(),
+          tagline: colTagline.trim(),
+          description: colDesc.trim(),
+          image_url: colCover.trim(),
+          badge: colBadge.trim(),
+          is_active: colFeatured,
+        }),
+      });
+
+      const data = await res.json();
+      const newId = data.collection?.id || `col-custom-${Date.now()}`;
+
+      if (editingCollection) {
+        setCollections((prev) =>
+          prev.map((c) =>
+            c.id === editingCollection.id
+              ? {
+                  ...c,
+                  title: colTitle.trim(),
+                  slug: colSlug.trim(),
+                  tagline: colTagline.trim(),
+                  description: colDesc.trim(),
+                  coverImage: colCover.trim() || c.coverImage,
+                  badge: colBadge.trim(),
+                  isFeaturedOnHomepage: colFeatured,
+                }
+              : c
+          )
+        );
+        triggerToast(`Collection "${colTitle}" updated in database.`);
+      } else {
+        const newCol: SareeCollection = {
+          id: newId,
+          title: colTitle.trim(),
+          slug: colSlug.trim(),
+          tagline: colTagline.trim(),
+          description: colDesc.trim(),
+          coverImage: colCover.trim() || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+          badge: colBadge.trim(),
+          assignedSkuCount: 0,
+          isFeaturedOnHomepage: colFeatured,
+          status: 'ACTIVE',
+          assignedSkus: [],
+        };
+        setCollections([newCol, ...collections]);
+        triggerToast(`Collection "${colTitle}" created and saved to database.`);
+      }
+    } catch (err) {
+      console.error('[Collections API] Save error:', err);
     }
 
     setIsCollectionModalOpen(false);

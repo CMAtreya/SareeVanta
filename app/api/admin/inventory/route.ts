@@ -41,17 +41,17 @@ export async function POST(request: Request) {
 
   const { data: currentInv } = await supabase
     .from('inventory')
-    .select('id, physical_quantity')
+    .select('variant_id, quantity')
     .eq('variant_id', targetVariantId)
     .maybeSingle();
 
-  const newQty = Math.max(0, (currentInv?.physical_quantity || 0) + delta);
+  const newQty = Math.max(0, (currentInv?.quantity || 0) + delta);
 
   await supabase
     .from('inventory')
     .upsert({
       variant_id: targetVariantId,
-      physical_quantity: newQty,
+      quantity: newQty,
       updated_at: new Date().toISOString(),
     });
 
