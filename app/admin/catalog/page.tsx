@@ -1414,7 +1414,8 @@ export default function AdminCatalogPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  disabled={!newSareeForm.title.trim() || !newSareeForm.priceINR}
+                  className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Register Master Saree
                 </button>

@@ -367,8 +367,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           <button
             type="button"
             onClick={() => handleSave('DRAFT')}
-            disabled={isSaving}
-            className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-2xs"
+            disabled={isSaving || !title.trim() || !sellingPrice}
+            className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Save as Draft
           </button>
@@ -376,8 +376,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           <button
             type="button"
             onClick={() => handleSave('PUBLISHED')}
-            disabled={isSaving}
-            className="px-5 py-2 rounded-xl bg-[#7A1C30] hover:bg-[#601625] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            disabled={isSaving || !title.trim() || !sellingPrice}
+            className="px-5 py-2 rounded-xl bg-[#7A1C30] hover:bg-[#601625] text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (
               <span>Saving...</span>

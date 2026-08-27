@@ -77,13 +77,26 @@ export async function POST(request: Request) {
   }
 
   // 2. Create Default Variant & Initial Inventory
-  if (sku && color_id) {
+  const targetSku = sku || `NSH-SKU-${slug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+
+  let targetColorId = color_id;
+  if (!targetColorId) {
+    const { data: firstColor } = await supabase.from('colors').select('id').limit(1).maybeSingle();
+    if (firstColor) {
+      targetColorId = firstColor.id;
+    } else {
+      const { data: newColor } = await supabase.from('colors').insert({ name: 'Heritage Gold', hex_code: '#D4AF37' }).select('id').single();
+      targetColorId = newColor?.id;
+    }
+  }
+
+  if (targetColorId) {
     const { data: variant } = await supabase
       .from('product_variants')
       .insert({
         product_id: product.id,
-        color_id,
-        sku,
+        color_id: targetColorId,
+        sku: targetSku,
         price_paise: baseSellingPricePaise,
         mrp_paise: baseMrpPaise,
       })
@@ -91,7 +104,7 @@ export async function POST(request: Request) {
       .single();
 
     if (variant) {
-      await supabase.from('inventory').insert({
+      await supabase.from('inventory').upsert({
         variant_id: variant.id,
         quantity: body.initial_stock || 10,
         reserved_quantity: 0,
