@@ -18,6 +18,7 @@ import {
 import { products, sixCategoriesWithThumbnails } from '@/lib/products';
 import ProductCard from '@/components/ecommerce/ProductCard';
 import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarousel';
+import { useProducts } from '@/hooks/useProducts';
 
 export default function HomePage() {
   // ----------------------------------------------------
@@ -106,20 +107,36 @@ export default function HomePage() {
   };
 
   // ----------------------------------------------------
-  // 2. Shop By Occasion Tab State
+  // 2. Fetch Live Products from Supabase Backend
   // ----------------------------------------------------
-  const [activeOccasionTab, setActiveOccasionTab] = useState<'festive' | 'wedding' | 'casual'>('festive');
+  const { products: dbProducts } = useProducts();
+  const activeProducts = dbProducts.length > 0 ? dbProducts : products;
+
+  // ----------------------------------------------------
+  // 3. Dynamic Category Curator with Live Counts & Photos
+  // ----------------------------------------------------
+  const dynamicCategories = sixCategoriesWithThumbnails.map((cat) => {
+    const matching = activeProducts.filter(
+      (p) => p.weave?.toLowerCase().includes(cat.name.toLowerCase()) || cat.name.toLowerCase().includes((p.weave || '').toLowerCase())
+    );
+    const catImages = matching.flatMap((p) => p.images || []).filter(Boolean);
+    const mainImg = catImages[0] || cat.image;
+    const thumbs = catImages.length >= 4 ? catImages.slice(0, 4) : cat.thumbnails;
+
+    return {
+      ...cat,
+      count: `${matching.length > 0 ? matching.length : 12} Designs`,
+      image: mainImg,
+      thumbnails: thumbs,
+    };
+  });
+
+  // ----------------------------------------------------
+  // 4. Shop By Occasion Tab State (4 Live Database Occasions)
+  // ----------------------------------------------------
+  const [activeOccasionTab, setActiveOccasionTab] = useState<'wedding' | 'festive' | 'reception' | 'casual'>('wedding');
 
   const occasionContent = {
-    festive: {
-      title: 'Festive & Puja Celebrations',
-      desc: 'Radiant jewel tones, liquid Mysore crepes, and gossamer organzas designed to capture morning temple lamps and evening Diwali soirées.',
-      link: '/products?occasion=Festive+%26+Puja',
-      buttonText: 'Explore Festive Wear',
-      image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=1000&q=80',
-      sampleWeaves: 'Mysore Silk • Paithani • Pure Organza',
-      products: products.filter((p) => p.occasion === 'Festive & Puja').slice(0, 3),
-    },
     wedding: {
       title: 'Muhurtham & Bridal Trousseau',
       desc: 'Commanding weight, sculptural Korvai borders, and 24-karat tested real gold zari crafted for royal South Indian bridal mandaps.',
@@ -127,23 +144,41 @@ export default function HomePage() {
       buttonText: 'Explore Bridal Wear',
       image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=1000&q=80',
       sampleWeaves: 'Kanchipuram Korvai • Royal Wodeyar • Double Ikkat',
-      products: products.filter((p) => p.isBridal).slice(0, 3),
+      products: activeProducts.filter((p) => p.isBridal || p.occasion?.toLowerCase().includes('bridal')).slice(0, 3),
+    },
+    festive: {
+      title: 'Festive & Puja Celebrations',
+      desc: 'Radiant jewel tones, liquid Mysore crepes, and gossamer organzas designed to capture morning temple lamps and evening Diwali soirées.',
+      link: '/products?occasion=Festive+%26+Puja',
+      buttonText: 'Explore Festive Wear',
+      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=80',
+      sampleWeaves: 'Mysore Silk • Paithani • Pure Organza',
+      products: activeProducts.filter((p) => p.occasion?.toLowerCase().includes('festive') || p.occasion?.toLowerCase().includes('puja')).slice(0, 3),
+    },
+    reception: {
+      title: 'Cocktail & Royal Reception',
+      desc: 'Luminous metallic weaves, intricate zari borders, and contemporary colors crafted for evening galas and receptions.',
+      link: '/products?occasion=Cocktail+%26+Reception',
+      buttonText: 'Explore Reception Wear',
+      image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1000&q=80',
+      sampleWeaves: 'Banarasi Kadwa • Paithani • Tissue Georgette',
+      products: activeProducts.filter((p) => p.occasion?.toLowerCase().includes('reception') || p.occasion?.toLowerCase().includes('cocktail')).slice(0, 3),
     },
     casual: {
       title: 'Daily Classic & Subtle Drapes',
       desc: 'Lightweight breathable pure tussar, soft silks, and hand-spun chanderis that provide effortless all-day comfort without sacrificing elegance.',
       link: '/products?occasion=Daily+Classic',
       buttonText: 'Explore Casual Wear',
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1000&q=80',
+      image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1000&q=80',
       sampleWeaves: 'Chanderi Tussar • Soft Silk • Kasuti Crepe',
-      products: products.filter((p) => p.occasion === 'Daily Classic' || p.priceINR < 35000).slice(0, 3),
+      products: activeProducts.filter((p) => p.occasion?.toLowerCase().includes('daily') || p.priceINR < 35000).slice(0, 3),
     },
   };
 
   // ----------------------------------------------------
-  // 3. New Arrivals (Structure ready for API)
+  // 5. New Arrivals (Live Database Products)
   // ----------------------------------------------------
-  const newArrivals = products.slice(0, 5);
+  const newArrivals = activeProducts.slice(0, 8);
 
   return (
     <div className="relative w-full bg-[#FAF3E4] text-[#1F1B16]">
@@ -271,7 +306,7 @@ export default function HomePage() {
 
         {/* 6 Category Tiles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {sixCategoriesWithThumbnails.map((cat) => (
+          {dynamicCategories.map((cat) => (
             <div
               key={cat.id}
               className="bg-white rounded-2xl p-5 border border-[#C87F4A]/25 shadow-silk hover:shadow-silk-lg transition-all duration-300 flex flex-col justify-between"

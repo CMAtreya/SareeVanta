@@ -12,7 +12,9 @@ export async function GET(
 
   if (supabaseUrl && !supabaseUrl.includes('placeholder')) {
     try {
-      const { data, error } = await supabase
+      const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
+
+      let query = supabase
         .from('products')
         .select(`
           id,
@@ -38,9 +40,15 @@ export async function GET(
             colors ( id, name, hex_code ),
             product_variant_media ( url, is_primary, display_order )
           )
-        `)
-        .or(`slug.eq.${slug},id.eq.${slug}`)
-        .maybeSingle();
+        `);
+
+      if (isUuid) {
+        query = query.or(`slug.eq.${slug},id.eq.${slug}`);
+      } else {
+        query = query.eq('slug', slug);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (!error && data) {
         const variants = data.product_variants || [];
