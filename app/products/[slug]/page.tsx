@@ -127,7 +127,7 @@ export default function ProductDetailPage() {
         const primaryImgs = (data.product.images && data.product.images.length > 0
           ? data.product.images
           : data.product.colorVariants?.[0]?.images || []
-        ).filter((url: any) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+        ).filter((url: any) => typeof url === 'string' && url.trim().length > 5);
         setGalleryImages(primaryImgs);
         setSelectedImageIdx(0);
         if (data.product.reviewsList) {
@@ -150,7 +150,7 @@ export default function ProductDetailPage() {
             const primaryImgs = (data.product.images && data.product.images.length > 0
               ? data.product.images
               : data.product.colorVariants?.[0]?.images || []
-            ).filter((url: any) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
+            ).filter((url: any) => typeof url === 'string' && url.trim().length > 5);
             setGalleryImages(primaryImgs);
             setSelectedImageIdx(0);
             if (data.product.reviewsList) {

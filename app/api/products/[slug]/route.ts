@@ -52,7 +52,11 @@ export async function GET(
       if (!error && data) {
         const variants = data.product_variants || [];
         const firstVariant = variants[0];
-        const allImages = variants.flatMap((v: any) => v.product_variant_media?.map((m: any) => m.url) || []);
+        const variantMedia = firstVariant?.product_variant_media || [];
+        const allImages = (variantMedia.length > 0 ? variantMedia : variants.flatMap((v: any) => v.product_variant_media || []))
+          .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))
+          .map((m: any) => m.url)
+          .filter(Boolean);
 
         const weaveData: any = Array.isArray(data.weavings) ? data.weavings[0] : data.weavings;
         const fabricData: any = Array.isArray(data.fabrics) ? data.fabrics[0] : data.fabrics;

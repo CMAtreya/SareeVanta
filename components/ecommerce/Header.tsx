@@ -133,25 +133,65 @@ export default function Header() {
     return () => clearInterval(timer);
   }, []);
 
-  // Debounced search autocomplete & matching products
+  // Instant client-side + debounced server-side search autocomplete
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
       setSearchSuggestions([]);
       setMatchingProducts([]);
       return;
     }
+
+    // 1. Instant local autocomplete matching
+    const localSugs: { type: string; text: string; url: string }[] = [];
+    const knownTaxonomies = [
+      { type: 'Weave Tradition', name: 'Mysore Silk', url: '/products?weave=Mysore+Silk' },
+      { type: 'Weave Tradition', name: 'Kanchipuram', url: '/products?weave=Kanchipuram' },
+      { type: 'Weave Tradition', name: 'Banarasi', url: '/products?weave=Banarasi' },
+      { type: 'Weave Tradition', name: 'Paithani', url: '/products?weave=Paithani' },
+      { type: 'Weave Tradition', name: 'Tissue Georgette', url: '/products?weave=Tissue+Georgette' },
+      { type: 'Weave Tradition', name: 'Ikkat', url: '/products?weave=Ikkat' },
+      { type: 'Fabric Texture', name: 'Pure Mulberry Silk', url: '/products?fabric=Pure+Mulberry+Silk' },
+      { type: 'Fabric Texture', name: 'Soft Silk', url: '/products?fabric=Soft+Silk' },
+      { type: 'Fabric Texture', name: 'Crepe Silk', url: '/products?fabric=Crepe+Silk' },
+      { type: 'Fabric Texture', name: 'Organza', url: '/products?fabric=Organza' },
+      { type: 'Royal Hue', name: 'Crimson Red', url: '/products?color=Crimson+Red' },
+      { type: 'Royal Hue', name: 'Peacock Teal', url: '/products?color=Peacock+Teal' },
+      { type: 'Royal Hue', name: 'Kanchipuram Gold', url: '/products?color=Kanchipuram+Gold' },
+      { type: 'Royal Hue', name: 'Rani Pink', url: '/products?color=Rani+Pink' },
+      { type: 'Royal Hue', name: 'Bottle Green', url: '/products?color=Bottle+Green' },
+      { type: 'Royal Hue', name: 'Midnight Blue', url: '/products?color=Midnight+Blue' },
+      { type: 'Heritage Pattern', name: 'Kasuti Diamonds', url: '/products?search=Kasuti+Diamonds' },
+      { type: 'Heritage Pattern', name: 'Peacock Mayil & Yanai', url: '/products?search=Peacock+Mayil' },
+      { type: 'Heritage Pattern', name: 'Floral Kadwa Meenakari', url: '/products?search=Kadwa' },
+    ];
+
+    knownTaxonomies.forEach((t) => {
+      if (t.name.toLowerCase().includes(q)) {
+        localSugs.push({ type: t.type, text: t.name, url: t.url });
+      }
+    });
+
+    setSearchSuggestions(localSugs.slice(0, 5));
+
+    // 2. Debounced API fetch for full catalog & live images
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery.trim())}`);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
         if (res.ok) {
           const data = await res.json();
-          setSearchSuggestions(data.suggestions || []);
-          setMatchingProducts(data.products?.slice(0, 4) || []);
+          if (data.suggestions && data.suggestions.length > 0) {
+            setSearchSuggestions(data.suggestions);
+          }
+          if (data.products && Array.isArray(data.products)) {
+            setMatchingProducts(data.products.slice(0, 4));
+          }
         }
       } catch (err) {
         console.error(err);
       }
-    }, 200);
+    }, 150);
+
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -431,34 +471,36 @@ export default function Header() {
                   </div>
                 )}
 
-                {/* 3. Popular Searches Pills */}
-                <div className="space-y-2 pt-2.5 border-t border-[#C87F4A]/20">
-                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-600 block px-2">
-                    Popular Searches
-                  </span>
-                  <div className="flex flex-wrap gap-1.5 px-1">
-                    {[
-                      'Mysore Silk Crepe',
-                      'Bridal Kanchipuram',
-                      'Banarasi Katan',
-                      '24K Pure Zari',
-                      'Soft Silk Sarees',
-                      'Champagne Tissue',
-                    ].map((term, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onMouseDown={() => {
-                          setSearchQuery(term);
-                          router.push(`/search?q=${encodeURIComponent(term)}`);
-                        }}
-                        className="text-[11px] bg-white/70 hover:bg-[#7A1C30] hover:text-white backdrop-blur-sm px-3 py-1 rounded-full text-stone-700 transition-all border border-[#C87F4A]/30 shadow-2xs font-sans"
-                      >
-                        {term}
-                      </button>
-                    ))}
+                {/* 3. Popular Searches Pills (Shown when query is empty or as footer) */}
+                {(!searchQuery.trim() || (matchingProducts.length === 0 && searchSuggestions.length === 0)) && (
+                  <div className="space-y-2 pt-2.5 border-t border-[#C87F4A]/20">
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-stone-600 block px-2">
+                      Popular Searches
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 px-1">
+                      {[
+                        'Mysore Silk Crepe',
+                        'Bridal Kanchipuram',
+                        'Banarasi Katan',
+                        '24K Pure Zari',
+                        'Soft Silk Sarees',
+                        'Champagne Tissue',
+                      ].map((term, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onMouseDown={() => {
+                            setSearchQuery(term);
+                            router.push(`/search?q=${encodeURIComponent(term)}`);
+                          }}
+                          className="text-[11px] bg-white/70 hover:bg-[#7A1C30] hover:text-white backdrop-blur-sm px-3 py-1 rounded-full text-stone-700 transition-all border border-[#C87F4A]/30 shadow-2xs font-sans cursor-pointer"
+                        >
+                          {term}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>
