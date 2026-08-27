@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +12,7 @@ const fallbackThumbnails = [
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = createAdminClient();
     const { data: dbReels, error } = await supabase
       .from('instagram_reels')
       .select('*')

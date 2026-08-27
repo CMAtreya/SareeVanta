@@ -564,11 +564,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ==================================================== */}
-      {/* 8. INSTAGRAM REELS ATELIER CAROUSEL                 */}
-      {/* ==================================================== */}
-      <InstagramReelsCarousel />
     </div>
   );
 }
