@@ -835,11 +835,18 @@ export default function ProductDetailPage() {
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <div className="font-editorial text-4xl sm:text-5xl font-bold text-[#1F1B16]">
-                  {product.rating}
+                  {product.rating > 0 ? product.rating : '—'}
                 </div>
                 <div className="flex items-center justify-center gap-0.5 text-amber-500 mt-1">
                   {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        product.rating > 0 && i < Math.floor(product.rating)
+                          ? 'fill-amber-500 text-amber-500'
+                          : 'text-stone-300'
+                      }`}
+                    />
                   ))}
                 </div>
                 <span className="text-[11px] text-stone-500 font-sans block mt-0.5">
@@ -850,69 +857,89 @@ export default function ProductDetailPage() {
               <button
                 type="button"
                 onClick={() => setIsReviewModalOpen(true)}
-                className="bg-[#C87F4A] hover:bg-[#B36737] text-white px-5 py-3 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                className="bg-[#C87F4A] hover:bg-[#B36737] text-white px-5 py-3 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
               >
                 Write a Review
               </button>
             </div>
           </div>
 
-          {/* Individual Review Cards */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reviews.map((rev) => (
-              <div
-                key={rev.id}
-                className="p-5 rounded-2xl bg-[#FAF3E4]/70 border border-[#C87F4A]/20 flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  {/* Rating Stars & Date */}
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-0.5 text-amber-500">
-                      {[...Array(Math.floor(rev.rating))].map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 fill-amber-500" />
-                      ))}
-                    </div>
-                    <span className="text-[10px] font-mono text-stone-500">{rev.date}</span>
-                  </div>
-
-                  {/* Review Title */}
-                  <h4 className="font-editorial text-base font-bold text-[#1F1B16]">
-                    {rev.title}
-                  </h4>
-
-                  {/* Comment */}
-                  <p className="text-xs text-stone-600 font-sans leading-relaxed">
-                    "{rev.comment}"
-                  </p>
-
-                  {/* Uploaded Photo if available */}
-                  {rev.photo && (
-                    <div className="mt-2 relative w-20 h-24 rounded-lg overflow-hidden border border-[#C87F4A]/30 shadow-xs">
-                      <img src={rev.photo} alt="Customer uploaded drape photo" className="w-full h-full object-cover" />
-                      <div className="absolute bottom-1 right-1 bg-black/60 p-0.5 rounded text-white text-[8px] font-mono">
-                        <Camera className="w-2.5 h-2.5" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Author Info */}
-                <div className="mt-4 pt-3 border-t border-stone-200 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="font-bold text-[#1F1B16] block">{rev.author}</span>
-                    <span className="text-[10px] text-stone-500 font-sans">{rev.location}</span>
-                  </div>
-
-                  {rev.verified && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>Verified Buyer</span>
-                    </span>
-                  )}
-                </div>
+          {/* Individual Review Cards or No Reviews Empty State */}
+          {reviews.length === 0 ? (
+            <div className="mt-8 p-10 rounded-2xl bg-[#FAF3E4]/60 border border-dashed border-[#C87F4A]/30 text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-[#7A1C30]/10 text-[#7A1C30] flex items-center justify-center mx-auto">
+                <Star className="w-6 h-6 text-[#C87F4A]" />
               </div>
-            ))}
-          </div>
+              <h3 className="font-editorial text-xl font-bold text-stone-900">No Patron Reviews Yet</h3>
+              <p className="text-xs text-stone-600 font-mono max-w-md mx-auto leading-relaxed">
+                Be the first to share your drape experience for this heirloom masterpiece.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(true)}
+                className="inline-flex items-center gap-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-colors shadow-sm cursor-pointer"
+              >
+                <Star className="w-4 h-4" />
+                <span>Be the First to Review</span>
+              </button>
+            </div>
+          ) : (
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.map((rev) => (
+                <div
+                  key={rev.id}
+                  className="p-5 rounded-2xl bg-[#FAF3E4]/70 border border-[#C87F4A]/20 flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    {/* Rating Stars & Date */}
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-0.5 text-amber-500">
+                        {[...Array(Math.floor(rev.rating || 5))].map((_, i) => (
+                          <Star key={i} className="w-3.5 h-3.5 fill-amber-500" />
+                        ))}
+                      </div>
+                      <span className="text-[10px] font-mono text-stone-500">{rev.date}</span>
+                    </div>
+
+                    {/* Review Title */}
+                    <h4 className="font-editorial text-base font-bold text-[#1F1B16]">
+                      {rev.title}
+                    </h4>
+
+                    {/* Comment */}
+                    <p className="text-xs text-stone-600 font-sans leading-relaxed">
+                      "{rev.comment}"
+                    </p>
+
+                    {/* Uploaded Photo if available */}
+                    {rev.photo && (
+                      <div className="mt-2 relative w-20 h-24 rounded-lg overflow-hidden border border-[#C87F4A]/30 shadow-xs">
+                        <img src={rev.photo} alt="Customer uploaded drape photo" className="w-full h-full object-cover" />
+                        <div className="absolute bottom-1 right-1 bg-black/60 p-0.5 rounded text-white text-[8px] font-mono">
+                          <Camera className="w-2.5 h-2.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Author Info */}
+                  <div className="mt-4 pt-3 border-t border-stone-200 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-[#1F1B16] block">{rev.author}</span>
+                      <span className="text-[10px] text-stone-500 font-sans">{rev.location}</span>
+                    </div>
+
+                    {rev.verified && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Verified Buyer</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Write a Review Modal */}

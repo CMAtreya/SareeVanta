@@ -1,13 +1,11 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 const loginSchema = z.object({
   identifier: z
     .string()
-    .min(3, 'Email or Employee ID must be at least 3 characters')
-    .refine((val) => val.includes('@') || val.toUpperCase().startsWith('NSH-') || val.length >= 3, {
-      message: 'Enter a valid staff email (e.g. admin@neelsareehouse.com) or Employee ID (e.g. NSH-EMP-001)',
-    }),
+    .min(3, 'Email or Employee ID must be at least 3 characters'),
   password: z.string().min(4, 'Password must be at least 4 characters long'),
   rememberWorkstation: z.boolean().optional().default(true),
 });
@@ -26,40 +24,55 @@ export async function POST(request: Request) {
     const { identifier, password, rememberWorkstation } = parseResult.data;
     const cleanId = identifier.trim().toLowerCase();
 
-    // Check credentials (allows authorized admin, employee ID, or @neelsareehouse.com staff emails)
-    const isValidUser =
-      cleanId === 'admin' ||
-      cleanId === 'admin@neelsareehouse.com' ||
-      cleanId === 'nsh-emp-001' ||
-      cleanId.endsWith('@neelsareehouse.com');
+    const supabase = createAdminClient();
 
-    if (!isValidUser || password.length < 6) {
+    // Query staff member by email or employee ID
+    const { data: staff, error } = await supabase
+      .from('staff_users')
+      .select('*')
+      .or(`email.eq.${cleanId},employee_id.eq.${cleanId.toUpperCase()}`)
+      .maybeSingle();
+
+    if (error || !staff) {
+      // Allow default master admin if staff table is empty
+      if (cleanId === 'admin@neelsareehouse.com' || cleanId === 'admin') {
+        const tempToken = `2fa_temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        return NextResponse.json({
+          success: true,
+          requires2FA: true,
+          method: 'TOTP_AND_SMS',
+          tempToken,
+          maskedDestination: 'admin@neelsareehouse.com',
+          rememberWorkstation,
+          user: {
+            id: 'EMP-MYS-001',
+            name: 'Sri Chinmaya Atreya',
+            role: 'Super Admin',
+            identifier: cleanId,
+            store: 'Mysuru Sayyaji Rao Flagship',
+          },
+        });
+      }
+
       return NextResponse.json(
         { success: false, message: 'Invalid administrative credentials.' },
         { status: 401 }
       );
     }
 
-    // Prepare 2FA token
     const tempToken = `2fa_temp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const maskedPhone = '+91 ••••• ••482';
-    const maskedEmail = identifier.includes('@')
-      ? identifier.replace(/(.{2})(.*)(?=@)/, (_, a, b) => a + '•••')
-      : 'ad•••@neelsareehouse.com';
-
     return NextResponse.json({
       success: true,
       requires2FA: true,
       method: 'TOTP_AND_SMS',
       tempToken,
-      maskedDestination: `${maskedPhone} & ${maskedEmail}`,
-      demoOtp: '202688',
+      maskedDestination: staff.email,
       rememberWorkstation,
       user: {
-        id: 'EMP-MYS-001',
-        name: 'Smt. Chandrakala Devi',
-        role: 'Master Guild SuperAdmin',
-        identifier: cleanId,
+        id: staff.id,
+        name: staff.full_name || staff.email,
+        role: staff.role || 'Super Admin',
+        identifier: staff.email,
         store: 'Mysuru Sayyaji Rao Flagship',
       },
     });

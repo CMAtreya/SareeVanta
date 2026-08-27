@@ -94,10 +94,10 @@ export default function CustomerReviewsAdminPage() {
     const rejectedCount = reviews.filter((r) => r.status === 'REJECTED').length;
 
     const totalRatings = reviews.reduce((acc, r) => acc + r.rating, 0);
-    const avgRating = reviews.length > 0 ? (totalRatings / reviews.length).toFixed(2) : '4.85';
+    const avgRating = reviews.length > 0 ? (totalRatings / reviews.length).toFixed(2) : '0.0';
 
     const verifiedCount = reviews.filter((r) => r.isVerifiedBuyer).length;
-    const verifiedPercent = reviews.length > 0 ? Math.round((verifiedCount / reviews.length) * 100) : 94;
+    const verifiedPercent = reviews.length > 0 ? Math.round((verifiedCount / reviews.length) * 100) : 0;
 
     const totalUgcMedia = reviews.reduce((acc, r) => acc + r.mediaUrls.length, 0);
 

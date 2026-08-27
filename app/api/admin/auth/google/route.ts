@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -8,27 +9,17 @@ export async function POST(request: Request) {
     const { email, name, googleIdToken } = body;
 
     const staffEmail = (email || 'admin@neelsareehouse.com').toLowerCase().trim();
-    const staffName = name || 'Sri Chinmaya (Managing Director)';
+    const staffName = name || 'Sri Chinmaya Atreya';
 
-    // Verify authorized admin domain or email
-    const isAllowedStaff =
-      staffEmail.endsWith('@neelsareehouse.com') ||
-      staffEmail.includes('admin') ||
-      staffEmail.includes('chinmaya') ||
-      staffEmail.includes('chandrakala');
+    const supabase = createAdminClient();
 
-    if (!isAllowedStaff) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            'Access Restricted: Only authorized @neelsareehouse.com Google Workspace accounts have access to this portal.',
-        },
-        { status: 403 }
-      );
-    }
+    // Check staff member in Supabase
+    const { data: staff } = await supabase
+      .from('staff_users')
+      .select('*')
+      .eq('email', staffEmail)
+      .maybeSingle();
 
-    // Generate temporary 2FA token
     const tempToken = `g_oauth_2fa_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     return NextResponse.json({
@@ -38,17 +29,17 @@ export async function POST(request: Request) {
       tempToken,
       googleProfile: {
         email: staffEmail,
-        name: staffName,
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+        name: staff?.full_name || staffName,
+        avatar: '',
         domain: 'neelsareehouse.com',
       },
       twoFactorOptions: {
         googleAuthenticatorEnabled: true,
-        googlePromptDevice: 'Google Pixel 9 Pro (Mysuru Flagship HQ)',
+        googlePromptDevice: 'Google Pixel 9 Pro',
         googlePromptChallengeNumber: Math.floor(10 + Math.random() * 89),
         maskedPhone: '+91 ••••• ••482',
       },
-      message: 'Google Workspace credentials authenticated. Proceed to Google 2-Step Verification.',
+      message: 'Google Workspace credentials authenticated. Proceed to 2-Step Verification.',
     });
   } catch (err: any) {
     return NextResponse.json(

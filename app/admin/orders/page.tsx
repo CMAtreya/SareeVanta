@@ -88,244 +88,14 @@ export interface OrderRecord {
   silkMarkAuditId: string;
   customerType: 'VIP Patron' | 'First-Time Buyer' | 'Bridal Trousseau';
 }
+const INITIAL_ORDERS: OrderRecord[] = [];
 
-const INITIAL_ORDERS: OrderRecord[] = [
-  {
-    id: 'NSH-2026-8941',
-    date: '23 Aug 2026',
-    time: '06:15 PM',
-    customerName: 'Dr. Ananya Rao',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pincode: '560066',
-    address: 'Villa 14, Prestige Ozone, Whitefield Main Road',
-    phone: '+91 98450 12345',
-    email: 'ananya.rao@hospital.org',
-    items: [
-      {
-        title: 'Royal Wodeyar Crimson Crepe Silk',
-        weave: 'Mysore Silk',
-        sku: 'NSH-SKU-MYS-01',
-        price: 28500,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-        zari: '24K Tested Pure Zari',
-      },
-    ],
-    subtotalINR: 28500,
-    discountINR: 0,
-    taxINR: 1357, // 5% GST
-    totalAmount: 28500,
-    paymentGateway: 'Razorpay UPI',
-    paymentStatus: 'PAID',
-    fulfillmentState: 'TO_PACK',
-    awb: 'BD-BLR-884920',
-    carrier: 'Blue Dart Air Express',
-    isGiftWrapped: true,
-    giftMessage: 'Happy Wedding Anniversary to dearest Amma & Appa. With lots of love!',
-    silkMarkAuditId: 'CSB-2026-MYS-8942',
-    customerType: 'VIP Patron',
-  },
-  {
-    id: 'NSH-2026-8940',
-    date: '22 Aug 2026',
-    time: '03:40 PM',
-    customerName: 'Smt. Radhika Reddy',
-    city: 'Hyderabad',
-    state: 'Telangana',
-    pincode: '500034',
-    address: 'Bungalow 7, Road No 36, Jubilee Hills',
-    phone: '+91 99890 98765',
-    email: 'radhika.reddy@gmail.com',
-    items: [
-      {
-        title: 'Bridal Kanchipuram Korvai Gold Brocade',
-        weave: 'Kanchipuram',
-        sku: 'NSH-SKU-KAN-04',
-        price: 68000,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=600&auto=format&fit=crop',
-        zari: 'Sacred 3-Shuttle Pure Gold Zari',
-      },
-      {
-        title: 'Champagne Tissue Georgette Floral Zari',
-        weave: 'Tissue Georgette',
-        sku: 'NSH-SKU-TIS-08',
-        price: 36000,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=600&auto=format&fit=crop',
-        zari: 'Lightweight Tested Zari',
-      },
-    ],
-    subtotalINR: 104000,
-    discountINR: 4000,
-    couponCode: 'ROYALHERITAGE',
-    taxINR: 4761,
-    totalAmount: 100000,
-    paymentGateway: 'Cashfree NetBanking',
-    paymentStatus: 'PAID',
-    fulfillmentState: 'READY_TO_SHIP',
-    awb: 'BD-HYD-773821',
-    carrier: 'Blue Dart Air Express',
-    isGiftWrapped: false,
-    silkMarkAuditId: 'CSB-2026-KAN-1102',
-    customerType: 'Bridal Trousseau',
-  },
-  {
-    id: 'NSH-2026-8939',
-    date: '22 Aug 2026',
-    time: '01:20 PM',
-    customerName: 'Meera Deshmukh',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    pincode: '400050',
-    address: 'Flat 402, Sea Green Apts, Perry Cross Road, Bandra West',
-    phone: '+91 98200 44556',
-    email: 'meera.deshmukh@outlook.com',
-    items: [
-      {
-        title: 'Yeola Paithani Royal Peacock Asawali',
-        weave: 'Paithani',
-        sku: 'NSH-SKU-PAI-02',
-        price: 46000,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop',
-        zari: 'Tapestry Pure Zari',
-      },
-    ],
-    subtotalINR: 46000,
-    discountINR: 0,
-    taxINR: 2190,
-    totalAmount: 46000,
-    paymentGateway: 'Razorpay CC',
-    paymentStatus: 'PAID',
-    fulfillmentState: 'IN_TRANSIT',
-    awb: 'BD-MUM-119283',
-    carrier: 'Blue Dart Air Express',
-    isGiftWrapped: true,
-    giftMessage: 'For the Diwali Pooja. Stay blessed!',
-    silkMarkAuditId: 'CSB-2026-PAI-9920',
-    customerType: 'First-Time Buyer',
-  },
-  {
-    id: 'NSH-2026-8938',
-    date: '21 Aug 2026',
-    time: '07:10 PM',
-    customerName: 'Pooja Singhania',
-    city: 'New Delhi',
-    state: 'Delhi',
-    pincode: '110003',
-    address: 'B-14, Golf Links, Near Khan Market',
-    phone: '+91 98110 33445',
-    email: 'pooja.singhania@heritage.in',
-    items: [
-      {
-        title: 'Varanasi Shikargah Antique Gold Brocade',
-        weave: 'Banarasi',
-        sku: 'NSH-SKU-BAN-07',
-        price: 52000,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-        zari: 'Kadhwa Weave Tested Zari',
-      },
-    ],
-    subtotalINR: 52000,
-    discountINR: 2000,
-    couponCode: 'FIRSTSILK',
-    taxINR: 2380,
-    totalAmount: 50000,
-    paymentGateway: 'Razorpay UPI',
-    paymentStatus: 'PAID',
-    fulfillmentState: 'DELIVERED',
-    awb: 'DL-DEL-559281',
-    carrier: 'Delhivery Air',
-    isGiftWrapped: false,
-    silkMarkAuditId: 'CSB-2026-BAN-5401',
-    customerType: 'VIP Patron',
-  },
-  {
-    id: 'NSH-2026-8937',
-    date: '21 Aug 2026',
-    time: '04:00 PM',
-    customerName: 'Kavitha Sundaram',
-    city: 'Chennai',
-    state: 'Tamil Nadu',
-    pincode: '600028',
-    address: 'Flat 3B, Ceebros Heritage, Boat Club Road, R.A. Puram',
-    phone: '+91 94440 88990',
-    email: 'kavitha.sundaram@tcs.com',
-    items: [
-      {
-        title: 'Mysore Silk Gold Tissue Kasuti Border',
-        weave: 'Mysore Silk',
-        sku: 'NSH-SKU-MYS-03',
-        price: 24000,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=600&auto=format&fit=crop',
-        zari: 'Tested 24K Kasuti Zari',
-      },
-    ],
-    subtotalINR: 24000,
-    discountINR: 0,
-    taxINR: 1142,
-    totalAmount: 24000,
-    paymentGateway: 'Razorpay UPI',
-    paymentStatus: 'PAID',
-    fulfillmentState: 'OUT_FOR_DELIVERY',
-    awb: 'BD-CHE-339201',
-    carrier: 'Blue Dart Air Express',
-    isGiftWrapped: true,
-    giftMessage: 'With warmest compliments on your housewarming ceremony.',
-    silkMarkAuditId: 'CSB-2026-MYS-4410',
-    customerType: 'First-Time Buyer',
-  },
-  {
-    id: 'NSH-2026-8936',
-    date: '20 Aug 2026',
-    time: '05:20 PM',
-    customerName: 'Arundhati Sen',
-    city: 'Kolkata',
-    state: 'West Bengal',
-    pincode: '700019',
-    address: 'Flat 2A, Ballygunge Circular Road, Near Military Camp',
-    phone: '+91 98300 77665',
-    email: 'arundhati.sen@calcuttauniv.ac.in',
-    items: [
-      {
-        title: 'Patan Patola Double Ikkat Navratna Silk',
-        weave: 'Patola',
-        sku: 'NSH-SKU-PAT-01',
-        price: 85000,
-        qty: 1,
-        image:
-          'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=600&auto=format&fit=crop',
-        zari: 'Heritage Silk Weave',
-      },
-    ],
-    subtotalINR: 85000,
-    discountINR: 0,
-    taxINR: 4047,
-    totalAmount: 85000,
-    paymentGateway: 'Razorpay CC',
-    paymentStatus: 'PAID',
-    fulfillmentState: 'TO_PACK',
-    awb: 'DL-CCU-992810',
-    carrier: 'Delhivery Air',
-    isGiftWrapped: false,
-    silkMarkAuditId: 'CSB-2026-PAT-9011',
-    customerType: 'VIP Patron',
-  },
-];
+// In-Memory Module Cache for Instant Tab Switching
+let cachedOrdersData: any[] | null = null;
 
 export default function RedesignedAdminOrdersPage() {
-  const [orders, setOrders] = useState<OrderRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<any[]>(cachedOrdersData || []);
+  const [loading, setLoading] = useState(!cachedOrdersData);
   const [selectedStatusTab, setSelectedStatusTab] = useState<string>('ALL');
   const [selectedPaymentFilter, setSelectedPaymentFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -333,11 +103,12 @@ export default function RedesignedAdminOrdersPage() {
 
   // Fetch live orders strictly from API (No mock data fallback)
   useEffect(() => {
+    let isMounted = true;
     const loadOrders = () => {
       fetch('/api/admin/orders')
         .then((res) => res.json())
         .then((data) => {
-          if (data.orders && Array.isArray(data.orders)) {
+          if (isMounted && data.orders && Array.isArray(data.orders)) {
             const formatted = data.orders.map((o: any) => {
               const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
               const cust = o.customers || {};
@@ -383,10 +154,15 @@ export default function RedesignedAdminOrdersPage() {
                 ],
               };
             });
+            cachedOrdersData = formatted;
             setOrders(formatted);
+            setLoading(false);
           }
         })
-        .catch((err) => console.error('[Admin Orders] Fetch error:', err));
+        .catch((err) => {
+          console.error('[Admin Orders] Fetch error:', err);
+          if (isMounted) setLoading(false);
+        });
     };
 
     loadOrders();
@@ -591,7 +367,7 @@ export default function RedesignedAdminOrdersPage() {
         const matchesCity = (order.city || '').toLowerCase().includes(q);
         const matchesAwb = (order.awb || '').toLowerCase().includes(q);
         const matchesSku = (order.items || []).some(
-          (i) => (i.sku || '').toLowerCase().includes(q) || (i.title || '').toLowerCase().includes(q)
+          (item: any) => (item.sku || '').toLowerCase().includes(q) || (item.title || '').toLowerCase().includes(q)
         );
 
         if (
@@ -623,6 +399,39 @@ export default function RedesignedAdminOrdersPage() {
 
     return { totalRevenue, count, toPackCount, readyCount, deliveredCount, giftCount, aov };
   }, [orders]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 pb-20 text-slate-900 font-sans animate-fade-in">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs">
+          <div>
+            <div className="h-6 w-48 bg-slate-200 rounded-md animate-pulse mb-2" />
+            <div className="h-8 w-72 bg-slate-200 rounded-lg animate-pulse mb-1" />
+            <div className="h-4 w-96 bg-slate-100 rounded-md animate-pulse" />
+          </div>
+          <div className="h-10 w-40 bg-[#7A1C30]/20 rounded-2xl animate-pulse" />
+        </div>
+
+        {/* Skeleton Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
+              <div className="h-4 w-28 bg-slate-100 rounded animate-pulse" />
+              <div className="h-8 w-20 bg-slate-200 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Orders Table */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 space-y-4 shadow-2xs">
+          <div className="h-12 w-full bg-slate-100 rounded-2xl animate-pulse" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-16 w-full bg-slate-50 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-20 text-slate-900 font-sans">
@@ -872,7 +681,7 @@ export default function RedesignedAdminOrdersPage() {
                       {/* 3. Saree Items & Specs */}
                       <td className="py-4 px-4 align-top">
                         <div className="space-y-2 max-w-[240px]">
-                          {(order.items || []).map((item, idx) => (
+                          {(order.items || []).map((item: any, idx: number) => (
                             <div key={idx} className="flex items-center gap-2.5">
                               <img
                                 src={item.image}

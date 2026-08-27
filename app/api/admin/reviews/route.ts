@@ -25,57 +25,79 @@ export async function GET(request: Request) {
 
   const { data: dbReviews, error } = await query;
 
-  if (!error && dbReviews && dbReviews.length > 0) {
-    const formatted = dbReviews.map((r: any) => ({
-      id: r.id,
-      customerName: r.customers?.name || 'Valued Buyer',
-      customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      verifiedBuyer: Boolean(r.verified_buyer),
-      rating: r.rating || 5,
-      reviewTitle: 'Exquisite Silk Craftsmanship',
-      reviewText: r.review_text || 'Stunning loom weave quality.',
-      sareeTitle: r.product_variants?.products?.title || 'Heirloom Mysore Silk Saree',
-      sku: r.product_variants?.sku || 'NSH-SKU-MYS-01',
-      weave: 'Pure Mulberry Silk',
-      mediaUrls: (r.review_photos || []).map((p: any) => p.storage_path),
-      createdDate: r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
-      status: r.moderation_status || 'PENDING',
-      upvoteCount: 12,
-      isFeatured: false,
-    }));
-
-    return NextResponse.json({
-      success: true,
-      reviews: formatted,
-      stats: {
-        averageRating: 4.9,
-        totalPublished: formatted.filter((r: any) => r.status === 'APPROVED').length,
-        pendingCount: formatted.filter((r: any) => r.status === 'PENDING').length,
-        verifiedBuyerPercent: 95.0,
-        ugcMediaCount: formatted.reduce((acc: number, r: any) => acc + r.mediaUrls.length, 0),
-        starBreakdown: { 5: 80, 4: 15, 3: 3, 2: 1, 1: 1 },
-      },
-    });
+  if (error) {
+    console.error('[Admin Reviews API] Supabase error:', error.message);
+    return NextResponse.json({ success: false, reviews: [], error: error.message });
   }
 
-  // Fallback to initial store reviews if DB is empty
-  let list = STORE_REVIEWS;
-  if (statusParam && statusParam !== 'ALL') {
-    list = list.filter((r) => r.status === statusParam);
-  }
+  const list = dbReviews || [];
+  const formatted = list.map((r: any) => ({
+    id: r.id,
+    customerName: r.customers?.name || r.reviewer_name || 'Patron Buyer',
+    email: r.customers?.email || 'patron@sareevanta.com',
+    customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=400&auto=format&fit=crop',
+    city: 'Mysuru',
+    state: 'Karnataka',
+    verifiedBuyer: Boolean(r.verified_buyer ?? true),
+    rating: r.rating || 5,
+    reviewTitle: r.title || 'Exquisite Handloom Craftsmanship',
+    reviewText: r.review_text || r.comment || 'Stunning loom weave quality.',
+    sareeTitle: r.product_variants?.products?.title || 'Heirloom Silk Saree',
+    sku: r.product_variants?.sku || 'NSH-SKU-MYS-01',
+    weave: 'Pure Mulberry Silk',
+    mediaUrls: (r.review_photos || []).map((p: any) => p.storage_path).filter(Boolean),
+    createdDate: r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
+    status: r.moderation_status || 'PENDING',
+    upvoteCount: 0,
+    isFeatured: Boolean(r.is_featured),
+  }));
+
+  const totalPublished = formatted.filter((r: any) => r.status === 'APPROVED').length;
+  const pendingCount = formatted.filter((r: any) => r.status === 'PENDING').length;
+  const totalRatingSum = formatted.reduce((acc: number, r: any) => acc + r.rating, 0);
+  const averageRating = formatted.length > 0 ? Number((totalRatingSum / formatted.length).toFixed(2)) : 0;
 
   return NextResponse.json({
     success: true,
-    reviews: list,
+    reviews: formatted,
     stats: {
-      averageRating: 4.85,
-      totalPublished: STORE_REVIEWS.filter((r) => r.status === 'APPROVED').length,
-      pendingCount: STORE_REVIEWS.filter((r) => r.status === 'PENDING').length,
-      verifiedBuyerPercent: 94.2,
-      ugcMediaCount: STORE_REVIEWS.reduce((acc, r) => acc + r.mediaUrls.length, 0),
-      starBreakdown: { 5: 82, 4: 12, 3: 4, 2: 1, 1: 1 },
+      averageRating,
+      totalPublished,
+      pendingCount,
+      verifiedBuyerPercent: formatted.length > 0 ? 100 : 0,
+      ugcMediaCount: formatted.reduce((acc: number, r: any) => acc + (r.mediaUrls?.length || 0), 0),
+      starBreakdown: {
+        5: formatted.filter((r: any) => r.rating === 5).length,
+        4: formatted.filter((r: any) => r.rating === 4).length,
+        3: formatted.filter((r: any) => r.rating === 3).length,
+        2: formatted.filter((r: any) => r.rating === 2).length,
+        1: formatted.filter((r: any) => r.rating === 1).length,
+      },
     },
   });
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { reviewId, status } = body;
+
+    if (!reviewId || !status) {
+      return NextResponse.json({ error: 'reviewId and status required' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from('reviews')
+      .update({ moderation_status: status })
+      .eq('id', reviewId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, reviewId, status });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -22,10 +23,23 @@ export async function POST(request: Request) {
       );
     }
 
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const supabase = createAdminClient();
+
+    const { error } = await supabase.from('otp_verifications').insert({
+      phone: `+91${cleanPhone.slice(-10)}`,
+      otp_code: otpCode,
+      expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    });
+
+    if (error) {
+      console.warn('[OTP Request API] Supabase insert warning:', error.message);
+    }
+
     return NextResponse.json({
       success: true,
       message: `OTP sent successfully to +91 ${cleanPhone.slice(-10)}`,
-      demo_otp: '123456',
+      demo_otp: otpCode,
       resend_seconds: 30,
     });
   } catch (error) {

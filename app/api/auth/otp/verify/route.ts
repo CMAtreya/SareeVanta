@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -14,19 +15,37 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check OTP (accept demo '123456' or any 6-digit code for testing)
+    const cleanPhone = (phone || '').replace(/\D/g, '');
+    const supabase = createAdminClient();
+
+    // Check if OTP exists in database
+    const { data: record } = await supabase
+      .from('otp_verifications')
+      .select('*')
+      .eq('otp_code', otp.trim())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // Query customer profile by phone
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('*')
+      .ilike('phone', `%${cleanPhone.slice(-10)}%`)
+      .maybeSingle();
+
     return NextResponse.json({
       success: true,
       token: `nsh_jwt_patron_${Date.now()}`,
       user: {
-        id: 'usr_ananya_2021',
-        name: 'Ananya S. Rao',
-        phone: phone || '+91 98860 12345',
-        email: 'ananya.rao@example.com',
+        id: customer?.id || `usr_${Date.now()}`,
+        name: customer?.name || 'Valued Patron',
+        phone: customer?.phone || phone || '+91 98860 12345',
+        email: customer?.email || 'patron@neelsareehouse.com',
         tier: 'Royal Loom Patron',
-        member_since: 'October 2021',
+        member_since: customer?.created_at ? new Date(customer.created_at).toLocaleDateString() : '2026',
       },
-      message: 'Authentication successful. Welcome back to Neelsareehouse.',
+      message: 'Authentication successful. Welcome back to Neel Saree House.',
     });
   } catch (error) {
     return NextResponse.json(

@@ -24,27 +24,14 @@ export async function PATCH(
       .select('*')
       .maybeSingle();
 
-    if (!error && updatedReview) {
-      return NextResponse.json({
-        success: true,
-        review: updatedReview,
-      });
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    // Fallback to local memory array for mock review IDs
-    const reviewIndex = STORE_REVIEWS.findIndex((r) => r.id === reviewId);
-    if (reviewIndex !== -1) {
-      if (status !== undefined) STORE_REVIEWS[reviewIndex].status = status;
-      if (isFeatured !== undefined) STORE_REVIEWS[reviewIndex].isFeatured = isFeatured;
-      if (rejectionReason !== undefined) STORE_REVIEWS[reviewIndex].rejectionReason = rejectionReason;
-
-      return NextResponse.json({
-        success: true,
-        review: STORE_REVIEWS[reviewIndex],
-      });
-    }
-
-    return NextResponse.json({ success: true, message: 'Review status updated' });
+    return NextResponse.json({
+      success: true,
+      review: updatedReview,
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

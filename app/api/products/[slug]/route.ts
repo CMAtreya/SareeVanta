@@ -1,5 +1,4 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
-import { getProductBySlug as getMockProductBySlug } from '@/lib/products';
 import { NextResponse } from 'next/server';
 
 export async function GET(
@@ -75,19 +74,57 @@ export async function GET(
         }
 
         // Fetch approved customer reviews for product
-        let rating = 4.9;
-        let reviewCount = 12;
-        if (firstVariant?.id) {
-          const { data: revs } = await supabase
-            .from('reviews')
-            .select('rating')
-            .eq('variant_id', firstVariant.id)
-            .eq('moderation_status', 'APPROVED');
-          if (revs && revs.length > 0) {
-            reviewCount = revs.length;
-            rating = Number((revs.reduce((acc, r) => acc + r.rating, 0) / revs.length).toFixed(1));
-          }
+        let rating = 0;
+        let reviewCount = 0;
+        let reviewsList: any[] = [];
+
+        const { data: revs } = await supabase
+          .from('reviews')
+          .select('id, rating, comment, title, created_at, reviewer_name')
+          .eq('product_id', data.id)
+          .eq('moderation_status', 'APPROVED');
+
+        if (revs && revs.length > 0) {
+          reviewCount = revs.length;
+          rating = Number((revs.reduce((acc, r) => acc + (r.rating || 5), 0) / revs.length).toFixed(1));
+          reviewsList = revs.map((r) => ({
+            id: r.id,
+            author: r.reviewer_name || 'Patron',
+            location: 'Verified Buyer',
+            rating: r.rating || 5,
+            date: new Date(r.created_at).toLocaleDateString(),
+            title: r.title || 'Exceptional Pure Silk Saree',
+            comment: r.comment || '',
+            verified: true,
+          }));
         }
+
+        // Fetch live related products from Supabase
+        const { data: relatedData } = await supabase
+          .from('products')
+          .select(`
+            id, slug, title, base_mrp_paise, base_selling_price_paise,
+            weavings ( name ),
+            product_variants (
+              id,
+              product_variant_media ( url )
+            )
+          `)
+          .neq('id', data.id)
+          .limit(6);
+
+        const relatedProducts = (relatedData || []).map((rp: any) => {
+          const rpImages = rp.product_variants?.flatMap((v: any) => v.product_variant_media?.map((m: any) => m.url)) || [];
+          return {
+            id: rp.id,
+            slug: rp.slug,
+            title: rp.title,
+            weave: rp.weavings?.name || 'Mysore Silk',
+            priceINR: Math.round((rp.base_selling_price_paise || 2800000) / 100),
+            originalPriceINR: Math.round((rp.base_mrp_paise || 3400000) / 100),
+            images: rpImages.filter(Boolean),
+          };
+        });
 
         const formatted = {
           id: data.id,
@@ -102,14 +139,15 @@ export async function GET(
           mrpPaise: data.base_mrp_paise,
           rating,
           reviewCount,
+          reviewsList,
           color: colorData?.name || 'Crimson Red',
           colorHex: colorData?.hex_code || '#8B1E28',
-          images: allImages.length > 0 ? allImages : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85'],
+          images: allImages.filter(Boolean),
           zariGrade: zariData?.name || 'Tested Pure Gold Zari',
           dimensions: '5.5m Pure Silk Saree',
           inStock: totalStockCount > 0,
           stockCount: totalStockCount,
-          description: data.description,
+          description: data.description || '',
           artisanCluster: 'Mysuru Master Loom Guild',
           silkMarkCertified: true,
           colorVariants: variants.map((v: any) => ({
@@ -117,21 +155,16 @@ export async function GET(
             sku: v.sku,
             name: v.colors?.name || '',
             hex: v.colors?.hex_code || '#000000',
-            images: v.product_variant_media?.map((m: any) => m.url) || [],
+            images: v.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [],
           })),
         };
 
-        return NextResponse.json({ product: formatted, source: 'database' });
+        return NextResponse.json({ product: formatted, relatedProducts, source: 'database' });
       }
     } catch (e) {
-      console.warn('[Product Detail API] Fallback to mock product:', e);
+      console.error('[Product Detail API] Database error:', e);
     }
   }
 
-  const mockProduct = getMockProductBySlug(slug);
-  if (mockProduct) {
-    return NextResponse.json({ product: mockProduct, source: 'mock_fallback' });
-  }
-
-  return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+  return NextResponse.json({ error: 'Saree Creation Not Found' }, { status: 404 });
 }

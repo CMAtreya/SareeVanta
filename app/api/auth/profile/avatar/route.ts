@@ -1,19 +1,28 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
     const body = await request.json();
     const { imageBase64 } = body;
+    const uploadedUrl = imageBase64 || '';
 
-    // Simulate CDN upload and return high-resolution avatar URL
-    const uploadedUrl = imageBase64 || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80';
+    if (user && uploadedUrl) {
+      await supabase
+        .from('customers')
+        .update({ avatar_url: uploadedUrl })
+        .eq('auth_user_id', user.id);
+    }
 
     return NextResponse.json({
       success: true,
       avatarUrl: uploadedUrl,
-      message: 'Profile photo uploaded and processed successfully.',
+      message: 'Profile photo updated successfully.',
     });
   } catch (error: any) {
     return NextResponse.json(
@@ -24,9 +33,19 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (user) {
+    await supabase
+      .from('customers')
+      .update({ avatar_url: null })
+      .eq('auth_user_id', user.id);
+  }
+
   return NextResponse.json({
     success: true,
     avatarUrl: '',
-    message: 'Profile photo removed. Displaying monogram badge.',
+    message: 'Profile photo removed.',
   });
 }

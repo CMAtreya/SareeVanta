@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { products as mockProducts } from '@/lib/products';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -44,18 +43,17 @@ export async function GET() {
           const weaveData: any = Array.isArray(prod.weavings) ? prod.weavings[0] : prod.weavings;
           const fabricData: any = Array.isArray(prod.fabrics) ? prod.fabrics[0] : prod.fabrics;
           const media = prod.product_variants?.[0]?.product_variant_media || [];
+          const images = media.map((m: any) => m.url).filter(Boolean);
 
           return {
             id: prod.id || w.id,
             slug: prod.slug || '',
             title: prod.title || 'Saved Saree',
-            weave: weaveData?.name || 'Pure Mulberry Silk',
-            fabric: fabricData?.name || 'Silk',
-            priceINR: Math.round((prod.base_selling_price_paise || 2850000) / 100),
-            originalPriceINR: Math.round((prod.base_mrp_paise || 3200000) / 100),
-            images: media.map((m: any) => m.url).length > 0
-              ? media.map((m: any) => m.url)
-              : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80'],
+            weave: weaveData?.name || '',
+            fabric: fabricData?.name || '',
+            priceINR: Math.round((prod.base_selling_price_paise || 0) / 100),
+            originalPriceINR: Math.round((prod.base_mrp_paise || 0) / 100),
+            images,
             inStock: true,
           };
         });
@@ -65,12 +63,10 @@ export async function GET() {
     }
   }
 
-  // Fallback for guest users
-  const defaultSaved = [mockProducts[0], mockProducts[2]];
   return NextResponse.json({
-    items: defaultSaved,
-    count: defaultSaved.length,
-    source: 'guest_fallback',
+    items: [],
+    count: 0,
+    source: 'guest',
   });
 }
 

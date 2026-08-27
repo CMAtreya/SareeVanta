@@ -1,3 +1,4 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
@@ -14,7 +15,6 @@ export async function POST(request: Request) {
 
     const cleanPin = pincode.trim();
 
-    // Check 6-digit regex (starts with 1-9)
     if (!/^[1-9][0-9]{5}$/.test(cleanPin)) {
       return NextResponse.json(
         { serviceable: false, message: 'PIN code must be exactly 6 numeric digits (starting with 1-9).' },
@@ -22,8 +22,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Mock unserviceable area test (e.g. 000xxx)
-    if (cleanPin.startsWith('000') || cleanPin === '999999') {
+    const supabase = createClient();
+    const { data: pinRecord } = await supabase
+      .from('pincodes')
+      .select('pincode, city, state, is_serviceable')
+      .eq('pincode', cleanPin)
+      .maybeSingle();
+
+    if (pinRecord && !pinRecord.is_serviceable) {
       return NextResponse.json(
         {
           serviceable: false,
@@ -33,7 +39,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Calculate delivery date 3-4 days from today
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 3);
     const dateFormatted = deliveryDate.toLocaleDateString('en-IN', {
@@ -46,6 +51,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       serviceable: true,
       pincode: cleanPin,
+      city: pinRecord?.city || '',
+      state: pinRecord?.state || '',
       estimatedDelivery: dateFormatted,
       courier: 'BlueDart Air Express (Insured Security Transit)',
       tier: 'Tier 1 Priority Metro/Regional Hub',

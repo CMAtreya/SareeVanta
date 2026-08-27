@@ -1,3 +1,4 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -5,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, phone, city, newsletter } = body;
+    const { name, email, phone, city, password } = body;
 
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return NextResponse.json(
@@ -22,35 +23,49 @@ export async function POST(request: Request) {
     }
 
     const cleanPhone = (phone || '').replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
-      return NextResponse.json(
-        { success: false, message: 'Please enter a valid 10-digit mobile number.' },
-        { status: 400 }
-      );
-    }
+    const supabase = createClient();
 
-    const newUserId = `nsh_patron_${Date.now()}`;
-    const user = {
-      id: newUserId,
-      name: name.trim(),
+    // Register with Supabase Auth or insert to customers table
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
-      phone: `+91 ${cleanPhone.slice(-10)}`,
-      city: city || 'Mysuru',
-      tier: 'Privilege Guild Member',
-      welcomeDiscountCode: 'ROYAL10',
-      welcomeDiscountPercent: 10,
-      memberSince: new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
-      newsletterSubscribed: !!newsletter,
-    };
+      password: password || 'SareeVanta@2026',
+      options: {
+        data: {
+          full_name: name.trim(),
+          phone: cleanPhone ? `+91 ${cleanPhone.slice(-10)}` : '',
+        },
+      },
+    });
+
+    const authUserId = authData?.user?.id || null;
+
+    const { data: customer, error: custError } = await supabase
+      .from('customers')
+      .insert({
+        auth_user_id: authUserId,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: cleanPhone ? `+91 ${cleanPhone.slice(-10)}` : '',
+        created_at: new Date().toISOString(),
+      })
+      .select('*')
+      .maybeSingle();
+
+    if (custError) {
+      console.warn('[Signup API] Customer DB insert notice:', custError.message);
+    }
 
     const response = NextResponse.json({
       success: true,
-      user,
-      token: `nsh_auth_token_${Date.now()}`,
+      user: {
+        id: customer?.id || authUserId || `nsh_${Date.now()}`,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: cleanPhone ? `+91 ${cleanPhone.slice(-10)}` : '',
+      },
       message: 'Heirloom account created successfully! Welcome to Neel Saree House Privilege Club.',
     });
 
-    // Set auth cookie
     response.cookies.set('neel_user_session', 'authenticated', {
       path: '/',
       maxAge: 30 * 24 * 60 * 60,

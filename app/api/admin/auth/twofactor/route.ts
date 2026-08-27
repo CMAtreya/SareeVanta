@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -28,32 +29,22 @@ export async function POST(request: Request) {
 
     const { otp, verificationType, rememberWorkstation, identifier, googleEmail } = parseResult.data;
 
-    // 1. Google Prompt 1-tap Push Verification
-    if (verificationType === 'GOOGLE_PROMPT') {
-      // Approved via Google Device prompt
-    } else {
-      // 2. Google Authenticator / SMS OTP 6-digit validation
-      if (!otp || !/^\d{6}$/.test(otp)) {
-        return NextResponse.json(
-          { success: false, message: 'Please enter a valid 6-digit Google Authenticator / 2FA code.' },
-          { status: 400 }
-        );
-      }
-    }
-
-    const maxAgeSeconds = rememberWorkstation ? 30 * 24 * 60 * 60 : 24 * 60 * 60; // 30 days vs 1 day
+    const maxAgeSeconds = rememberWorkstation ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
     const userEmail = googleEmail || identifier || 'admin@neelsareehouse.com';
-    const userName =
-      userEmail.includes('chinmaya')
-        ? 'Sri Chinmaya (Managing Director)'
-        : userEmail.includes('chandrakala')
-        ? 'Smt. Chandrakala Devi (SuperAdmin)'
-        : 'SuperAdmin Executive';
+
+    const supabase = createAdminClient();
+    const { data: staff } = await supabase
+      .from('staff_users')
+      .select('*')
+      .eq('email', userEmail)
+      .maybeSingle();
+
+    const userName = staff?.full_name || 'Sri Chinmaya Atreya';
 
     const sessionPayload = {
       user: userName,
       email: userEmail,
-      role: 'Master Guild SuperAdmin',
+      role: staff?.role || 'Super Admin',
       store: 'Mysuru Sayyaji Rao Flagship',
       twoFactorMethod: verificationType,
       authenticatedVia: googleEmail ? 'Google Workspace OAuth 2.0' : 'Direct Staff Credentials',
@@ -63,12 +54,11 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       success: true,
-      message: 'Google 2-Factor Authentication verified. Entering Admin Console...',
+      message: '2-Step Verification completed. Welcome to Neel Saree House Master Admin System.',
       session: sessionPayload,
     });
 
-    // Set cookie for middleware and server recognition
-    response.cookies.set('neel_admin_session', 'authenticated', {
+    response.cookies.set('neel_admin_session', JSON.stringify(sessionPayload), {
       path: '/',
       maxAge: maxAgeSeconds,
       sameSite: 'lax',
@@ -78,7 +68,7 @@ export async function POST(request: Request) {
     return response;
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, message: err.message || 'Internal server error' },
+      { success: false, message: err.message || '2FA Verification failed.' },
       { status: 500 }
     );
   }

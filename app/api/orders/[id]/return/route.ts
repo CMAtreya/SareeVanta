@@ -1,3 +1,4 @@
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 export async function POST(
@@ -9,6 +10,7 @@ export async function POST(
     const body = await request.json();
     const { orderItem, reason, details, refund_method } = body;
 
+    const supabase = createClient();
     const rmaId = `RMA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const pickupDate = new Date();
@@ -19,6 +21,19 @@ export async function POST(
       month: 'short',
       year: 'numeric',
     });
+
+    const { error } = await supabase.from('returns').insert({
+      rma_number: rmaId,
+      order_number: orderNumber,
+      reason: reason || 'Defect/Discrepancy',
+      notes: details || '',
+      status: 'PICKUP_SCHEDULED',
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.warn('[Returns API] Error inserting into Supabase:', error.message);
+    }
 
     return NextResponse.json({
       success: true,

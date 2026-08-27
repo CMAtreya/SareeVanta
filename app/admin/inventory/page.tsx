@@ -61,8 +61,12 @@ interface AuditLogRecord {
   notes?: string;
 }
 
+// In-Memory Module Cache for Instant Tab Switching
+let cachedInventoryData: InventoryItem[] | null = null;
+
 export default function InventoryMatrixPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>(cachedInventoryData || []);
+  const [loading, setLoading] = useState<boolean>(!cachedInventoryData);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'MATRIX' | 'LOGS'>('MATRIX');
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,17 +74,18 @@ export default function InventoryMatrixPage() {
   const [weaveFilter, setWeaveFilter] = useState('ALL');
 
   useEffect(() => {
+    let isMounted = true;
     fetch('/api/admin/inventory')
       .then((res) => res.json())
       .then((data) => {
-        if (data.inventory && Array.isArray(data.inventory)) {
+        if (isMounted && data.inventory && Array.isArray(data.inventory)) {
           const formatted: InventoryItem[] = data.inventory.map((inv: any, idx: number) => ({
             id: inv.id || `inv-${idx}`,
             sku: inv.product_variants?.sku || `NSH-SKU-MYS-0${idx + 1}`,
             title: inv.product_variants?.products?.title || 'Heirloom Mulberry Silk Saree',
             weave: 'Pure Mulberry Silk',
             fabric: '100% Pure Mulberry Silk',
-            image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+            image: inv.product_variants?.product_variant_media?.[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
             binLocation: `Vault-MYS-${10 + idx}`,
             loomBatch: `LOOM-KA-MYS-${10 + idx}`,
             costPrice: Math.round(((inv.product_variants?.price_paise || 2000000) * 0.7) / 100),
@@ -90,10 +95,19 @@ export default function InventoryMatrixPage() {
             reorderPoint: 2,
             silkMarkAuditId: `CSB-2026-MYS-${3310 + idx}`,
           }));
+          cachedInventoryData = formatted;
           setInventory(formatted);
+          setLoading(false);
         }
       })
-      .catch((err) => console.error('Error fetching live inventory:', err));
+      .catch((err) => {
+        console.error('Error fetching live inventory:', err);
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
 
@@ -254,6 +268,38 @@ export default function InventoryMatrixPage() {
     link.click();
     document.body.removeChild(link);
   };
+
+  if (loading) {
+    return (
+      <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-[#E8DCC9]">
+          <div>
+            <div className="h-7 w-64 bg-[#E8DCC9]/40 rounded-lg animate-pulse mb-2" />
+            <div className="h-4 w-96 bg-[#E8DCC9]/20 rounded-md animate-pulse" />
+          </div>
+          <div className="h-10 w-36 bg-[#E8DCC9]/40 rounded-xl animate-pulse" />
+        </div>
+
+        {/* Skeleton KPI Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="bg-white p-4 rounded-2xl border border-[#E8DCC9] shadow-2xs space-y-3">
+              <div className="h-4 w-24 bg-stone-100 rounded animate-pulse" />
+              <div className="h-8 w-16 bg-stone-200 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Table */}
+        <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs p-6 space-y-4">
+          <div className="h-10 w-full bg-stone-100 rounded-xl animate-pulse" />
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-14 w-full bg-stone-50 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-sans text-[#1F1B16] select-none pb-28 space-y-6 animate-fade-in">

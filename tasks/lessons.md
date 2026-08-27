@@ -7,3 +7,7 @@
 2. **Multiple Variant Images Preservation**:
    - **Mistake**: `GET /api/products/[slug]` or `GET /api/admin/products` returned only the 1st image or did not preserve all uploaded variant images in `galleryImages`.
    - **Correction**: Always query and return ALL `product_variant_media` rows ordered by `display_order` ASC for all variants of a product. In PDP (`app/products/[slug]/page.tsx`), aggregate media across all variants into `galleryImages` so every uploaded image (Image 1, Image 2, Image 3) appears in the thumbnail strip!
+
+3. **No Static Mock Fallbacks on Admin & Customer Pages**:
+   - **Mistake**: Hardcoded mock arrays initialized in admin pages (e.g. `/admin/customerreviews`) or fallback objects returned from API endpoints instead of querying Supabase directly.
+   - **Correction**: Connect every admin management page directly to Supabase REST/API endpoints. If database table is empty, render a clean, branded empty state banner—never display hardcoded fake mock records!

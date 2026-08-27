@@ -1,31 +1,40 @@
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), 'lib', 'instagram-reels.json');
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      return NextResponse.json(data);
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('instagram_reels')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
-    return NextResponse.json({ success: false, message: 'Reels database not found.' }, { status: 404 });
-  } catch (error) {
-    return NextResponse.json({ success: false, message: 'Failed to fetch Instagram reels.' }, { status: 500 });
+
+    const formatted = (data || []).map((r: any) => ({
+      id: r.id,
+      videoUrl: r.video_url,
+      caption: r.caption || '',
+      likesCount: r.likes_count || 0,
+      sareeTitle: r.saree_title || '',
+      sareePriceINR: r.saree_price_inr || 0,
+      sareeSlug: r.saree_slug || '',
+      sortOrder: r.sort_order || 0,
+    }));
+
+    return NextResponse.json({
+      success: true,
+      lastSynced: new Date().toISOString(),
+      reels: formatted,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
 
 export async function POST() {
-  try {
-    // Return updated automated feed
-    const filePath = path.join(process.cwd(), 'lib', 'instagram-reels.json');
-    if (fs.existsSync(filePath)) {
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      data.lastSynced = new Date().toISOString();
-      return NextResponse.json({ success: true, message: 'Reels feed synchronized successfully with @neelsareehouse', data });
-    }
-    return NextResponse.json({ success: true, message: 'Synced.' });
-  } catch (error) {
-    return NextResponse.json({ success: false, message: 'Sync failed.' }, { status: 500 });
-  }
+  return GET();
 }

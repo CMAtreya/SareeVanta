@@ -38,58 +38,7 @@ export interface StaffMember {
   twoFactorEnabled: boolean;
 }
 
-const INITIAL_STAFF: StaffMember[] = [
-  {
-    id: 'staff-1',
-    name: 'Sri Chinmaya Atreya',
-    email: 'chinmaya@neelsareehouse.com',
-    phone: '+91 98801 12345',
-    role: 'SUPER_ADMIN',
-    status: 'ACTIVE',
-    lastActive: 'Active right now (Session ID: ssn_8941)',
-    twoFactorEnabled: true,
-  },
-  {
-    id: 'staff-2',
-    name: 'Ananya Deshpande',
-    email: 'ananya@neelsareehouse.com',
-    phone: '+91 98450 67890',
-    role: 'CATALOG_MANAGER',
-    status: 'ACTIVE',
-    lastActive: '22 Aug 2026, 04:30 PM',
-    twoFactorEnabled: true,
-  },
-  {
-    id: 'staff-3',
-    name: 'Ramesh Gowda',
-    email: 'ramesh.warehouse@neelsareehouse.com',
-    phone: '+91 94480 33445',
-    role: 'FULFILLMENT_STAFF',
-    status: 'ACTIVE',
-    lastActive: '22 Aug 2026, 05:15 PM',
-    twoFactorEnabled: true,
-  },
-  {
-    id: 'staff-4',
-    name: 'Divya Sundaram',
-    email: 'divya.concierge@neelsareehouse.com',
-    phone: '+91 99000 88776',
-    role: 'CUSTOMER_CARE',
-    status: 'ACTIVE',
-    lastActive: '22 Aug 2026, 03:50 PM',
-    twoFactorEnabled: false,
-  },
-  {
-    id: 'staff-5',
-    name: 'Prakash Rao (Mysuru Vault Lead)',
-    email: 'prakash.vault@neelsareehouse.com',
-    phone: '+91 98860 55443',
-    role: 'FULFILLMENT_STAFF',
-    status: 'INVITED',
-    lastActive: 'Invitation email sent 2 hours ago',
-    twoFactorEnabled: false,
-  },
-];
+const INITIAL_STAFF: StaffMember[] = [];
 
 const ROLES_INFO: Record<
   StaffRole,
