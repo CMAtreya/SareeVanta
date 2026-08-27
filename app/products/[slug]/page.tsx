@@ -100,8 +100,10 @@ export default function ProductDetailPage() {
           if (isMounted && data.product) {
             setProduct(data.product);
             setRelatedItems(data.relatedProducts || []);
-            const initialImages = data.product.colorVariants?.[0]?.images || data.product.images;
-            setGalleryImages(initialImages);
+            const allAvailableImages = Array.from(
+              new Set([...(data.product.images || []), ...(data.product.colorVariants?.[0]?.images || [])])
+            ).filter((url) => typeof url === 'string' && url.trim().length > 5);
+            setGalleryImages(allAvailableImages.length > 0 ? allAvailableImages : []);
             setSelectedImageIdx(0);
             if (data.product.reviewsList) {
               setReviews(data.product.reviewsList);
@@ -123,8 +125,10 @@ export default function ProductDetailPage() {
             .filter((p) => p.id !== found.id && (p.weave === found.weave || p.occasion === found.occasion))
             .slice(0, 4);
           setRelatedItems(rel);
-          const initialImages = found.colorVariants?.[0]?.images || found.images;
-          setGalleryImages(initialImages);
+          const allAvailableImages = Array.from(
+            new Set([...(found.images || []), ...(found.colorVariants?.[0]?.images || [])])
+          ).filter((url) => typeof url === 'string' && url.trim().length > 5);
+          setGalleryImages(allAvailableImages.length > 0 ? allAvailableImages : []);
           setSelectedImageIdx(0);
           if (found.reviewsList) {
             setReviews(found.reviewsList);
@@ -144,8 +148,10 @@ export default function ProductDetailPage() {
   const handleVariantClick = (idx: number) => {
     setSelectedVariantIndex(idx);
     if (product?.colorVariants && product.colorVariants[idx]) {
-      const variantImgs = product.colorVariants[idx].images;
-      setGalleryImages(variantImgs && variantImgs.length > 0 ? variantImgs : product.images);
+      const variantImgs = (product.colorVariants[idx].images || []).filter((url) => typeof url === 'string' && url.trim().length > 5);
+      const mainImgs = (product.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5);
+      const combined = Array.from(new Set([...variantImgs, ...mainImgs]));
+      setGalleryImages(combined.length > 0 ? combined : galleryImages);
       setSelectedImageIdx(0);
     }
   };
@@ -332,7 +338,7 @@ export default function ProductDetailPage() {
                       <img
                         src={currentImg}
                         alt={product.title}
-                        className={`w-full h-full max-h-[580px] object-cover object-center transition-opacity duration-200 ${
+                        className={`w-full h-full max-h-[620px] object-contain object-center transition-opacity duration-200 ${
                           isZoomed ? 'opacity-0' : 'opacity-100'
                         }`}
                       />
