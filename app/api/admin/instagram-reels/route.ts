@@ -5,7 +5,9 @@ export const dynamic = 'force-dynamic';
 
 function extractInstagramShortcode(url: string): string | null {
   if (!url || typeof url !== 'string') return null;
-  const match = url.match(/instagram\.com\/(?:reel|p)\/([A-Za-z0-9_-]+)/i);
+  const trimmed = url.trim();
+  if (/^[A-Za-z0-9_-]{5,35}$/.test(trimmed)) return trimmed;
+  const match = trimmed.match(/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i);
   return match ? match[1] : null;
 }
 
