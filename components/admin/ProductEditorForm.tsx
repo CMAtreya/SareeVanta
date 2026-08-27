@@ -59,8 +59,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   // Find existing product if edit mode
   const existingProduct = products.find((p) => p.id === productId);
 
-  // Auto-generated SKU and Barcode for new items
-  const autoSku = `NSH-${Math.floor(1000 + Math.random() * 9000)}`;
+  // Auto-generated SKU and Barcode for new items (NSH-SKU-[WEAVE_CODE]-[SEQ])
+  const autoSku = `NSH-SKU-MYS-${Math.floor(10 + Math.random() * 90)}`;
   const autoBarcode = `890${Math.floor(100000000 + Math.random() * 900000000)}`;
 
   // Form State: System Identifiers (Read-Only)
@@ -339,16 +339,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
   // Save / Publish Action
   const handleSave = async (targetStatus: 'PUBLISHED' | 'DRAFT') => {
-    if (!title.trim() || !sellingPrice) return;
-
     setIsSaving(true);
     const updatedProductPayload = {
-      title: title.trim(),
-      slug: title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
+      title: title.trim() || 'Untitled Saree Creation',
+      slug: (title.trim() || 'saree').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
       description: description.trim(),
-      base_mrp_inr: Number(mrp) || Number(sellingPrice) * 1.18,
+      base_mrp_inr: Number(mrp) || Number(sellingPrice || 28000) * 1.18,
       base_selling_price_inr: Number(sellingPrice) || 28000,
-      sku: sku || `NSH-SKU-MYS-${Math.floor(1000 + Math.random() * 9000)}`,
+      sku: sku || `NSH-SKU-MYS-${Math.floor(10 + Math.random() * 90)}`,
       weave,
       fabric,
       zari: zariSpec,
@@ -374,16 +372,16 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     setTimeout(() => {
       setSaveToast(false);
       router.push('/admin/catalog');
-    }, 800);
+    }, 1200);
   };
 
   return (
     <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in max-w-6xl mx-auto">
       {/* Toast Notification */}
       {saveToast && (
-        <div className="fixed top-6 right-6 z-50 bg-emerald-900 text-emerald-100 px-4 py-3 rounded-xl shadow-xl border border-emerald-700 flex items-center gap-2 font-semibold text-xs animate-bounce">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>Product SKU saved successfully! Redirecting to Catalog...</span>
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 bg-[#7A1C30] text-white px-6 py-4 rounded-2xl shadow-2xl border border-amber-300/40 flex items-center gap-3 font-semibold text-xs animate-bounce">
+          <CheckCircle2 className="w-5 h-5 text-amber-300" />
+          <span>Saree Masterpiece Details Saved Successfully! Redirecting to Catalog...</span>
         </div>
       )}
 
@@ -996,13 +994,19 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                      const objectUrl = URL.createObjectURL(file);
-                                      const updated = [...colorVariants];
-                                      const newImgs = [...updated[idx].images] as [string, string, string];
-                                      newImgs[imgIdx] = objectUrl;
-                                      updated[idx].images = newImgs;
-                                      setColorVariants(updated);
-                                      setIsDirty(true);
+                                      const reader = new FileReader();
+                                      reader.onload = (event) => {
+                                        const base64DataUrl = event.target?.result as string;
+                                        if (base64DataUrl) {
+                                          const updated = [...colorVariants];
+                                          const newImgs = [...updated[idx].images] as [string, string, string];
+                                          newImgs[imgIdx] = base64DataUrl;
+                                          updated[idx].images = newImgs;
+                                          setColorVariants(updated);
+                                          setIsDirty(true);
+                                        }
+                                      };
+                                      reader.readAsDataURL(file);
                                     }
                                   }}
                                 />
