@@ -102,69 +102,68 @@ export default function RedesignedAdminOrdersPage() {
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
 
   // Fetch live orders strictly from API (No mock data fallback)
+  const loadOrders = () => {
+    fetch('/api/admin/orders')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.orders && Array.isArray(data.orders)) {
+          const formatted = data.orders.map((o: any) => {
+            const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
+            const cust = o.customers || {};
+            const items = (o.order_items || []).map((item: any) => ({
+              title: item.product_name_snapshot || 'Heirloom Silk Saree',
+              weave: 'Pure Mulberry Silk',
+              sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
+              color: item.color_name_snapshot || 'Royal Crimson',
+              price: Math.round((item.unit_price_paise || 0) / 100),
+              quantity: item.quantity || 1,
+              image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+            }));
+
+            return {
+              id: o.order_number || o.id,
+              db_id: o.id,
+              date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
+              customerName: cust.name || addr.recipient_name || 'Customer',
+              phone: cust.phone || addr.phone || '+91 98860 00000',
+              email: cust.email || 'customer@sareevanta.com',
+              city: addr.city || 'Mysuru',
+              state: addr.state || 'Karnataka',
+              pincode: addr.postal_code || '570001',
+              addressLine1: addr.address_line_1 || 'Heritage Quarter',
+              fulfillmentState: o.order_status === 'PLACED' ? 'TO_PACK' : o.order_status === 'PROCESSING' ? 'READY_TO_SHIP' : o.order_status === 'SHIPPED' ? 'IN_TRANSIT' : o.order_status === 'DELIVERED' ? 'DELIVERED' : 'TO_PACK',
+              paymentGateway: o.payment_status === 'PAID' ? 'Razorpay UPI' : 'Cash on Delivery',
+              paymentStatus: o.payment_status === 'PAID' ? 'PAID' : 'PENDING',
+              subtotalAmount: Math.round((o.subtotal_paise || o.total_paise || 0) / 100),
+              discountAmount: Math.round((o.discount_paise || 0) / 100),
+              shippingFee: 0,
+              totalAmount: Math.round((o.total_paise || 0) / 100),
+              isGiftWrapped: false,
+              items: items.length > 0 ? items : [
+                {
+                  title: 'Royal Wodeyar Mulberry Silk Saree',
+                  weave: 'Mysore Silk Crepe',
+                  sku: 'NSH-SKU-MYS-01',
+                  color: 'Royal Crimson',
+                  price: Math.round((o.total_paise || 0) / 100),
+                  quantity: 1,
+                  image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+                }
+              ],
+            };
+          });
+          cachedOrdersData = formatted;
+          setOrders(formatted);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error('[Admin Orders] Fetch error:', err);
+        setLoading(false);
+      });
+  };
+
   useEffect(() => {
-    let isMounted = true;
-    const loadOrders = () => {
-      fetch('/api/admin/orders')
-        .then((res) => res.json())
-        .then((data) => {
-          if (isMounted && data.orders && Array.isArray(data.orders)) {
-            const formatted = data.orders.map((o: any) => {
-              const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
-              const cust = o.customers || {};
-              const items = (o.order_items || []).map((item: any) => ({
-                title: item.product_name_snapshot || 'Heirloom Silk Saree',
-                weave: 'Pure Mulberry Silk',
-                sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
-                color: item.color_name_snapshot || 'Royal Crimson',
-                price: Math.round((item.unit_price_paise || 0) / 100),
-                quantity: item.quantity || 1,
-                image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-              }));
-
-              return {
-                id: o.order_number || o.id,
-                db_id: o.id,
-                date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
-                customerName: cust.name || addr.recipient_name || 'Valued Patron',
-                phone: cust.phone || addr.phone || '+91 98860 00000',
-                email: cust.email || 'patron@sareevanta.com',
-                city: addr.city || 'Mysuru',
-                state: addr.state || 'Karnataka',
-                pincode: addr.postal_code || '570001',
-                addressLine1: addr.address_line_1 || 'Heritage Quarter',
-                fulfillmentState: o.order_status === 'PLACED' ? 'TO_PACK' : o.order_status === 'PROCESSING' ? 'READY_TO_SHIP' : o.order_status === 'SHIPPED' ? 'IN_TRANSIT' : o.order_status === 'DELIVERED' ? 'DELIVERED' : 'TO_PACK',
-                paymentGateway: o.payment_status === 'PAID' ? 'Razorpay UPI' : 'Cash on Delivery',
-                paymentStatus: o.payment_status === 'PAID' ? 'PAID' : 'PENDING',
-                subtotalAmount: Math.round((o.subtotal_paise || o.total_paise || 0) / 100),
-                discountAmount: Math.round((o.discount_paise || 0) / 100),
-                shippingFee: 0,
-                totalAmount: Math.round((o.total_paise || 0) / 100),
-                isGiftWrapped: false,
-                items: items.length > 0 ? items : [
-                  {
-                    title: 'Royal Wodeyar Mulberry Silk Saree',
-                    weave: 'Mysore Silk Crepe',
-                    sku: 'NSH-SKU-MYS-01',
-                    color: 'Royal Crimson',
-                    price: Math.round((o.total_paise || 0) / 100),
-                    quantity: 1,
-                    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-                  }
-                ],
-              };
-            });
-            cachedOrdersData = formatted;
-            setOrders(formatted);
-            setLoading(false);
-          }
-        })
-        .catch((err) => {
-          console.error('[Admin Orders] Fetch error:', err);
-          if (isMounted) setLoading(false);
-        });
-    };
-
     loadOrders();
 
     const supabase = createClient();
@@ -191,15 +190,46 @@ export default function RedesignedAdminOrdersPage() {
   const [activeDetailOrder, setActiveDetailOrder] = useState<OrderRecord | null>(null);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
 
-  // New Order Form State (Manual In-Store Booking)
+  // New Order Form State (Manual In-Store Showroom POS Booking)
+  const [catalogProducts, setCatalogProducts] = useState<any[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const [fulfillmentType, setFulfillmentType] = useState<'IN_STORE_HANDOVER' | 'SHIP_TO_ADDRESS'>('IN_STORE_HANDOVER');
   const [newCustName, setNewCustName] = useState('');
   const [newCustPhone, setNewCustPhone] = useState('');
+  const [newCustEmail, setNewCustEmail] = useState('');
   const [newCustCity, setNewCustCity] = useState('');
   const [newCustPincode, setNewCustPincode] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [newOrderWeave, setNewOrderWeave] = useState('Mysore Silk');
-  const [newOrderAmount, setNewOrderAmount] = useState('28500');
-  const [newOrderPayment, setNewOrderPayment] = useState<any>('Razorpay UPI');
+  const [newOrderAmount, setNewOrderAmount] = useState('28000');
+  const [newOrderPayment, setNewOrderPayment] = useState<string>('POS Card Terminal (PineLabs)');
+
+  // Load catalog products for showroom POS
+  useEffect(() => {
+    fetch('/api/admin/products')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.products && Array.isArray(d.products)) {
+          setCatalogProducts(d.products);
+          if (d.products.length > 0) {
+            const first = d.products[0];
+            setSelectedProductId(first.id);
+            setNewOrderAmount(String(Math.round((first.base_selling_price_paise || 2800000) / 100)));
+            setNewOrderWeave(first.weavings?.name || 'Mysore Silk');
+          }
+        }
+      })
+      .catch((e) => console.error('Error fetching catalog for showroom orders:', e));
+  }, []);
+
+  const handleSelectProduct = (prodId: string) => {
+    setSelectedProductId(prodId);
+    const found = catalogProducts.find((p) => p.id === prodId);
+    if (found) {
+      setNewOrderAmount(String(Math.round((found.base_selling_price_paise || 2800000) / 100)));
+      setNewOrderWeave(found.weavings?.name || 'Mysore Silk');
+    }
+  };
 
   // Copy Order ID feedback
   const handleCopyOrderId = (id: string) => {
@@ -213,33 +243,44 @@ export default function RedesignedAdminOrdersPage() {
     e.preventDefault();
     if (!newCustName.trim() || !newCustPhone.trim()) return;
 
-    const amount = Number(newOrderAmount) || 28500;
-    const isCod = newOrderPayment?.includes('COD');
+    const amount = Number(newOrderAmount) || 28000;
+    const selectedProd = catalogProducts.find((p) => p.id === selectedProductId);
+    const targetVariant = selectedProd?.product_variants?.[0];
+    const targetSku = targetVariant?.sku || `NSH-SKU-${(newOrderWeave || 'MYS').substring(0, 3).toUpperCase()}-01`;
+    const targetColor = targetVariant?.colors?.name || 'Royal Crimson';
+    const targetImage = targetVariant?.product_variant_media?.[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop';
+    const targetTitle = selectedProd?.title || `${newOrderWeave} Heirloom Saree`;
+    const isInStore = fulfillmentType === 'IN_STORE_HANDOVER';
 
     try {
-      const res = await fetch('/api/checkout/orders', {
+      await fetch('/api/checkout/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subtotal: amount,
           discount: 0,
           total: amount,
-          paymentMethod: isCod ? 'cod' : 'online',
+          paymentMethod: 'showroom_pos',
+          orderStatus: isInStore ? 'DELIVERED' : 'PLACED',
+          paymentStatus: 'PAID',
           shippingAddress: {
             recipient_name: newCustName.trim(),
             phone: newCustPhone.trim(),
-            address_line_1: newCustAddress || 'Devaraja Market Silk Corridor',
-            city: newCustCity || 'Mysuru',
+            address_line_1: isInStore ? 'Showroom Boutique Handover Counter' : (newCustAddress || 'Residence Address'),
+            city: isInStore ? 'Mysuru' : (newCustCity || 'Bengaluru'),
             state: 'Karnataka',
-            postal_code: newCustPincode || '570001',
+            postal_code: isInStore ? '570001' : (newCustPincode || '570001'),
           },
           items: [
             {
               product: {
-                title: `${newOrderWeave} Heirloom Saree`,
-                sku: `NSH-SKU-${newOrderWeave.substring(0, 3).toUpperCase()}-01`,
+                id: selectedProd?.id,
+                title: targetTitle,
+                sku: targetSku,
                 price: amount,
-                color: 'Royal Gold',
+                color: targetColor,
+                image: targetImage,
+                weave: newOrderWeave,
               },
               quantity: 1,
             },
@@ -247,54 +288,16 @@ export default function RedesignedAdminOrdersPage() {
         }),
       });
 
-      const data = await res.json();
       setIsNewOrderModalOpen(false);
       setNewCustName('');
       setNewCustPhone('');
+      setNewCustEmail('');
+      setNewCustAddress('');
+      setNewCustCity('');
+      setNewCustPincode('');
 
-      // Refresh live order ledger
-      fetch('/api/admin/orders')
-        .then((r) => r.json())
-        .then((d) => {
-          if (d.orders && Array.isArray(d.orders)) {
-            const formatted = d.orders.map((o: any) => {
-              const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
-              const cust = o.customers || {};
-              const items = (o.order_items || []).map((item: any) => ({
-                title: item.product_name_snapshot || 'Heirloom Silk Saree',
-                weave: 'Pure Mulberry Silk',
-                sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
-                color: item.color_name_snapshot || 'Royal Crimson',
-                price: Math.round((item.unit_price_paise || 0) / 100),
-                quantity: item.quantity || 1,
-                image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-              }));
-
-              return {
-                id: o.order_number || o.id,
-                db_id: o.id,
-                date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
-                customerName: cust.name || addr.recipient_name || 'Valued Patron',
-                phone: cust.phone || addr.phone || '+91 98860 00000',
-                email: cust.email || 'patron@sareevanta.com',
-                city: addr.city || 'Mysuru',
-                state: addr.state || 'Karnataka',
-                pincode: addr.postal_code || '570001',
-                addressLine1: addr.address_line_1 || 'Heritage Quarter',
-                fulfillmentState: o.order_status === 'PLACED' ? 'TO_PACK' : o.order_status === 'PROCESSING' ? 'READY_TO_SHIP' : o.order_status === 'SHIPPED' ? 'IN_TRANSIT' : o.order_status === 'DELIVERED' ? 'DELIVERED' : 'TO_PACK',
-                paymentGateway: o.payment_status === 'PAID' ? 'Razorpay UPI' : 'Cash on Delivery',
-                paymentStatus: o.payment_status === 'PAID' ? 'PAID' : 'PENDING',
-                subtotalAmount: Math.round((o.subtotal_paise || o.total_paise || 0) / 100),
-                discountAmount: Math.round((o.discount_paise || 0) / 100),
-                shippingFee: 0,
-                totalAmount: Math.round((o.total_paise || 0) / 100),
-                isGiftWrapped: false,
-                items,
-              };
-            });
-            setOrders(formatted);
-          }
-        });
+      // Refresh live orders ledger
+      loadOrders();
     } catch (err) {
       console.error('[Admin Manual Order] Error creating order:', err);
     }
@@ -770,21 +773,6 @@ export default function RedesignedAdminOrdersPage() {
                               <span>Cancelled</span>
                             </div>
                           )}
-
-                          {/* Quick Manual Override Dropdown */}
-                          <div className="pt-0.5">
-                            <select
-                              value={order.fulfillmentState}
-                              onChange={(e) => handleUpdateStatus(order.id, e.target.value as any)}
-                              className="text-[10px] font-mono text-slate-500 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 hover:border-slate-400 focus:outline-none cursor-pointer"
-                            >
-                              <option value="TO_PACK">1. To Pack (Unfulfilled)</option>
-                              <option value="READY_TO_SHIP">2. Ready to Ship (Packed)</option>
-                              <option value="IN_TRANSIT">3. In Transit (Dispatched)</option>
-                              <option value="DELIVERED">4. Delivered</option>
-                              <option value="CANCELLED">5. Cancelled</option>
-                            </select>
-                          </div>
                         </div>
                       </td>
 
@@ -1064,7 +1052,7 @@ export default function RedesignedAdminOrdersPage() {
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1 text-xs">
               <div className="font-bold text-slate-900 flex items-center gap-1.5 font-mono">
                 <MapPin className="w-3.5 h-3.5 text-[#7A1C30]" />
-                <span>Patron Shipping Address</span>
+                <span>Customer Shipping Address</span>
               </div>
               <div className="text-slate-700 pl-5 leading-relaxed">
                 {activeDetailOrder.address}, {activeDetailOrder.city}, {activeDetailOrder.state} -{' '}
@@ -1099,118 +1087,243 @@ export default function RedesignedAdminOrdersPage() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 3: CREATE MANUAL SHOWROOM / OFFLINE ORDER          */}
+      {/* MODAL 3: LUXURY SHOWROOM & BOUTIQUE POS ORDER CREATION    */}
       {/* ========================================================= */}
       {isNewOrderModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-                <Plus className="w-4 h-4 text-[#7A1C30]" />
-                <span>Book In-Store / Showroom Order</span>
-              </h3>
+              <div>
+                <h3 className="font-bold text-base text-slate-900 font-sans flex items-center gap-2">
+                  <Plus className="w-4 h-4 text-[#7A1C30]" />
+                  <span>Book In-Store / Showroom Order</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  Boutique POS order entry with live catalog inventory deduction
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsNewOrderModalOpen(false)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateManualOrder} className="space-y-3.5 text-xs font-sans">
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Patron Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={newCustName}
-                  onChange={(e) => setNewCustName(e.target.value)}
-                  placeholder="e.g. Smt. Lakshmi Narayanan"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900 font-semibold"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            <form onSubmit={handleCreateManualOrder} className="space-y-4 text-xs font-sans">
+              {/* 1. Customer Details */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] block">
+                  1. Customer Details
+                </span>
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Mobile Phone *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={newCustPhone}
-                    onChange={(e) => setNewCustPhone(e.target.value)}
-                    placeholder="+91 98450 XXXXX"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-slate-900"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Destination City</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Customer Full Name *</label>
                   <input
                     type="text"
-                    value={newCustCity}
-                    onChange={(e) => setNewCustCity(e.target.value)}
-                    placeholder="e.g. Mysuru / Bengaluru"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-slate-900"
+                    required
+                    value={newCustName}
+                    onChange={(e) => setNewCustName(e.target.value)}
+                    placeholder="e.g. Smt. Lakshmi Narayanan"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-slate-900 font-semibold focus:border-[#7A1C30] focus:ring-1 focus:ring-[#7A1C30]"
                   />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Mobile Phone *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={newCustPhone}
+                      onChange={(e) => setNewCustPhone(e.target.value)}
+                      placeholder="+91 98450 XXXXX"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-mono text-slate-900 focus:border-[#7A1C30] focus:ring-1 focus:ring-[#7A1C30]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1">Email (For GST Invoice)</label>
+                    <input
+                      type="email"
+                      value={newCustEmail}
+                      onChange={(e) => setNewCustEmail(e.target.value)}
+                      placeholder="customer@email.com"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-slate-900 focus:border-[#7A1C30] focus:ring-1 focus:ring-[#7A1C30]"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* 2. Handloom Saree Catalog Selection */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] block">
+                  2. Select Saree from Live Catalog
+                </span>
+
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Silk Weave</label>
+                  <label className="block font-semibold text-slate-700 mb-1">Handloom Saree Creation *</label>
                   <select
-                    value={newOrderWeave}
-                    onChange={(e) => setNewOrderWeave(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-semibold text-slate-800"
+                    value={selectedProductId}
+                    onChange={(e) => handleSelectProduct(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white font-semibold text-slate-900 focus:border-[#7A1C30]"
                   >
-                    <option value="Mysore Silk">Mysore Silk Crepe</option>
-                    <option value="Kanchipuram">Kanchipuram Bridal</option>
-                    <option value="Banarasi">Banarasi Kadhwa</option>
-                    <option value="Paithani">Yeola Paithani</option>
-                    <option value="Patola">Patan Patola</option>
+                    {catalogProducts.map((p) => {
+                      const firstVar = p.product_variants?.[0];
+                      const price = Math.round((p.base_selling_price_paise || 2800000) / 100);
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {p.title} — ₹{price.toLocaleString('en-IN')} ({p.weavings?.name || 'Silk'})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Order Amount (₹) *</label>
-                  <input
-                    type="number"
-                    required
-                    value={newOrderAmount}
-                    onChange={(e) => setNewOrderAmount(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-slate-900"
-                  />
-                </div>
+                {/* Selected Saree Live Preview Card */}
+                {(() => {
+                  const curr = catalogProducts.find((p) => p.id === selectedProductId) || catalogProducts[0];
+                  if (!curr) return null;
+                  const firstVar = curr.product_variants?.[0];
+                  const img = firstVar?.product_variant_media?.[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop';
+                  return (
+                    <div className="flex items-center gap-3 p-2.5 bg-white rounded-xl border border-slate-200">
+                      <img src={img} alt={curr.title} className="w-11 h-14 rounded-lg object-cover border border-slate-200 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-slate-900 text-xs truncate">{curr.title}</div>
+                        <div className="text-[10px] font-mono text-slate-500">
+                          Weave: <span className="font-semibold text-slate-800">{curr.weavings?.name || newOrderWeave}</span> • SKU: {firstVar?.sku || 'NSH-SKU'}
+                        </div>
+                        <div className="text-[10px] font-mono text-emerald-700 font-semibold flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          <span>Silk Mark Certified • In Stock</span>
+                        </div>
+                      </div>
+                      <div className="text-right font-mono pr-1">
+                        <div className="font-bold text-slate-900 text-sm">₹{Number(newOrderAmount).toLocaleString('en-IN')}</div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
-              <div>
-                <label className="block font-semibold text-slate-700 mb-1">Payment Method</label>
+              {/* 3. Fulfillment Mode */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] block">
+                  3. Fulfillment Choice
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentType('IN_STORE_HANDOVER')}
+                    className={`p-2.5 rounded-xl border text-left font-semibold transition-all cursor-pointer ${
+                      fulfillmentType === 'IN_STORE_HANDOVER'
+                        ? 'bg-[#7A1C30] text-white border-[#7A1C30] shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="font-bold text-xs flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>In-Store Handover</span>
+                    </div>
+                    <div className={`text-[10px] font-normal mt-0.5 ${fulfillmentType === 'IN_STORE_HANDOVER' ? 'text-rose-100' : 'text-slate-500'}`}>
+                      Walk-in customer takeaway (Delivered On-Spot)
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentType('SHIP_TO_ADDRESS')}
+                    className={`p-2.5 rounded-xl border text-left font-semibold transition-all cursor-pointer ${
+                      fulfillmentType === 'SHIP_TO_ADDRESS'
+                        ? 'bg-[#7A1C30] text-white border-[#7A1C30] shadow-sm'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="font-bold text-xs flex items-center gap-1">
+                      <Truck className="w-3.5 h-3.5" />
+                      <span>Ship to Address</span>
+                    </div>
+                    <div className={`text-[10px] font-normal mt-0.5 ${fulfillmentType === 'SHIP_TO_ADDRESS' ? 'text-rose-100' : 'text-slate-500'}`}>
+                      Enters packing queue for Shiprocket dispatch
+                    </div>
+                  </button>
+                </div>
+
+                {/* Delivery Address fields if Shipping */}
+                {fulfillmentType === 'SHIP_TO_ADDRESS' && (
+                  <div className="space-y-2 pt-2 border-t border-slate-200">
+                    <div>
+                      <label className="block font-semibold text-slate-700 mb-1">Street Address *</label>
+                      <input
+                        type="text"
+                        required={fulfillmentType === 'SHIP_TO_ADDRESS'}
+                        value={newCustAddress}
+                        onChange={(e) => setNewCustAddress(e.target.value)}
+                        placeholder="House No, Street, Landmark"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-slate-900 font-semibold"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">City *</label>
+                        <input
+                          type="text"
+                          required={fulfillmentType === 'SHIP_TO_ADDRESS'}
+                          value={newCustCity}
+                          onChange={(e) => setNewCustCity(e.target.value)}
+                          placeholder="e.g. Bengaluru"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-slate-900"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-semibold text-slate-700 mb-1">Pincode *</label>
+                        <input
+                          type="text"
+                          required={fulfillmentType === 'SHIP_TO_ADDRESS'}
+                          value={newCustPincode}
+                          onChange={(e) => setNewCustPincode(e.target.value)}
+                          placeholder="560001"
+                          className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white font-mono text-slate-900"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Payment & Billing Settlement */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7A1C30] block">
+                  4. Payment Method & Settlement
+                </span>
                 <select
                   value={newOrderPayment}
                   onChange={(e) => setNewOrderPayment(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-slate-800"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white text-slate-800 font-semibold"
                 >
-                  <option value="Razorpay UPI">UPI (Showroom QR / PhonePe / GPay)</option>
-                  <option value="Razorpay CC">Credit / Debit Card Machine (POS)</option>
-                  <option value="Cash on Delivery">Cash Settlement (Walk-in)</option>
-                  <option value="Cashfree NetBanking">Direct RTGS / NEFT Bank Transfer</option>
+                  <option value="POS Card Terminal (PineLabs)">POS Card Swipe / Tap (PineLabs / EDC)</option>
+                  <option value="Showroom Dynamic UPI QR">Showroom Dynamic UPI QR (GPay / PhonePe)</option>
+                  <option value="Cash Settlement">Cash Settlement (Walk-in Receipt)</option>
+                  <option value="RTGS / Direct Bank Transfer">Direct RTGS / NEFT Bank Transfer</option>
                 </select>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsNewOrderModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white font-bold rounded-xl text-xs shadow-md"
+                  className="px-5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white font-bold rounded-xl text-xs shadow-md cursor-pointer transition-colors flex items-center gap-1.5"
                 >
-                  Register Order
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Register Showroom Order</span>
                 </button>
               </div>
             </form>
