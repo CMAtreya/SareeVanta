@@ -167,7 +167,14 @@ export async function GET(
           })),
         };
 
-        return NextResponse.json({ product: formatted, relatedProducts, source: 'database' });
+        return NextResponse.json(
+          { product: formatted, relatedProducts, source: 'database' },
+          {
+            headers: {
+              'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+            },
+          }
+        );
       }
     } catch (e) {
       console.error('[Product Detail API] Database error:', e);

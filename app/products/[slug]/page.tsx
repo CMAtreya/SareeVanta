@@ -35,6 +35,10 @@ import {
 import { products, Product, Review } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
 import ProductCard from '@/components/ecommerce/ProductCard';
+import ProductDetailSkeleton from '@/components/ecommerce/ProductDetailSkeleton';
+
+// In-memory PDP cache for instant (0ms) product loading
+const pdpCache = new Map<string, any>();
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -90,14 +94,34 @@ export default function ProductDetailPage() {
   // Carousel Ref for "You May Also Like"
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Fetch product from GET /api/products/:slug
+  // Fetch product from GET /api/products/:slug with memory cache
   useEffect(() => {
     let isMounted = true;
+
+    if (pdpCache.has(slug)) {
+      const data = pdpCache.get(slug);
+      if (data.product) {
+        setProduct(data.product);
+        setRelatedItems(data.relatedProducts || []);
+        const allAvailableImages = Array.from(
+          new Set([...(data.product.images || []), ...(data.product.colorVariants?.[0]?.images || [])])
+        ).filter((url) => typeof url === 'string' && url.trim().length > 5);
+        setGalleryImages(allAvailableImages.length > 0 ? allAvailableImages : []);
+        setSelectedImageIdx(0);
+        if (data.product.reviewsList) {
+          setReviews(data.product.reviewsList);
+        }
+        setLoading(false);
+        return;
+      }
+    }
+
     const fetchProduct = async () => {
       try {
         const res = await fetch(`/api/products/${slug}`);
         if (res.ok) {
           const data = await res.json();
+          pdpCache.set(slug, data);
           if (isMounted && data.product) {
             setProduct(data.product);
             setRelatedItems(data.relatedProducts || []);
@@ -167,14 +191,7 @@ export default function ProductDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-16 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="w-12 h-12 border-4 border-[#C87F4A] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="font-serif text-lg text-stone-700">Loading Atelier Masterpiece...</p>
-        </div>
-      </div>
-    );
+    return <ProductDetailSkeleton />;
   }
 
   if (!product) {
@@ -579,7 +596,7 @@ export default function ProductDetailPage() {
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                 <span>
                   {stock <= 3
-                    ? `⚡ Only ${stock} pieces left in Mysuru salon vault`
+                    ? `⚡ Only ${stock} pieces left in Mysuru flagship vault`
                     : `In Stock • ${stock} available for immediate dispatch`}
                 </span>
               </span>

@@ -18,7 +18,7 @@ export default function OurStoryPage() {
       {/* 3. Shop by Royal Weave Category Grid */}
       <CategoryGrid />
 
-      {/* 4. Trust, Silk Mark Authenticity & Mysuru Heritage Salon */}
+      {/* 4. Trust, Silk Mark Authenticity & Mysuru Heritage Store */}
       <TrustSection />
 
       {/* 5. Heirloom Bestsellers & Fast Functional Product Discovery */}

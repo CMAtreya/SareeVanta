@@ -94,7 +94,7 @@ export default function CommandPalette({
       },
     },
     {
-      title: 'View Mysore Flagship Salon Storefront',
+      title: 'View Mysore Flagship Store Storefront',
       category: 'Actions',
       icon: ExternalLink,
       action: () => {

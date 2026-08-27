@@ -95,7 +95,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             Home
           </Link>
           <ChevronRight className="w-3 h-3 text-stone-400" />
-          <span className="text-[#1F1B16] font-semibold">Patron Account Salon</span>
+          <span className="text-[#1F1B16] font-semibold">Patron Account Hub</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

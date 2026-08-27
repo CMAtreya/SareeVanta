@@ -90,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       id: 'notif-3',
       type: 'WEBHOOK',
       title: 'BlueDart Manifest Synced',
-      desc: '14 parcels ready for pickup at Mysuru Flagship Salon.',
+      desc: '14 parcels ready for pickup at Mysuru Flagship Store.',
       time: '1 hour ago',
       unread: false,
     },

@@ -83,7 +83,7 @@ export default function Customer360ProfilePage({
       id: 'vlog-2',
       date: '10 Aug 2026, 03:00 PM',
       duration: '22 Mins',
-      stylist: 'Suresh (Salon Lead)',
+      stylist: 'Suresh (Store Lead)',
       notes:
         'Introductory consultation for daughter’s November wedding. Shared curated PDF lookbook for reception weaves.',
       status: 'COMPLETED',
@@ -115,13 +115,13 @@ export default function Customer360ProfilePage({
       {
         id: `sn-${Date.now()}`,
         time: 'Just now',
-        author: 'Admin (Mysuru Salon)',
+        author: 'Admin (Mysuru store)',
         note: newStaffNote.trim(),
       },
       ...staffNotes,
     ]);
     setNewStaffNote('');
-    triggerToast('Private salon stylist note saved.');
+    triggerToast('Private Store Stylist note saved.');
   };
 
   const handleGenerateVoucher = (e: React.FormEvent) => {
@@ -336,7 +336,7 @@ export default function Customer360ProfilePage({
           {/* Staff Internal Notes Box */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
             <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider flex items-center justify-between">
-              <span>Stylist & Salon Notes</span>
+              <span>Stylist & Store Notes</span>
               <span className="text-[10px] font-mono text-slate-400">{staffNotes.length} Notes</span>
             </h4>
 
@@ -385,7 +385,7 @@ export default function Customer360ProfilePage({
             {[
               { key: 'ORDERS', label: 'Order History (4)', icon: ShoppingBag },
               { key: 'BAG_WISHLIST', label: 'Bag & Wishlist (3 Items)', icon: Heart },
-              { key: 'VIDEO_CALLS', label: 'Salon Styling Logs (2)', icon: Sparkles },
+              { key: 'VIDEO_CALLS', label: 'Store Styling Logs (2)', icon: Sparkles },
               { key: 'ADDRESSES', label: 'Saved Addresses', icon: MapPin },
             ].map((tab) => (
               <button
@@ -601,14 +601,14 @@ export default function Customer360ProfilePage({
           )}
 
           {/* ============================================ */}
-          {/* TAB 3: SALON STYLING & CONSULTATION LOGS     */}
+          {/* TAB 3: Store Styling & CONSULTATION LOGS     */}
           {/* ============================================ */}
           {activeTab === 'VIDEO_CALLS' && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
               <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                 <div>
                   <h4 className="font-bold text-xs text-slate-900 uppercase font-mono tracking-wider">
-                    VIP Salon Consultation & Styling Logs
+                    VIP Store Consultation & Styling Logs
                   </h4>
                   <p className="text-[11px] font-mono text-slate-500">
                     Boutique drape and styling sessions with Mysuru master drapers
@@ -620,7 +620,7 @@ export default function Customer360ProfilePage({
                   className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Log Salon Consultation</span>
+                  <span>Log Store Consultation</span>
                 </button>
               </div>
 
@@ -749,14 +749,14 @@ export default function Customer360ProfilePage({
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-900"
                 >
                   <option value="Meenakshi (Senior Bridal Draper)">Meenakshi (Senior Bridal Draper)</option>
-                  <option value="Suresh (Sayyaji Rao Salon Lead)">Suresh (Sayyaji Rao Salon Lead)</option>
+                  <option value="Suresh (Sayyaji Rao Store Lead)">Suresh (Sayyaji Rao Store Lead)</option>
                   <option value="Radha (Heritage Silk Curator)">Radha (Heritage Silk Curator)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Focus Weaves to Pre-Arrange on Salon Mannequins
+                  Focus Weaves to Pre-Arrange on store mannequins
                 </label>
                 <input
                   type="text"
@@ -856,7 +856,7 @@ export default function Customer360ProfilePage({
                     </button>
                   </div>
                   <span className="text-[10px] text-slate-500 block">
-                    Valid for 90 days on online storefront & Mysuru flagship salon.
+                    Valid for 90 days on online storefront & Mysuru Flagship Store.
                   </span>
                 </div>
               )}

@@ -248,7 +248,7 @@ function LoginCardContent() {
 
               <div className="pt-6">
                 <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#C87F4A] font-bold block mb-1">
-                  Patron Salon
+                  Patron Portal
                 </span>
                 <h3 className="font-editorial text-2xl sm:text-3xl font-bold text-white leading-tight">
                   Welcome to Royal Mysore Heritage

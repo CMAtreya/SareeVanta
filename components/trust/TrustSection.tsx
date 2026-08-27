@@ -94,7 +94,7 @@ export default function TrustSection() {
           </div>
         </div>
 
-        {/* Highlight Banner: Mysore Heritage Flagship Salon */}
+        {/* Highlight Banner: Mysore Heritage Flagship Store */}
         <div className="relative rounded-2xl bg-gradient-to-r from-[#2A2826] to-[#1C1A18] border border-[#C87F4A]/40 p-8 sm:p-12 overflow-hidden shadow-2xl">
           <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(#C87F4A_1.5px,transparent_1.5px)] [background-size:20px_20px] opacity-10 pointer-events-none hidden lg:block" />
 
@@ -108,7 +108,7 @@ export default function TrustSection() {
                 Experience the Royal Weaves of Mysuru in Person
               </h3>
               <p className="text-sm text-stone-300 max-w-2xl leading-relaxed">
-                Step into our flagship salon on Sayyaji Rao Road, Mysuru. Explore over 600 handloom silk creations curated across royal crepe, Kanchipuram bridal brocades, and tested pure zari masterpieces.
+                Step into our Flagship Store on Sayyaji Rao Road, Mysuru. Explore over 600 handloom silk creations curated across royal crepe, Kanchipuram bridal brocades, and tested pure zari masterpieces.
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-4">
@@ -135,7 +135,7 @@ export default function TrustSection() {
                 className="w-full bg-[#C87F4A] hover:bg-[#B36737] text-white py-4 px-6 rounded-sm text-xs font-semibold uppercase tracking-[0.2em] transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-black/40 text-center"
               >
                 <MapPin className="w-4 h-4" />
-                <span>Get Salon Directions</span>
+                <span>Get Store Directions</span>
               </a>
 
               <a

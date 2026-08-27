@@ -105,7 +105,7 @@ export async function GET(
         label: 'Packed',
         title: 'Fall, Pico & Archival Packing Completed',
         timestamp: placedDateStr,
-        location: 'Neelsareehouse Finishing Salon',
+        location: 'Neelsareehouse Finishing Atelier',
         description: 'Complimentary fall & pico tailored; sealed in heirloom cedar preservation box.',
         status: isDelivered ? 'completed' : 'current',
       },

@@ -138,13 +138,20 @@ export async function GET(request: Request) {
       }
       if (color) formattedProducts = formattedProducts.filter(p => p.color.toLowerCase().includes(color.toLowerCase()));
 
-      return NextResponse.json({
-        products: formattedProducts,
-        total: formattedProducts.length,
-        totalPages: Math.ceil(formattedProducts.length / limit) || 1,
-        counts,
-        source: 'database',
-      });
+      return NextResponse.json(
+        {
+          products: formattedProducts,
+          total: formattedProducts.length,
+          totalPages: Math.ceil(formattedProducts.length / limit) || 1,
+          counts,
+          source: 'database',
+        },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+          },
+        }
+      );
     }
   } catch (e) {
     console.error('[Products API] Error fetching from database:', e);

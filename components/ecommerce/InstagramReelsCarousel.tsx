@@ -194,7 +194,7 @@ export default function InstagramReelsCarousel() {
           </h2>
 
           <p className="text-stone-600 text-xs sm:text-sm font-sans leading-relaxed pt-1">
-            Live silk draping tutorials, loom rhythms, and official Instagram reels playing directly from our Mysuru salon.
+            Live silk draping tutorials, loom rhythms, and official Instagram reels playing directly from our Mysuru store.
           </p>
 
           <div className="pt-2 flex items-center justify-center gap-3">

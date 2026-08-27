@@ -20,7 +20,7 @@ export default function VisitUsPage() {
             <span>Heritage Flagship Destination</span>
           </div>
           <h1 className="font-editorial text-3xl sm:text-5xl font-normal text-[#1F1B16]">
-            Visit Our Mysuru Heritage Salon
+            Visit Our Mysuru Heritage Store
           </h1>
           <p className="text-xs sm:text-sm text-stone-600 font-sans mt-2">
             Experience our 1984 flagship boutique on Sayyaji Rao Road with personalized master draper appointments.
@@ -33,7 +33,7 @@ export default function VisitUsPage() {
             <div className="relative aspect-video rounded-2xl overflow-hidden shadow-inner border border-[#C87F4A]/20">
               <img
                 src="https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80"
-                alt="Mysuru Flagship Salon"
+                alt="Mysuru Flagship Store"
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-5 text-white">
@@ -45,7 +45,7 @@ export default function VisitUsPage() {
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-[#C87F4A] flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong>Neelsareehouse Flagship Salon:</strong> <br />
+                  <strong>Neelsareehouse Flagship Store:</strong> <br />
                   #104/A, Sayyaji Rao Road, Opp. Royal Palace Northern Gate, Mysuru, Karnataka 570001
                 </span>
               </div>
@@ -55,7 +55,7 @@ export default function VisitUsPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-[#C87F4A] flex-shrink-0" />
-                <span>Salon Desk: +91 821 242 3344</span>
+                <span>Store Desk: +91 821 242 3344</span>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-[#C87F4A] flex-shrink-0" />
@@ -66,7 +66,7 @@ export default function VisitUsPage() {
             <div className="p-4 bg-[#FAF3E4] rounded-2xl border border-[#C87F4A]/25 flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-[#1F1B16] block">Need Assistance or Directions?</span>
-                <span className="text-[10px] text-stone-500 font-sans">Our Mysuru salon concierge is here to help.</span>
+                <span className="text-[10px] text-stone-500 font-sans">Our Mysuru store concierge is here to help.</span>
               </div>
               <a
                 href="https://wa.me/918212423344"
@@ -82,14 +82,14 @@ export default function VisitUsPage() {
           {/* Appointment Booking Form */}
           <div className="lg:col-span-6 bg-white p-8 rounded-3xl border border-[#C87F4A]/25 shadow-silk-lg space-y-6">
             <h2 className="font-editorial text-2xl font-bold text-[#1F1B16] pb-3 border-b border-stone-100">
-              Schedule an In-Salon Boutique Visit
+              Schedule an In-Store Boutique Visit
             </h2>
 
             {booked ? (
               <div className="py-8 text-center space-y-3">
                 <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
                 <h3 className="font-editorial text-2xl font-bold text-[#1F1B16]">
-                  Salon Visit Confirmed
+                  Store Visit Confirmed
                 </h3>
                 <p className="text-xs text-stone-600 font-sans max-w-sm mx-auto">
                   A dedicated master sari draper has been reserved for your flagship visit. You will receive an SMS and WhatsApp confirmation.
@@ -98,7 +98,7 @@ export default function VisitUsPage() {
             ) : (
               <form onSubmit={handleBook} className="space-y-4">
                 <div className="p-3 rounded-xl border border-[#C87F4A] bg-[#FAF3E4] text-center">
-                  <span className="text-xs block font-bold text-[#1F1B16]">In-Salon Flagship Boutique Visit</span>
+                  <span className="text-xs block font-bold text-[#1F1B16]">In-Store Flagship Boutique Visit</span>
                   <span className="text-[10px] text-stone-500 font-normal">Sayyaji Rao Road, Opp. Royal Palace, Mysuru</span>
                 </div>
 

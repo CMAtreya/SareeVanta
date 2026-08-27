@@ -50,7 +50,7 @@ const announcements = [
     id: 4,
     content: (
       <span>
-        ✦ Visit Our Mysuru Flagship Heritage Salon on Sayyaji Rao Road.
+        ✦ Visit Our Mysuru Flagship Heritage Store on Sayyaji Rao Road.
       </span>
     ),
   },

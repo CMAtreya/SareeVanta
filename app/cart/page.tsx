@@ -172,7 +172,7 @@ export default function CartPage() {
         <div className="pb-4 border-b border-[#C87F4A]/20 mb-8">
           <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#C87F4A] font-mono font-semibold mb-1">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Neelsareehouse Checkout Salon</span>
+            <span>Neelsareehouse Checkout Portal</span>
           </div>
           <h1 className="font-editorial text-3xl sm:text-4xl lg:text-5xl font-normal text-[#1F1B16] tracking-tight">
             Your Shopping Bag

@@ -1220,7 +1220,7 @@ export default function CheckoutPage() {
                           Govt. Silk Mark Guarantee Certificate Issued
                         </span>
                         <span className="text-[11px] text-emerald-800">
-                          Digital QR Certificate has been dispatched to your email and registered account salon.
+                          Digital QR Certificate has been dispatched to your email and registered account.
                         </span>
                       </div>
                     </div>
@@ -1241,7 +1241,7 @@ export default function CheckoutPage() {
                       className="w-full sm:w-auto px-6 py-3.5 bg-[#7A1C30] hover:bg-[#601625] text-white rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md"
                     >
                       <Package className="w-4 h-4" />
-                      <span>Track Consignment in Live Salon</span>
+                      <span>Track Consignment in Live Orders</span>
                     </Link>
 
                     <Link

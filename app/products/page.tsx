@@ -17,7 +17,11 @@ import {
 } from 'lucide-react';
 import { products, Product } from '@/lib/products';
 import ProductCard from '@/components/ecommerce/ProductCard';
+import ProductCardSkeleton from '@/components/ecommerce/ProductCardSkeleton';
 import ProductFilters, { FilterCounts } from '@/components/ecommerce/ProductFilters';
+
+// Client-side in-memory query cache for instant (0ms) filter switching
+const filterQueryCache = new Map<string, any>();
 
 function ProductsListingContent() {
   const router = useRouter();
@@ -119,26 +123,39 @@ function ProductsListingContent() {
   // Fetch products from GET /api/products
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true);
 
     const fetchProducts = async () => {
-      try {
-        const params = new URLSearchParams();
-        if (selectedWeaves.length > 0) params.set('weave', selectedWeaves.join(','));
-        if (selectedFabrics.length > 0) params.set('fabric', selectedFabrics.join(','));
-        if (selectedOccasions.length > 0) params.set('occasion', selectedOccasions.join(','));
-        if (selectedColors.length > 0) params.set('color', selectedColors.join(','));
-        if (priceRange[0] > 10000) params.set('price_min', priceRange[0].toString());
-        if (priceRange[1] < 100000) params.set('price_max', priceRange[1].toString());
-        if (silkMarkOnly) params.set('silk_mark', 'true');
-        if (sortBy) params.set('sort', sortBy);
-        params.set('page', currentPage.toString());
-        params.set('limit', gridCols === 4 ? '12' : '9');
-        if (filterParam) params.set('filter', filterParam);
+      const params = new URLSearchParams();
+      if (selectedWeaves.length > 0) params.set('weave', selectedWeaves.join(','));
+      if (selectedFabrics.length > 0) params.set('fabric', selectedFabrics.join(','));
+      if (selectedOccasions.length > 0) params.set('occasion', selectedOccasions.join(','));
+      if (selectedColors.length > 0) params.set('color', selectedColors.join(','));
+      if (priceRange[0] > 10000) params.set('price_min', priceRange[0].toString());
+      if (priceRange[1] < 100000) params.set('price_max', priceRange[1].toString());
+      if (silkMarkOnly) params.set('silk_mark', 'true');
+      if (sortBy) params.set('sort', sortBy);
+      params.set('page', currentPage.toString());
+      params.set('limit', gridCols === 4 ? '12' : '9');
+      if (filterParam) params.set('filter', filterParam);
 
-        const res = await fetch(`/api/products?${params.toString()}`);
+      const cacheKey = params.toString();
+      if (filterQueryCache.has(cacheKey)) {
+        const cached = filterQueryCache.get(cacheKey);
+        setApiProducts(cached.products || []);
+        setApiTotal(cached.total || 0);
+        setApiTotalPages(cached.totalPages || 1);
+        setFilterCounts(cached.counts);
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const res = await fetch(`/api/products?${cacheKey}`);
         if (res.ok) {
           const data = await res.json();
+          filterQueryCache.set(cacheKey, data);
           if (isMounted) {
             setApiProducts(data.products || []);
             setApiTotal(data.total || 0);
@@ -411,11 +428,16 @@ function ProductsListingContent() {
               </div>
             )}
 
-            {/* Product Grid Area / Empty State */}
+            {/* Product Grid Area / Shimmer Skeletons / Empty State */}
             {isLoading ? (
-              <div className="py-24 text-center">
-                <div className="inline-block w-8 h-8 border-3 border-[#C87F4A] border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-xs font-mono text-stone-500">Loading Royal Masterpieces...</p>
+              <div
+                className={`grid grid-cols-2 ${
+                  gridCols === 4 ? 'lg:grid-cols-4 sm:grid-cols-3' : 'lg:grid-cols-3 sm:grid-cols-2'
+                } gap-4 sm:gap-6`}
+              >
+                {[...Array(gridCols === 4 ? 8 : 6)].map((_, sIdx) => (
+                  <ProductCardSkeleton key={sIdx} />
+                ))}
               </div>
             ) : apiProducts.length === 0 ? (
               /* Empty State */

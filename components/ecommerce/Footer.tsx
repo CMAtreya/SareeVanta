@@ -129,7 +129,7 @@ export default function Footer() {
             <div className="pt-2 space-y-2 text-xs text-stone-300 font-sans">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-[#C87F4A] flex-shrink-0 mt-0.5" />
-                <span>Flagship Salon: Sayyaji Rao Road, Near Royal Palace, Mysuru 570001</span>
+                <span>Flagship Store: Sayyaji Rao Road, Near Royal Palace, Mysuru 570001</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#C87F4A] flex-shrink-0" />
@@ -194,7 +194,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/visit-us" className="hover:text-white transition-colors">
-                  Book Salon Appointment
+                  Book Store Appointment
                 </Link>
               </li>
               <li>
@@ -204,7 +204,7 @@ export default function Footer() {
               </li>
               <li>
                 <a href="https://wa.me/918212423344" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  WhatsApp Salon Desk
+                  WhatsApp Store Desk
                 </a>
               </li>
             </ul>

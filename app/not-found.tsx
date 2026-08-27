@@ -1,56 +1,156 @@
 import Link from 'next/link';
-import { PackageSearch, ArrowLeft, Home, Sparkles } from 'lucide-react';
+import {
+  Sparkles,
+  ArrowRight,
+  Home,
+  ShoppingBag,
+  Search,
+  Compass,
+  Crown,
+} from 'lucide-react';
 
 export default function NotFound() {
+  const quickLinks = [
+    {
+      title: 'Royal Mysore Silk',
+      desc: 'Tested 24K pure gold zari borders',
+      href: '/products?weave=Mysore+Silk',
+      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      title: 'Bridal Kanchipuram',
+      desc: 'Heavy Korvai interlocking weaves',
+      href: '/products?weave=Kanchipuram',
+      image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80',
+    },
+    {
+      title: 'Varanasi Kadwa Katan',
+      desc: 'Hand-loomed Meenakari floral jaal',
+      href: '/products?weave=Banarasi',
+      image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80',
+    },
+  ];
+
   return (
-    <div className="bg-[#FAF3E4] min-h-screen flex items-center justify-center px-4 sm:px-6 py-16 text-[#1F1B16]">
-      <div className="max-w-xl w-full bg-white/90 backdrop-blur-md rounded-3xl border border-[#E8DCC9] shadow-[0_20px_50px_rgba(122,28,48,0.08)] p-8 sm:p-12 text-center space-y-6 relative overflow-hidden">
-        {/* Ambient Gold & Maroon Radial Shimmer */}
-        <div className="absolute -top-24 -right-24 w-56 h-56 bg-gradient-to-br from-[#7A1C30]/15 via-[#C87F4A]/10 to-transparent rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-56 h-56 bg-gradient-to-tr from-[#C87F4A]/15 via-amber-100/30 to-transparent rounded-full blur-2xl pointer-events-none" />
+    <div className="bg-[#FAF3E4] min-h-[90vh] relative overflow-hidden flex flex-col justify-between text-[#1F1B16]">
+      {/* 1. Subtle Heritage Background Ambient Glows & Watermark */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-radial from-[#C87F4A]/10 via-[#7A1C30]/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-10 right-0 w-96 h-96 bg-[#7A1C30]/5 rounded-full blur-2xl pointer-events-none" />
 
-        {/* 404 Emblem Badge */}
-        <div className="relative inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[#FAF5EE] to-[#FAF3E4] border border-[#C87F4A]/40 shadow-inner text-[#7A1C30] mx-auto">
-          <PackageSearch className="w-9 h-9 stroke-[1.5]" />
-          <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#7A1C30] text-[#E2CE9F] flex items-center justify-center text-[10px] font-mono font-bold">
-            404
-          </div>
-        </div>
+      {/* Grand 404 Watermark Typography */}
+      <div className="absolute top-12 left-1/2 -translate-x-1/2 select-none pointer-events-none font-serif text-[12rem] sm:text-[18rem] md:text-[22rem] font-bold text-[#C87F4A]/10 leading-none tracking-widest z-0">
+        404
+      </div>
 
-        <div className="space-y-2 relative">
-          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-mono font-bold tracking-[0.25em] text-[#C87F4A]">
-            <Sparkles className="w-3 h-3 text-[#7A1C30]" />
-            <span>Neelsareehouse Mysuru Archive</span>
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 w-full flex-1 flex flex-col justify-center">
+        {/* Top Atelier Badge */}
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-[#C87F4A]/30 text-xs font-mono font-semibold text-[#7A1C30] shadow-xs backdrop-blur-md">
+            <Crown className="w-3.5 h-3.5 text-[#C87F4A]" />
+            <span>NEEL SAREE HOUSE • ATELIER ARCHIVE</span>
           </div>
-          <h1 className="font-editorial text-3xl sm:text-4xl font-bold tracking-tight text-stone-900 leading-tight">
-            Heirloom Piece Not Found
+
+          <h1 className="font-editorial text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-stone-900 leading-[1.15]">
+            The Drape You Seek Has Drifted Into Our Archives
           </h1>
-          <p className="text-xs sm:text-sm text-stone-600 font-sans leading-relaxed max-w-md mx-auto pt-1">
-            The page or saree collection archive you are looking for has been relocated or is no longer available in our active registry.
+
+          <p className="text-xs sm:text-sm text-stone-600 font-sans leading-relaxed max-w-lg mx-auto">
+            Like a rare vintage weave retired to our Mysore vaults, this specific page or saree listing is no longer in our active gallery. Let us guide you back to our living collections.
           </p>
+
+          {/* Search Box on 404 Page */}
+          <form action="/products" method="GET" className="pt-2 max-w-md mx-auto relative">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-stone-400 absolute left-4 pointer-events-none" />
+              <input
+                type="text"
+                name="search"
+                placeholder="Search by weave, fabric, color, or occasion..."
+                className="w-full pl-11 pr-24 py-3 bg-white/95 backdrop-blur-md rounded-full border border-[#C87F4A]/30 focus:outline-none focus:border-[#7A1C30] focus:ring-2 focus:ring-[#7A1C30]/20 text-xs text-[#1F1B16] shadow-sm transition-all font-sans"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 px-4 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white text-[11px] font-mono font-bold uppercase tracking-wider rounded-full transition-colors shadow-sm cursor-pointer"
+              >
+                Find
+              </button>
+            </div>
+          </form>
+
+          {/* Primary Action Buttons */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-[#7A1C30] hover:bg-[#5F1424] text-white text-xs font-sans font-bold uppercase tracking-widest transition-all shadow-md group cursor-pointer"
+            >
+              <Home className="w-4 h-4 text-[#E2CE9F] group-hover:scale-110 transition-transform" />
+              <span>Return to Homepage</span>
+            </Link>
+
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white hover:bg-[#FAF3E4] text-[#1F1B16] border border-[#C87F4A]/40 text-xs font-sans font-bold uppercase tracking-widest transition-all shadow-xs cursor-pointer group"
+            >
+              <ShoppingBag className="w-4 h-4 text-[#C87F4A] group-hover:scale-110 transition-transform" />
+              <span>Explore All Sarees</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3 relative">
-          <Link
-            href="/"
-            className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#7A1C30] hover:bg-[#5F1424] text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 group"
-          >
-            <Home className="w-4 h-4 text-[#E2CE9F] group-hover:scale-110 transition-transform" />
-            <span>Return to Salon Homepage</span>
-          </Link>
-          <Link
-            href="/products"
-            className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#FAF3E4] hover:bg-white text-stone-800 border border-[#C87F4A]/40 hover:border-[#7A1C30]/60 text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4 text-stone-500" />
-            <span>Explore Handlooms</span>
-          </Link>
-        </div>
+        {/* Curated Recommendations Grid */}
+        <div className="mt-14 pt-10 border-t border-[#C87F4A]/20">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-[#7A1C30]" />
+              <h3 className="font-editorial text-lg sm:text-xl font-bold text-stone-900">
+                Curated Living Collections
+              </h3>
+            </div>
+            <Link
+              href="/products"
+              className="text-xs font-mono font-bold uppercase tracking-wider text-[#7A1C30] hover:text-[#C87F4A] flex items-center gap-1 transition-colors"
+            >
+              <span>View Full Vault</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
 
-        <div className="pt-4 border-t border-[#E8DCC9]/60 text-[10px] font-mono text-stone-600 tracking-wider">
-          Mysuru Flagship Guild Registry • Estd. 2021
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {quickLinks.map((item, idx) => (
+              <Link
+                key={idx}
+                href={item.href}
+                className="group relative bg-white/90 backdrop-blur-md rounded-2xl p-4 border border-[#C87F4A]/20 hover:border-[#7A1C30]/50 hover:shadow-silk-lg transition-all duration-300 flex items-center gap-4 overflow-hidden"
+              >
+                <div className="w-16 h-20 rounded-xl overflow-hidden bg-[#FAF3E4] border border-[#C87F4A]/20 flex-shrink-0 relative">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#C87F4A] font-semibold block">
+                    Handloom Edit
+                  </span>
+                  <h4 className="font-editorial text-sm font-bold text-[#1F1B16] group-hover:text-[#7A1C30] transition-colors truncate">
+                    {item.title}
+                  </h4>
+                  <p className="text-[11px] text-stone-500 font-sans truncate">
+                    {item.desc}
+                  </p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-stone-400 group-hover:text-[#7A1C30] group-hover:translate-x-1 transition-all flex-shrink-0" />
+              </Link>
+            ))}
+          </div>
         </div>
+      </div>
+
+      {/* Bottom Heritage Footer Note */}
+      <div className="py-4 border-t border-[#E8DCC9]/70 text-center text-[10px] font-mono text-stone-500 tracking-widest uppercase bg-white/40 backdrop-blur-xs">
+        Neel Saree House • Sayyaji Rao Road, Mysuru Flagship Store • Estd. 2021
       </div>
     </div>
   );

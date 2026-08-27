@@ -94,7 +94,7 @@ export default function SingleOrderProcessingPage({
     {
       id: 'log-3',
       time: '22 Aug 2026, 08:05 PM',
-      author: 'Packaging Salon Lead',
+      author: 'Packaging Store Lead',
       note: 'Saree wrapped in pure unbleached muslin cloth with natural cedar balls in gift box.',
       type: 'USER',
     },
@@ -110,7 +110,7 @@ export default function SingleOrderProcessingPage({
     const newEntry: AuditLogEntry = {
       id: `log-${Date.now()}`,
       time: 'Just now',
-      author: 'Admin (Mysuru Salon)',
+      author: 'Admin (Mysuru store)',
       note: newNote.trim(),
       type: 'USER',
     };
