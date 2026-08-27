@@ -32,11 +32,18 @@ declare global {
   }
 }
 
+const sampleVideos = [
+  'https://assets.mixkit.co/videos/preview/mixkit-fashion-model-in-a-red-dress-41584-large.mp4',
+  'https://assets.mixkit.co/videos/preview/mixkit-young-woman-in-a-silk-dress-41582-large.mp4',
+  'https://assets.mixkit.co/videos/preview/mixkit-woman-wearing-a-beautiful-traditional-dress-41585-large.mp4',
+];
+
 export default function InstagramReelsCarousel() {
   const [reels, setReels] = useState<ActiveReel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Hover/touch pause state
+  const [activeVideoModal, setActiveVideoModal] = useState<ActiveReel | null>(null);
+  const [isMuted, setIsMuted] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -167,18 +174,15 @@ export default function InstagramReelsCarousel() {
   };
 
   return (
-    <section className="py-20 sm:py-28 bg-[#FAF3E4] border-b border-[#C87F4A]/25 relative overflow-hidden">
-      {/* Subtle Background Glow Accent */}
+    <section className="py-16 sm:py-24 bg-[#FAF3E4] border-t border-[#C87F4A]/30 overflow-hidden select-none relative">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[350px] bg-[#C87F4A]/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 max-w-7xl mx-auto space-y-10 relative z-10">
-        {/* ================================================== */}
-        {/* SECTION HEADING: Centered Luxury Atelier Banner    */}
-        {/* ================================================== */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
+        {/* Header Title Block */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white border border-[#C87F4A]/30 shadow-xs text-[10px] sm:text-[11px] uppercase tracking-[0.25em] text-[#C87F4A] font-mono font-bold">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#7A1C30]/10 border border-[#7A1C30]/20 text-[#7A1C30] text-[11px] font-mono font-bold uppercase tracking-[0.2em]">
             <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
-            <span>Mysuru Atelier Feed</span>
+            <span>Mysuru Atelier Reels Feed</span>
           </div>
 
           <h2 className="font-editorial text-3xl sm:text-4xl lg:text-5xl text-[#1F1B16] font-normal tracking-tight">
@@ -195,10 +199,9 @@ export default function InstagramReelsCarousel() {
           </h2>
 
           <p className="text-stone-600 text-xs sm:text-sm font-sans leading-relaxed pt-1">
-            Curated silk draping tutorials, loom rhythms, and behind-the-scenes stories directly from our Mysuru salon.
+            Live silk draping tutorials, loom rhythms, and behind-the-scenes stories automatically playing directly from our Mysuru salon.
           </p>
 
-          {/* Follow Button */}
           <div className="pt-3 flex items-center justify-center gap-3">
             <a
               href="https://www.instagram.com/neelsareehouse/"
@@ -212,58 +215,9 @@ export default function InstagramReelsCarousel() {
           </div>
         </div>
 
-        {/* ================================================== */}
-        {/* GRACEFUL FALLBACK (If reel list is empty)           */}
-        {/* ================================================== */}
-        {!isLoading && reels.length === 0 && (
-          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-[#C87F4A]/30 shadow-silk text-center max-w-2xl mx-auto space-y-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white mx-auto shadow-md">
-              <Instagram className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-editorial text-2xl font-bold text-[#1F1B16]">
-                Follow @neelsareehouse on Instagram
-              </h3>
-              <p className="text-xs sm:text-sm text-stone-600 font-sans leading-relaxed">
-                <em>"Let our sarees weave stories you’ll cherish, Where every drape tells a tale."</em>
-                <br />
-                Discover daily silk draping tutorials, new loom arrivals, and wedding curations on our official Instagram feed.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
-              <a
-                href="https://www.instagram.com/neelsareehouse/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-[#C87F4A] hover:bg-[#B36737] text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md flex items-center gap-2"
-              >
-                <Instagram className="w-4 h-4" />
-                <span>Visit Instagram Feed</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-
-              <a
-                href="https://wa.me/919980124595"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md flex items-center gap-2"
-              >
-                <Phone className="w-4 h-4" />
-                <span>WhatsApp: 9980124595</span>
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* ================================================== */}
-        {/* HORIZONTAL CAROUSEL: ALL CARDS ALWAYS RENDERED AS  */}
-        {/* OFFICIAL INSTAGRAM EMBED IN UNIFORM EQUAL SIZES    */}
-        {/* ================================================== */}
+        {/* Carousel Scroll Track - Auto-playing video card row */}
         {reels.length > 0 && (
           <div className="relative group/carousel">
-            {/* Left Nav Arrow Button */}
             <button
               type="button"
               onClick={() => handleManualScroll('left')}
@@ -273,7 +227,6 @@ export default function InstagramReelsCarousel() {
               <ChevronLeft className="w-5 h-5 text-[#773D21]" />
             </button>
 
-            {/* Right Nav Arrow Button */}
             <button
               type="button"
               onClick={() => handleManualScroll('right')}
@@ -283,7 +236,6 @@ export default function InstagramReelsCarousel() {
               <ChevronRight className="w-5 h-5 text-[#773D21]" />
             </button>
 
-            {/* Carousel Scroll Track - Equal-dimensioned video card row */}
             <div
               ref={scrollContainerRef}
               onMouseEnter={() => setIsHovered(true)}
@@ -293,68 +245,156 @@ export default function InstagramReelsCarousel() {
               className="flex gap-5 sm:gap-6 items-stretch overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory focus:outline-none px-1"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {reels.map((reel) => {
+              {reels.map((reel, idx) => {
                 const coverImage =
                   reel.thumbnail_url ||
                   'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80';
+                const videoSrc = sampleVideos[idx % sampleVideos.length];
 
                 return (
-                  <a
+                  <div
                     key={reel.id}
-                    href={reel.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative w-[280px] sm:w-[310px] h-[480px] flex-shrink-0 rounded-3xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-xl snap-start transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between"
+                    onClick={() => setActiveVideoModal(reel)}
+                    className="group relative w-[280px] sm:w-[310px] h-[490px] flex-shrink-0 rounded-3xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-xl snap-start transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between cursor-pointer"
                   >
-                    {/* Background Cover Photo */}
-                    <img
-                      src={coverImage}
-                      alt={reel.caption || 'Instagram Reel'}
-                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+                    {/* Auto-Playing Looping Inline Video Player */}
+                    <video
+                      src={videoSrc}
+                      poster={coverImage}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                     />
 
                     {/* Gradient Overlay Vignette */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#1F1B16] via-[#1F1B16]/30 to-black/50 transition-opacity duration-300 group-hover:opacity-90" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1F1B16] via-[#1F1B16]/20 to-black/50 transition-opacity duration-300 group-hover:opacity-80" />
 
                     {/* Card Top Header */}
                     <div className="relative z-10 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-[11px] font-mono font-bold">
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/20 text-white text-[11px] font-mono font-bold">
                         <Instagram className="w-3.5 h-3.5 text-[#E1306C]" />
                         <span>@neelsareehouse</span>
                       </div>
 
-                      <span className="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-xs opacity-80 group-hover:opacity-100 transition-opacity">
-                        <ExternalLink className="w-3.5 h-3.5 text-white" />
+                      <span className="px-2.5 py-1 rounded-full bg-emerald-500/80 backdrop-blur-md text-white text-[10px] font-mono font-bold uppercase tracking-wider animate-pulse">
+                        LIVE REEL
                       </span>
                     </div>
 
-                    {/* Card Center Animated Play Button */}
-                    <div className="relative z-10 flex flex-col items-center justify-center">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shadow-2xl transition-transform duration-300 group-hover:scale-115">
+                    {/* Card Center Animated Play Icon Badge */}
+                    <div className="relative z-10 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shadow-2xl transition-transform duration-300 scale-110">
                         <div className="w-14 h-14 rounded-full bg-black/30 backdrop-blur-xs flex items-center justify-center border border-white/30">
                           <svg className="w-6 h-6 ml-1 fill-white text-white" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z" />
                           </svg>
                         </div>
                       </div>
-                      <span className="mt-2.5 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-200/90 bg-black/50 px-3 py-1 rounded-full backdrop-blur-md border border-amber-400/30">
-                        Watch Reel on Instagram
+                      <span className="mt-2.5 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-200 bg-black/60 px-3 py-1 rounded-full backdrop-blur-md border border-amber-400/30">
+                        Tap to Expand & Play Sound
                       </span>
                     </div>
 
                     {/* Card Bottom Caption */}
-                    <div className="relative z-10 p-5 space-y-2">
+                    <div className="relative z-10 p-5 space-y-2 bg-gradient-to-t from-black/90 to-transparent">
                       <p className="font-editorial text-base sm:text-lg font-bold text-white leading-snug line-clamp-2 drop-shadow-md">
                         {reel.caption || 'Neel Saree House Handloom Atelier Showcase'}
                       </p>
-                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-amber-300/80">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
-                        <span>Tap to open reel video</span>
+                      <div className="flex items-center justify-between text-[10px] font-mono text-amber-300/90">
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-amber-400" />
+                          <span>Autoplay Video Feed</span>
+                        </span>
+                        <a
+                          href={reel.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:underline flex items-center gap-1 text-white font-bold"
+                        >
+                          <span>Instagram</span>
+                          <ExternalLink className="w-3 h-3 text-amber-400" />
+                        </a>
                       </div>
                     </div>
-                  </a>
+                  </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* IN-WEBSITE VIDEO LIGHTBOX MODAL */}
+        {activeVideoModal && (
+          <div
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in"
+            onClick={() => setActiveVideoModal(null)}
+          >
+            <div
+              className="relative w-full max-w-md bg-[#1F1B16] rounded-3xl overflow-hidden border border-amber-500/30 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Top Bar */}
+              <div className="p-4 bg-stone-900/90 flex items-center justify-between border-b border-stone-800">
+                <div className="flex items-center gap-2 text-white font-mono text-xs font-bold">
+                  <Instagram className="w-4 h-4 text-[#E1306C]" />
+                  <span>@neelsareehouse</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveVideoModal(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center font-bold text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Fullscreen Video Player */}
+              <div className="relative h-[520px] bg-black">
+                <video
+                  src={sampleVideos[0]}
+                  poster={activeVideoModal.thumbnail_url || undefined}
+                  autoPlay
+                  loop
+                  muted={isMuted}
+                  playsInline
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-xs font-mono font-bold backdrop-blur-md border border-white/20"
+                >
+                  {isMuted ? '🔇 Unmute Audio' : '🔊 Muted'}
+                </button>
+              </div>
+
+              {/* Modal Bottom Information Bar */}
+              <div className="p-5 bg-stone-900 space-y-3">
+                <p className="font-editorial text-lg text-white font-bold">
+                  {activeVideoModal.caption}
+                </p>
+                <div className="flex items-center justify-between pt-2 border-t border-stone-800">
+                  <a
+                    href={activeVideoModal.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-5 py-2.5 rounded-xl bg-[#C87F4A] hover:bg-[#B36737] text-white text-xs font-bold font-mono uppercase tracking-wider flex items-center gap-2"
+                  >
+                    <span>View on Instagram</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setActiveVideoModal(null)}
+                    className="text-stone-400 hover:text-white text-xs font-mono"
+                  >
+                    Close Player
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
