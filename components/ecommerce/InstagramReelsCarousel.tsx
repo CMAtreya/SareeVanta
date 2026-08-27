@@ -283,7 +283,7 @@ export default function InstagramReelsCarousel() {
               <ChevronRight className="w-5 h-5 text-[#773D21]" />
             </button>
 
-            {/* Carousel Scroll Track - Equal-dimensioned card row */}
+            {/* Carousel Scroll Track - Equal-dimensioned video card row */}
             <div
               ref={scrollContainerRef}
               onMouseEnter={() => setIsHovered(true)}
@@ -293,72 +293,68 @@ export default function InstagramReelsCarousel() {
               className="flex gap-5 sm:gap-6 items-stretch overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory focus:outline-none px-1"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {reels.map((reel) => (
-                <div
-                  key={reel.id}
-                  className="w-[320px] sm:w-[335px] flex-shrink-0 rounded-3xl overflow-hidden bg-white border border-[#C87F4A]/30 shadow-silk-lg snap-start transition-all duration-300 hover:shadow-2xl flex flex-col justify-between"
-                >
-                  {/* Card Header Bar */}
-                  <div className="p-3 bg-[#FAF3E4] flex items-center justify-between border-b border-[#C87F4A]/20">
-                    <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-[#773D21]">
-                      <Instagram className="w-4 h-4 text-[#E1306C]" />
-                      <span>@neelsareehouse</span>
+              {reels.map((reel) => {
+                const coverImage =
+                  reel.thumbnail_url ||
+                  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80';
+
+                return (
+                  <a
+                    key={reel.id}
+                    href={reel.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative w-[280px] sm:w-[310px] h-[480px] flex-shrink-0 rounded-3xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-xl snap-start transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl flex flex-col justify-between"
+                  >
+                    {/* Background Cover Photo */}
+                    <img
+                      src={coverImage}
+                      alt={reel.caption || 'Instagram Reel'}
+                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110"
+                    />
+
+                    {/* Gradient Overlay Vignette */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1F1B16] via-[#1F1B16]/30 to-black/50 transition-opacity duration-300 group-hover:opacity-90" />
+
+                    {/* Card Top Header */}
+                    <div className="relative z-10 p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-[11px] font-mono font-bold">
+                        <Instagram className="w-3.5 h-3.5 text-[#E1306C]" />
+                        <span>@neelsareehouse</span>
+                      </div>
+
+                      <span className="p-2 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white text-xs opacity-80 group-hover:opacity-100 transition-opacity">
+                        <ExternalLink className="w-3.5 h-3.5 text-white" />
+                      </span>
                     </div>
 
-                    <a
-                      href={`https://www.instagram.com/reel/${reel.shortcode}/`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded-full bg-white border border-[#C87F4A]/30 hover:bg-[#FAF3E4] text-[#773D21] text-[10px] font-mono flex items-center gap-1 transition-colors shadow-xs"
-                      title="Open on Instagram"
-                    >
-                      <span>Open</span>
-                      <ExternalLink className="w-3 h-3 text-[#C87F4A]" />
-                    </a>
-                  </div>
-
-                  {/* Official Instagram oEmbed Blockquote Container */}
-                  <div className="p-2 sm:p-3 flex items-center justify-center min-h-[480px] bg-white">
-                    <blockquote
-                      className="instagram-media"
-                      data-instgrm-permalink={`https://www.instagram.com/reel/${reel.shortcode}/`}
-                      data-instgrm-version="14"
-                      style={{
-                        background: '#FFF',
-                        border: 0,
-                        borderRadius: '16px',
-                        boxShadow: 'none',
-                        margin: '1px',
-                        maxWidth: '335px',
-                        minWidth: '280px',
-                        padding: 0,
-                        width: '99.375%',
-                      }}
-                    >
-                      <div style={{ padding: '16px' }}>
-                        <a
-                          href={`https://www.instagram.com/reel/${reel.shortcode}/`}
-                          style={{
-                            background: '#FFFFFF',
-                            lineHeight: 0,
-                            padding: '0 0',
-                            textAlign: 'center',
-                            textDecoration: 'none',
-                            width: '100%',
-                            color: '#C87F4A',
-                            fontSize: '12px',
-                            fontFamily: 'sans-serif',
-                          }}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View this reel on Instagram
-                        </a>
+                    {/* Card Center Animated Play Button */}
+                    <div className="relative z-10 flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] flex items-center justify-center text-white shadow-2xl transition-transform duration-300 group-hover:scale-115">
+                        <div className="w-14 h-14 rounded-full bg-black/30 backdrop-blur-xs flex items-center justify-center border border-white/30">
+                          <svg className="w-6 h-6 ml-1 fill-white text-white" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
                       </div>
-                    </blockquote>
-                  </div>
-                </div>
-              ))}
+                      <span className="mt-2.5 text-[10px] font-mono font-bold uppercase tracking-widest text-amber-200/90 bg-black/50 px-3 py-1 rounded-full backdrop-blur-md border border-amber-400/30">
+                        Watch Reel on Instagram
+                      </span>
+                    </div>
+
+                    {/* Card Bottom Caption */}
+                    <div className="relative z-10 p-5 space-y-2">
+                      <p className="font-editorial text-base sm:text-lg font-bold text-white leading-snug line-clamp-2 drop-shadow-md">
+                        {reel.caption || 'Neel Saree House Handloom Atelier Showcase'}
+                      </p>
+                      <div className="flex items-center gap-1.5 text-[10px] font-mono text-amber-300/80">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>Tap to open reel video</span>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
             </div>
           </div>
         )}
