@@ -11,7 +11,7 @@ export interface UseProductsOptions {
 }
 
 export function useProducts(options: UseProductsOptions = {}) {
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,13 +34,18 @@ export function useProducts(options: UseProductsOptions = {}) {
         const res = await fetch(`/api/products?${queryParams.toString()}`);
         if (res.ok) {
           const data = await res.json();
-          if (isMounted && data.products && Array.isArray(data.products) && data.products.length > 0) {
-            setProducts(data.products);
+          if (isMounted && data.products && Array.isArray(data.products)) {
+            setProducts(data.products.length > 0 ? data.products : fallbackProducts);
           }
+        } else if (isMounted) {
+          setProducts(fallbackProducts);
         }
       } catch (err: any) {
         console.warn('[useProducts Hook] API error, using static fallback:', err);
-        if (isMounted) setError(err?.message || 'Failed to fetch products');
+        if (isMounted) {
+          setProducts(fallbackProducts);
+          setError(err?.message || 'Failed to fetch products');
+        }
       } finally {
         if (isMounted) setLoading(false);
       }

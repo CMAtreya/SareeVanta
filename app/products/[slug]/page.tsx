@@ -44,14 +44,14 @@ export default function ProductDetailPage() {
   const { addToCart, toggleWishlist, isInWishlist, currency } = useCart();
 
   // Local / API Product Data
-  const initialProduct = products.find((p) => p.slug === slug) || products[0];
-  const [product, setProduct] = useState<Product>(initialProduct);
+  const initialProduct = products.find((p) => p.slug === slug || p.id === slug);
+  const [product, setProduct] = useState<Product | null>(initialProduct || null);
   const [relatedItems, setRelatedItems] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialProduct);
 
   // Gallery & Variant State
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const [galleryImages, setGalleryImages] = useState<string[]>(initialProduct.images);
+  const [galleryImages, setGalleryImages] = useState<string[]>(initialProduct?.images || []);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
 
   // Zoom on Hover State
@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
   const [infoTab, setInfoTab] = useState<'moreInformation' | 'moreInfo'>('moreInformation');
 
   // Reviews State
-  const [reviews, setReviews] = useState<Review[]>(initialProduct.reviewsList || []);
+  const [reviews, setReviews] = useState<Review[]>(initialProduct?.reviewsList || []);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReviewAuthor, setNewReviewAuthor] = useState('');
   const [newReviewTitle, setNewReviewTitle] = useState('');
@@ -107,6 +107,7 @@ export default function ProductDetailPage() {
               setReviews(data.product.reviewsList);
             }
           }
+          if (isMounted) setLoading(false);
           return;
         }
       } catch (err) {
@@ -114,19 +115,22 @@ export default function ProductDetailPage() {
       }
 
       // Fallback local lookup
-      const found = products.find((p) => p.slug === slug) || products[0];
+      const found = products.find((p) => p.slug === slug || p.id === slug);
       if (isMounted) {
-        setProduct(found);
-        const rel = products
-          .filter((p) => p.id !== found.id && (p.weave === found.weave || p.occasion === found.occasion))
-          .slice(0, 4);
-        setRelatedItems(rel);
-        const initialImages = found.colorVariants?.[0]?.images || found.images;
-        setGalleryImages(initialImages);
-        setSelectedImageIdx(0);
-        if (found.reviewsList) {
-          setReviews(found.reviewsList);
+        if (found) {
+          setProduct(found);
+          const rel = products
+            .filter((p) => p.id !== found.id && (p.weave === found.weave || p.occasion === found.occasion))
+            .slice(0, 4);
+          setRelatedItems(rel);
+          const initialImages = found.colorVariants?.[0]?.images || found.images;
+          setGalleryImages(initialImages);
+          setSelectedImageIdx(0);
+          if (found.reviewsList) {
+            setReviews(found.reviewsList);
+          }
         }
+        setLoading(false);
       }
     };
 
@@ -139,7 +143,7 @@ export default function ProductDetailPage() {
   // Color Variant Selection
   const handleVariantClick = (idx: number) => {
     setSelectedVariantIndex(idx);
-    if (product.colorVariants && product.colorVariants[idx]) {
+    if (product?.colorVariants && product.colorVariants[idx]) {
       const variantImgs = product.colorVariants[idx].images;
       setGalleryImages(variantImgs && variantImgs.length > 0 ? variantImgs : product.images);
       setSelectedImageIdx(0);
@@ -154,6 +158,17 @@ export default function ProductDetailPage() {
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setZoomCoords({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
   };
+
+  if (loading || !product) {
+    return (
+      <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-16 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-[#C87F4A] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="font-serif text-lg text-stone-700">Loading Atelier Masterpiece...</p>
+        </div>
+      </div>
+    );
+  }
 
   const inWishlist = isInWishlist(product.id);
   const totalPriceINR = product.priceINR * quantity;

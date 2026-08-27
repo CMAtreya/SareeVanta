@@ -117,6 +117,8 @@ export default function AdminCatalogPage() {
         if (data.products && Array.isArray(data.products) && data.products.length > 0) {
           const formatted: CatalogSaree[] = data.products.map((p: any, idx: number) => {
             const firstVariant = p.product_variants?.[0] || {};
+            const invData = Array.isArray(firstVariant.inventory) ? firstVariant.inventory[0] : firstVariant.inventory;
+            const actualStock = invData ? Math.max(0, (invData.quantity || 0) - (invData.reserved_quantity || 0)) : 10;
             const weave = p.weavings?.name || 'Mysore Silk Crepe';
             const fabric = p.fabrics?.name || '100% Pure Mulberry Silk';
             const zari = p.zari_specifications?.name || 'Pure 24K Gold Zari';
@@ -126,6 +128,7 @@ export default function AdminCatalogPage() {
             return {
               id: p.id,
               title: p.title,
+              slug: p.slug || p.id,
               sku: firstVariant.sku || `NSH-SKU-MYS-${10 + idx}`,
               loomId: `LOOM-KA-${10 + idx}`,
               hsnCode: '5007.20.10',
@@ -134,7 +137,7 @@ export default function AdminCatalogPage() {
               zariType: zari,
               priceINR,
               originalPriceINR: mrpINR,
-              stock: 2,
+              stock: actualStock,
               hasAiAvatar: true,
               isActive: p.is_published !== false,
               status: p.is_published ? 'ACTIVE' : 'DRAFT',
@@ -238,7 +241,7 @@ export default function AdminCatalogPage() {
   };
 
   // Inline Stock Update
-  const handleStockChange = (id: string, newStock: number) => {
+  const handleStockChange = async (id: string, newStock: number) => {
     const validStock = Math.max(0, newStock);
     setCatalog((prev) =>
       prev.map((item) => {
@@ -254,6 +257,21 @@ export default function AdminCatalogPage() {
         return item;
       })
     );
+
+    try {
+      const targetItem = catalog.find((i) => i.id === id);
+      await fetch('/api/admin/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          product_id: id,
+          sku: targetItem?.sku,
+          new_quantity: validStock,
+        }),
+      });
+    } catch (err) {
+      console.error('[Catalog] Error updating stock in database:', err);
+    }
   };
 
   // Visibility Toggle

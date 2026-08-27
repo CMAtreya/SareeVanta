@@ -86,8 +86,6 @@ export default function RootLayout({
             <StorefrontLayout>{children}</StorefrontLayout>
           </SmoothScrollProvider>
         </CartProvider>
-        {/* Global Instagram oEmbed script loaded once asynchronously */}
-        <script async src="https://www.instagram.com/embed.js" />
       </body>
     </html>
   );

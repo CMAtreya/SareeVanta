@@ -822,46 +822,94 @@ export default function StorefrontDisplayManagerPage() {
             </div>
 
             <form onSubmit={handleSaveSlide} className="p-6 space-y-4 overflow-y-auto text-xs font-sans">
-              {/* Images */}
+              {/* Images File Upload Pickers */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Desktop Image URL (1920x800) *
+                {/* Desktop Banner Image Upload */}
+                <div className="space-y-1.5">
+                  <label className="block font-semibold text-slate-700">
+                    Desktop Banner Image (1920x800) *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingSlide.desktopImage}
-                    onChange={(e) =>
-                      setEditingSlide({ ...editingSlide, desktopImage: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono"
-                  />
-                  <img
-                    src={editingSlide.desktopImage}
-                    alt="Desktop Preview"
-                    className="w-full h-24 rounded-lg object-cover mt-2 border border-slate-200"
-                  />
+                  <div className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-3 text-center bg-slate-50 transition-colors">
+                    <input
+                      type="file"
+                      id="desktop-banner-upload"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditingSlide({
+                              ...editingSlide,
+                              desktopImage: reader.result as string,
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <label htmlFor="desktop-banner-upload" className="cursor-pointer space-y-1 block">
+                      <ImageIcon className="w-5 h-5 text-blue-600 mx-auto" />
+                      <span className="text-xs font-bold text-slate-900 block">
+                        Choose Desktop Image File
+                      </span>
+                      <span className="text-[10px] text-slate-500 block">
+                        PNG, JPG, WEBP (Recommended 1920x800)
+                      </span>
+                    </label>
+                  </div>
+                  {editingSlide.desktopImage && (
+                    <img
+                      src={editingSlide.desktopImage}
+                      alt="Desktop Preview"
+                      className="w-full h-24 rounded-lg object-cover mt-2 border border-slate-200"
+                    />
+                  )}
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Mobile Image URL (800x1000) *
+                {/* Mobile Banner Image Upload */}
+                <div className="space-y-1.5">
+                  <label className="block font-semibold text-slate-700">
+                    Mobile Banner Image (800x1000) *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={editingSlide.mobileImage}
-                    onChange={(e) =>
-                      setEditingSlide({ ...editingSlide, mobileImage: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono"
-                  />
-                  <img
-                    src={editingSlide.mobileImage}
-                    alt="Mobile Preview"
-                    className="w-20 h-24 rounded-lg object-cover mt-2 border border-slate-200"
-                  />
+                  <div className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-3 text-center bg-slate-50 transition-colors">
+                    <input
+                      type="file"
+                      id="mobile-banner-upload"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditingSlide({
+                              ...editingSlide,
+                              mobileImage: reader.result as string,
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <label htmlFor="mobile-banner-upload" className="cursor-pointer space-y-1 block">
+                      <Smartphone className="w-5 h-5 text-blue-600 mx-auto" />
+                      <span className="text-xs font-bold text-slate-900 block">
+                        Choose Mobile Image File
+                      </span>
+                      <span className="text-[10px] text-slate-500 block">
+                        PNG, JPG, WEBP (Recommended 800x1000)
+                      </span>
+                    </label>
+                  </div>
+                  {editingSlide.mobileImage && (
+                    <img
+                      src={editingSlide.mobileImage}
+                      alt="Mobile Preview"
+                      className="w-20 h-24 rounded-lg object-cover mt-2 border border-slate-200"
+                    />
+                  )}
                 </div>
               </div>
 

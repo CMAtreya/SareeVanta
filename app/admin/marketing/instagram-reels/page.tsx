@@ -557,6 +557,10 @@ export default function AdminInstagramReelsPage() {
                       <img
                         src={reel.thumbnail_url}
                         alt={reel.caption || reel.shortcode}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
+                        }}
                         className="w-full h-full object-cover"
                       />
                     ) : (

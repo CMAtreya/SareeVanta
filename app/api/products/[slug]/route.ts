@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { getProductBySlug as getMockProductBySlug } from '@/lib/products';
 import { NextResponse } from 'next/server';
 
@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   const { slug } = params;
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   if (supabaseUrl && !supabaseUrl.includes('placeholder')) {
@@ -39,8 +39,8 @@ export async function GET(
             product_variant_media ( url, is_primary, display_order )
           )
         `)
-        .eq('slug', slug)
-        .single();
+        .or(`slug.eq.${slug},id.eq.${slug}`)
+        .maybeSingle();
 
       if (!error && data) {
         const variants = data.product_variants || [];

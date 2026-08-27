@@ -9,10 +9,11 @@ export async function GET() {
     .select(`
       *,
       product_variants (
+        id,
         sku,
         price_paise,
         colors(name),
-        products(title)
+        products(id, title)
       )
     `);
 
@@ -26,34 +27,42 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = createAdminClient();
   const body = await request.json();
-  const { variant_id, sku, change_quantity, quantity_delta, reason = 'Manual Admin Stock Adjustment' } = body;
-  const delta = change_quantity ?? quantity_delta ?? 0;
+  const { variant_id, product_id, sku, change_quantity, quantity_delta, new_quantity } = body;
 
   let targetVariantId = variant_id;
   if (!targetVariantId && sku) {
     const { data: v } = await supabase.from('product_variants').select('id').eq('sku', sku).maybeSingle();
     targetVariantId = v?.id;
   }
-
-  if (!targetVariantId) {
-    return NextResponse.json({ success: true, message: 'Stock update processed' });
+  if (!targetVariantId && product_id) {
+    const { data: v } = await supabase.from('product_variants').select('id').eq('product_id', product_id).maybeSingle();
+    targetVariantId = v?.id;
   }
 
-  const { data: currentInv } = await supabase
-    .from('inventory')
-    .select('variant_id, quantity')
-    .eq('variant_id', targetVariantId)
-    .maybeSingle();
+  if (targetVariantId) {
+    let finalQty = 0;
+    if (new_quantity !== undefined) {
+      finalQty = Math.max(0, Number(new_quantity));
+    } else {
+      const delta = change_quantity ?? quantity_delta ?? 0;
+      const { data: currentInv } = await supabase
+        .from('inventory')
+        .select('quantity')
+        .eq('variant_id', targetVariantId)
+        .maybeSingle();
+      finalQty = Math.max(0, (currentInv?.quantity || 0) + delta);
+    }
 
-  const newQty = Math.max(0, (currentInv?.quantity || 0) + delta);
+    await supabase
+      .from('inventory')
+      .upsert({
+        variant_id: targetVariantId,
+        quantity: finalQty,
+        updated_at: new Date().toISOString(),
+      });
 
-  await supabase
-    .from('inventory')
-    .upsert({
-      variant_id: targetVariantId,
-      quantity: newQty,
-      updated_at: new Date().toISOString(),
-    });
+    return NextResponse.json({ success: true, new_quantity: finalQty });
+  }
 
-  return NextResponse.json({ success: true, new_quantity: newQty });
+  return NextResponse.json({ success: true, message: 'Stock update processed' });
 }

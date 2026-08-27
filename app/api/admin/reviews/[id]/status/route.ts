@@ -12,8 +12,10 @@ export async function PATCH(
     const reviewId = params.id;
 
     const supabase = createAdminClient();
-    const updates: any = {};
-    if (status) updates.moderation_status = status;
+    const updates: Record<string, any> = {};
+    if (status !== undefined) updates.moderation_status = status;
+    if (isFeatured !== undefined) updates.is_featured = Boolean(isFeatured);
+    if (rejectionReason !== undefined) updates.rejection_reason = rejectionReason;
 
     const { data: updatedReview, error } = await supabase
       .from('reviews')

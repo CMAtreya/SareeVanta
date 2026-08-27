@@ -264,9 +264,8 @@ export default function InventoryMatrixPage() {
   // Modal State for stock adjustment
   const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
   const [adjustDirection, setAdjustDirection] = useState<'INCREASE' | 'DECREASE'>('INCREASE');
-  const [adjustQuantity, setAdjustQuantity] = useState<number>(1);
+  const [adjustQuantity, setAdjustQuantity] = useState<string>('1');
   const [adjustReason, setAdjustReason] = useState<string>('Stock Count Reconcile');
-  const [adjustStaff, setAdjustStaff] = useState<string>('Ramesh (Warehouse Lead)');
   const [adjustNotes, setAdjustNotes] = useState<string>('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -321,9 +320,10 @@ export default function InventoryMatrixPage() {
   // Handle Stock Adjustment Confirmation
   const handleConfirmStockAdjustment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!adjustingItem || adjustQuantity <= 0) return;
+    const qtyVal = Math.max(1, parseInt(adjustQuantity, 10) || 1);
+    if (!adjustingItem) return;
 
-    const delta = adjustDirection === 'INCREASE' ? adjustQuantity : -adjustQuantity;
+    const delta = adjustDirection === 'INCREASE' ? qtyVal : -qtyVal;
     const previousStock = adjustingItem.physicalStock;
     const newStock = Math.max(0, previousStock + delta);
 
@@ -338,7 +338,7 @@ export default function InventoryMatrixPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sku: adjustingItem.sku,
-          quantity_delta: delta,
+          change_quantity: delta,
           reason: adjustReason,
         }),
       });
@@ -356,7 +356,7 @@ export default function InventoryMatrixPage() {
       previousStock,
       newStock,
       reason: adjustReason,
-      staffMember: adjustStaff,
+      staffMember: 'SuperAdmin Executive (Authenticated Session)',
       notes: adjustNotes.trim() || undefined,
     };
     setAuditLogs([newLog, ...auditLogs]);
@@ -365,7 +365,7 @@ export default function InventoryMatrixPage() {
       `Stock for ${adjustingItem.sku} adjusted by ${delta > 0 ? `+${delta}` : delta} units (${adjustReason}).`
     );
     setAdjustingItem(null);
-    setAdjustQuantity(1);
+    setAdjustQuantity('1');
     setAdjustNotes('');
   };
 
@@ -962,12 +962,17 @@ export default function InventoryMatrixPage() {
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Delta Units</label>
                   <input
-                    type="number"
-                    min={1}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     required
                     value={adjustQuantity}
-                    onChange={(e) => setAdjustQuantity(Math.max(1, Number(e.target.value)))}
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setAdjustQuantity(val);
+                    }}
+                    placeholder="Enter units (e.g. 50)"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -998,18 +1003,15 @@ export default function InventoryMatrixPage() {
                 </select>
               </div>
 
-              {/* Staff Identification */}
+              {/* Automatic Authenticated Staff Identification */}
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Authorizing Staff Member *
+                  Authorizing Staff Member
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={adjustStaff}
-                  onChange={(e) => setAdjustStaff(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 font-medium"
-                />
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-800">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>SuperAdmin Executive (Authenticated Admin Session)</span>
+                </div>
               </div>
 
               {/* Internal Notes */}

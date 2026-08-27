@@ -215,13 +215,13 @@ export default function Header() {
             : 'bg-[#FAF3E4]/95 backdrop-blur-md border-b border-[#C87F4A]/20'
         }`}
       >
-        <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-3 sm:py-3.5 flex items-center justify-between gap-4 sm:gap-8">
+        <div className="w-full px-2.5 sm:px-6 md:px-8 lg:px-10 xl:px-12 py-2.5 sm:py-3.5 flex items-center justify-between gap-1.5 sm:gap-8">
           {/* Mobile Menu Button (Small Screens) */}
-          <div className="flex items-center lg:hidden">
+          <div className="flex items-center lg:hidden flex-shrink-0">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
-              className="text-[#1F1B16] hover:text-[#7A1C30] p-1.5 -ml-1 focus:outline-none"
+              className="text-[#1F1B16] hover:text-[#7A1C30] p-1 focus:outline-none"
               aria-label="Open Navigation Menu"
             >
               <Menu className="w-5 h-5" />
@@ -231,10 +231,10 @@ export default function Header() {
           {/* Left: Brand Identity Logo (NEELSAREEHOUSE MYSURU • ESTD. 2021) */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 sm:gap-3 focus:outline-none group flex-shrink-0"
+            className="flex items-center gap-1.5 sm:gap-3 focus:outline-none group flex-shrink-0 min-w-0"
           >
             {/* Brand Emblem Logo with Gold Gradient Ring */}
-            <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full p-[2px] bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B] shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+            <div className="relative w-8 h-8 sm:w-11 sm:h-11 rounded-full p-[2px] bg-gradient-to-br from-[#E2CE9F] via-[#C87F4A] to-[#B8892B] shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
               <div className="w-full h-full rounded-full overflow-hidden bg-[#FAF3E4] flex items-center justify-center p-0.5 border border-white/60">
                 <picture>
                   <source srcSet="/assets/logo.webp" type="image/webp" />
@@ -253,11 +253,11 @@ export default function Header() {
               </div>
             </div>
 
-            <div className="flex flex-col items-start">
-              <span className="font-editorial text-xl sm:text-2xl lg:text-[26px] font-bold tracking-[0.06em] text-[#1F1B16] uppercase group-hover:text-[#7A1C30] transition-colors leading-none">
+            <div className="flex flex-col items-start min-w-0">
+              <span className="font-editorial text-sm xs:text-base sm:text-2xl lg:text-[26px] font-bold tracking-[0.02em] sm:tracking-[0.06em] text-[#1F1B16] uppercase group-hover:text-[#7A1C30] transition-colors leading-none truncate">
                 NEELSAREEHOUSE
               </span>
-              <span className="text-[8px] sm:text-[9.5px] tracking-[0.28em] font-sans font-bold text-[#C87F4A] uppercase mt-1 leading-none">
+              <span className="text-[7px] sm:text-[9.5px] tracking-[0.16em] sm:tracking-[0.28em] font-sans font-bold text-[#C87F4A] uppercase mt-0.5 sm:mt-1 leading-none">
                 MYSURU • ESTD. 2021
               </span>
             </div>

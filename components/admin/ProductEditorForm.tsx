@@ -206,30 +206,81 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [isSaving, setIsSaving] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
 
-  // Populate data in edit mode
+  // Populate data in edit mode from Supabase or static product store
   useEffect(() => {
-    if (mode === 'edit' && existingProduct) {
-      setTitle(existingProduct.title);
-      setDescription(
-        existingProduct.description ||
-          `${existingProduct.title} handcrafted in pure mulberry silk with authentic zari borders.`
-      );
-      setWeave(existingProduct.weave);
-      setSellingPrice(String(existingProduct.priceINR));
-      setMrp(String(existingProduct.originalPriceINR || Math.round(existingProduct.priceINR * 1.18)));
-      setCostPrice(String(Math.round(existingProduct.priceINR * 0.65)));
-      setSku((existingProduct as any).sku || `NSH-${Math.floor(1000 + Math.random() * 9000)}`);
-      setBarcode((existingProduct as any).barcode || `890${Math.floor(100000000 + Math.random() * 900000000)}`);
-      if (existingProduct.images?.length) {
-        setImages(existingProduct.images);
+    async function fetchProductDetails() {
+      if (mode !== 'edit' || !productId) return;
+
+      // Check static array first
+      let targetProduct = products.find((p) => p.id === productId);
+
+      // If not in static array, fetch live product from API endpoint
+      if (!targetProduct) {
+        try {
+          const res = await fetch('/api/admin/products');
+          const data = await res.json();
+          if (data.products && Array.isArray(data.products)) {
+            const found = data.products.find((p: any) => p.id === productId || p.slug === productId);
+            if (found) {
+              const mainVariant = found.product_variants?.[0];
+              targetProduct = {
+                id: found.id,
+                title: found.title,
+                priceINR: Math.round((found.base_selling_price_paise || 2800000) / 100),
+                originalPriceINR: Math.round((found.base_mrp_paise || 3400000) / 100),
+                weave: found.weavings?.name || 'Mysore Silk',
+                fabric: found.fabrics?.name || '100% Pure Mulberry Silk',
+                zariSpec: found.zari_specifications?.name || 'Pure 24K Tested Zari',
+                description: found.description || '',
+                images: mainVariant?.product_variant_media?.map((m: any) => m.url) || [
+                  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
+                ],
+                sku: mainVariant?.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
+                barcode: `890${(found.id || '1000').replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '0')}`,
+              } as any;
+            }
+          }
+        } catch (err) {
+          console.error('[ProductEditorForm] Error fetching product for edit:', err);
+        }
       }
+
+      if (targetProduct) {
+        setTitle(targetProduct.title);
+        setDescription(
+          targetProduct.description ||
+            `${targetProduct.title} handcrafted in pure mulberry silk with authentic zari borders.`
+        );
+        setWeave(targetProduct.weave || 'Mysore Silk');
+        if ((targetProduct as any).fabric) setFabric((targetProduct as any).fabric);
+        if ((targetProduct as any).zariSpec) setZariSpec((targetProduct as any).zariSpec);
+        setSellingPrice(String(targetProduct.priceINR));
+        setMrp(String(targetProduct.originalPriceINR || Math.round(targetProduct.priceINR * 1.18)));
+        setCostPrice(String(Math.round(targetProduct.priceINR * 0.65)));
+
+        // PERMANENT SKU & BARCODE — Fixed and preserved once assigned!
+        const fixedSku = (targetProduct as any).sku || `NSH-SKU-${targetProduct.id.slice(0, 6).toUpperCase()}`;
+        const fixedBarcode =
+          (targetProduct as any).barcode ||
+          `890${targetProduct.id.replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '5')}`;
+        setSku(fixedSku);
+        setBarcode(fixedBarcode);
+
+        if (targetProduct.images?.length) {
+          setImages(targetProduct.images);
+        }
+      }
+    }
+
+    if (mode === 'edit') {
+      fetchProductDetails();
     } else if (mode === 'create') {
       setTitle('Kanchipuram Heavy Korvai Bridal Silk Saree');
       setDescription(
         'Opulent Kanchipuram silk saree featuring double-shuttle Korvai interlocked temple borders and pure gold zari bullion.'
       );
     }
-  }, [mode, existingProduct]);
+  }, [mode, productId]);
 
   // Calculated Discount Percent
   const discountPercent = mrp && sellingPrice

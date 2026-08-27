@@ -14,7 +14,7 @@ export async function GET() {
       patterns(name),
       border_stylings(name),
       zari_specifications(name),
-      product_variants(*, colors(name, hex_code))
+      product_variants(*, colors(name, hex_code), inventory(*))
     `)
     .order('created_at', { ascending: false });
 
