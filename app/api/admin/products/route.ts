@@ -73,31 +73,59 @@ export async function POST(request: Request) {
   const baseMrpPaise = Math.round((base_mrp_inr || base_selling_price_inr) * 100);
   const baseSellingPricePaise = Math.round(base_selling_price_inr * 100);
 
-  // 1. Create Product
-  const { data: product, error: productError } = await supabase
+  // Check if product already exists by slug
+  const { data: existingProduct } = await supabase
     .from('products')
-    .insert({
-      title,
-      slug,
-      description: description || '',
-      base_mrp_paise: baseMrpPaise,
-      base_selling_price_paise: baseSellingPricePaise,
-      weaving_id: finalWeavingId,
-      fabric_id: finalFabricId,
-      occasion_id: finalOccasionId,
-      pattern_id: pattern_id || null,
-      border_styling_id: border_styling_id || null,
-      zari_specification_id: finalZariId,
-      is_published: true,
-    })
     .select('id')
-    .single();
+    .eq('slug', slug)
+    .maybeSingle();
 
-  if (productError) {
-    return NextResponse.json({ error: productError.message }, { status: 500 });
+  let productId = existingProduct?.id;
+
+  if (productId) {
+    // Update existing product
+    await supabase
+      .from('products')
+      .update({
+        title,
+        description: description || '',
+        base_mrp_paise: baseMrpPaise,
+        base_selling_price_paise: baseSellingPricePaise,
+        weaving_id: finalWeavingId,
+        fabric_id: finalFabricId,
+        occasion_id: finalOccasionId,
+        zari_specification_id: finalZariId,
+        is_published: true,
+      })
+      .eq('id', productId);
+  } else {
+    // Insert new product
+    const { data: newProd, error: productError } = await supabase
+      .from('products')
+      .insert({
+        title,
+        slug,
+        description: description || '',
+        base_mrp_paise: baseMrpPaise,
+        base_selling_price_paise: baseSellingPricePaise,
+        weaving_id: finalWeavingId,
+        fabric_id: finalFabricId,
+        occasion_id: finalOccasionId,
+        pattern_id: pattern_id || null,
+        border_styling_id: border_styling_id || null,
+        zari_specification_id: finalZariId,
+        is_published: true,
+      })
+      .select('id')
+      .single();
+
+    if (productError) {
+      return NextResponse.json({ error: productError.message }, { status: 500 });
+    }
+    productId = newProd.id;
   }
 
-  // 2. Create Default Variant & Initial Inventory
+  // 2. Create or Update Variant & Inventory
   const targetSku = sku || `NSH-SKU-${slug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 
   let targetColorId = color_id;
@@ -111,43 +139,66 @@ export async function POST(request: Request) {
     }
   }
 
-  if (targetColorId) {
-    const { data: variant } = await supabase
+  if (targetColorId && productId) {
+    // Check existing variant by product_id or sku
+    const { data: existingVariant } = await supabase
       .from('product_variants')
-      .insert({
-        product_id: product.id,
-        color_id: targetColorId,
-        sku: targetSku,
-        price_paise: baseSellingPricePaise,
-        mrp_paise: baseMrpPaise,
-      })
       .select('id')
-      .single();
+      .eq('product_id', productId)
+      .maybeSingle();
 
-    if (variant) {
+    let variantId = existingVariant?.id;
+
+    if (variantId) {
+      await supabase
+        .from('product_variants')
+        .update({
+          sku: targetSku,
+          price_paise: baseSellingPricePaise,
+          mrp_paise: baseMrpPaise,
+        })
+        .eq('id', variantId);
+    } else {
+      const { data: newVar } = await supabase
+        .from('product_variants')
+        .insert({
+          product_id: productId,
+          color_id: targetColorId,
+          sku: targetSku,
+          price_paise: baseSellingPricePaise,
+          mrp_paise: baseMrpPaise,
+        })
+        .select('id')
+        .single();
+      variantId = newVar?.id;
+    }
+
+    if (variantId) {
       // Upsert Inventory
       await supabase.from('inventory').upsert({
-        variant_id: variant.id,
+        variant_id: variantId,
         quantity: Number(initial_stock) || 10,
         reserved_quantity: 0,
       });
 
-      // Insert Media Photos if provided
+      // Update Media Photos: Delete old, insert new
       if (Array.isArray(images) && images.length > 0) {
-        const mediaInserts = images.filter(Boolean).map((url: string, index: number) => ({
-          variant_id: variant.id,
-          url,
-          is_primary: index === 0,
-          display_order: index,
-        }));
-        if (mediaInserts.length > 0) {
+        const validImages = images.filter(Boolean);
+        if (validImages.length > 0) {
+          await supabase.from('product_variant_media').delete().eq('variant_id', variantId);
+          const mediaInserts = validImages.map((url: string, index: number) => ({
+            variant_id: variantId,
+            url,
+            is_primary: index === 0,
+            display_order: index,
+          }));
           await supabase.from('product_variant_media').insert(mediaInserts);
         }
       }
     }
   }
 
-  return NextResponse.json({ success: true, product_id: product.id });
+  return NextResponse.json({ success: true, product_id: productId });
 }
 
 export async function DELETE(request: Request) {

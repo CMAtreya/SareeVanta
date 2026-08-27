@@ -321,26 +321,50 @@ export default function ProductDetailPage() {
               onMouseMove={handleMouseMove}
               className="relative flex-1 aspect-[3/4] rounded-2xl overflow-hidden bg-white border border-[#C87F4A]/25 shadow-silk-lg cursor-crosshair select-none"
             >
-              {/* Normal Image */}
-              <img
-                src={galleryImages[selectedImageIdx] || galleryImages[0]}
-                alt={product.title}
-                className={`w-full h-full object-cover object-center transition-opacity duration-200 ${
-                  isZoomed ? 'opacity-0' : 'opacity-100'
-                }`}
-              />
+              {/* Normal Image or Branded Atelier Placeholder */}
+              {(() => {
+                const currentImg = galleryImages[selectedImageIdx] || galleryImages[0] || product.images?.[0];
+                const hasValidImage = currentImg && typeof currentImg === 'string' && currentImg.trim().length > 5;
 
-              {/* Zoom Magnifier Lens Image */}
-              {isZoomed && (
-                <div
-                  className="absolute inset-0 w-full h-full bg-no-repeat pointer-events-none"
-                  style={{
-                    backgroundImage: `url(${galleryImages[selectedImageIdx] || galleryImages[0]})`,
-                    backgroundPosition: `${zoomCoords.x}% ${zoomCoords.y}%`,
-                    backgroundSize: '240%',
-                  }}
-                />
-              )}
+                if (hasValidImage) {
+                  return (
+                    <>
+                      <img
+                        src={currentImg}
+                        alt={product.title}
+                        className={`w-full h-full max-h-[580px] object-cover object-center transition-opacity duration-200 ${
+                          isZoomed ? 'opacity-0' : 'opacity-100'
+                        }`}
+                      />
+
+                      {/* Zoom Magnifier Lens Image */}
+                      {isZoomed && (
+                        <div
+                          className="absolute inset-0 w-full h-full bg-no-repeat pointer-events-none"
+                          style={{
+                            backgroundImage: `url(${currentImg})`,
+                            backgroundPosition: `${zoomCoords.x}% ${zoomCoords.y}%`,
+                            backgroundSize: '240%',
+                          }}
+                        />
+                      )}
+                    </>
+                  );
+                }
+
+                return (
+                  <div className="w-full h-full min-h-[440px] bg-[#1F1B16] text-[#FAF3E4] flex flex-col items-center justify-center p-8 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full border border-[#C87F4A]/50 flex items-center justify-center bg-[#FAF3E4]/10 shadow-lg">
+                      <Sparkles className="w-8 h-8 text-[#C87F4A]" />
+                    </div>
+                    <span className="text-xs font-mono tracking-[0.25em] uppercase text-[#E2CE9F]">NEEL SAREE HOUSE ATELIER</span>
+                    <h3 className="font-editorial text-2xl text-white font-semibold max-w-sm">{product.title}</h3>
+                    <p className="text-xs text-stone-300 font-mono max-w-xs leading-relaxed">
+                      Masterpiece Drape Photo Pending Studio Capture. 100% Pure Silk Certified.
+                    </p>
+                  </div>
+                );
+              })()}
 
               {/* Silk Mark Overlay Badge */}
               <div className="absolute top-4 left-4 bg-[#FAF3E4]/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#C87F4A]/30 text-xs font-mono font-semibold text-[#773D21] flex items-center gap-1.5 shadow-sm pointer-events-none">

@@ -223,6 +223,27 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             const found = data.products.find((p: any) => p.id === productId || p.slug === productId);
             if (found) {
               const mainVariant = found.product_variants?.[0];
+              const dbVariants = found.product_variants || [];
+
+              if (dbVariants.length > 0) {
+                const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
+                  const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
+                  return {
+                    id: v.id || `var-${vIdx + 1}`,
+                    name: v.colors?.name || 'Royal Crimson',
+                    hex: v.colors?.hex_code || '#8B1E28',
+                    sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
+                    stockCount: v.inventory?.[0]?.quantity || 10,
+                    images: [
+                      vImgs[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
+                      vImgs[1] || '',
+                      vImgs[2] || '',
+                    ] as [string, string, string],
+                  };
+                });
+                setColorVariants(mappedColorVars);
+              }
+
               targetProduct = {
                 id: found.id,
                 title: found.title,
@@ -232,7 +253,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 fabric: found.fabrics?.name || '100% Pure Mulberry Silk',
                 zariSpec: found.zari_specifications?.name || 'Pure 24K Tested Zari',
                 description: found.description || '',
-                images: mainVariant?.product_variant_media?.map((m: any) => m.url) || [
+                images: mainVariant?.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [
                   'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
                 ],
                 sku: mainVariant?.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
@@ -340,6 +361,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   // Save / Publish Action
   const handleSave = async (targetStatus: 'PUBLISHED' | 'DRAFT') => {
     setIsSaving(true);
+    const variantUploadedImages = colorVariants.flatMap((v) => v.images || []).filter(Boolean);
+    const combinedImages = Array.from(new Set([...variantUploadedImages, ...images.filter(Boolean)]));
+
     const updatedProductPayload = {
       title: title.trim() || 'Untitled Saree Creation',
       slug: (title.trim() || 'saree').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
@@ -352,7 +376,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       zari: zariSpec,
       occasion: selectedOccasions[0] || 'Bridal & Heritage',
       initial_stock: Number(stock) || 10,
-      images: images.filter(Boolean),
+      images: combinedImages,
     };
 
     try {
