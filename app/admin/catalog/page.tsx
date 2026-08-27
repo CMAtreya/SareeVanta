@@ -58,49 +58,8 @@ interface CatalogSaree {
   silkMarkNumber: string;
 }
 
-// Initial Catalog Data
-const INITIAL_CATALOG: CatalogSaree[] = products.map((p, idx) => {
-  const isLowStock = idx === 0 || idx === 2;
-  const isSinglePiece = idx === 1 || idx === 3;
-  const isDraft = idx === 5;
-  const hasAvatar = idx % 2 === 0;
-
-  let zari: CatalogSaree['zariType'] = 'Tested Gold Zari';
-  if (p.weave === 'Kanchipuram') zari = 'Pure Gold Zari';
-  else if (p.weave === 'Banarasi') zari = 'Antiqued Silver Zari';
-  else if (p.weave === 'Paithani') zari = 'Tapestry Zari';
-
-  return {
-    id: p.id,
-    title: p.title,
-    slug: p.slug,
-    sku: (p as any).sku || `NSH-SKU-${p.weave.substring(0, 3).toUpperCase()}-${String(idx + 1).padStart(2, '0')}`,
-    loomId: `LOOM-KA-${Math.floor(10 + idx * 3)}`,
-    hsnCode: '5007.20.10',
-    weave: p.weave,
-    fabric: '100% Pure Mulberry Silk',
-    zariType: zari,
-    priceINR: p.priceINR,
-    originalPriceINR: p.originalPriceINR || Math.round(p.priceINR * 1.15),
-    stock: isDraft ? 0 : isSinglePiece ? 1 : isLowStock ? 2 : Math.floor(4 + idx * 2),
-    hasAiAvatar: hasAvatar,
-    isActive: !isDraft,
-    status: isDraft
-      ? 'DRAFT'
-      : isSinglePiece
-      ? 'SINGLE_PIECE'
-      : isLowStock
-      ? 'LOW_STOCK'
-      : 'ACTIVE',
-    images: p.images || [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-    ],
-    silkMarkNumber: `CSB-2026-MYS-${1000 + idx}`,
-  };
-});
-
 export default function AdminCatalogPage() {
-  const [catalog, setCatalog] = useState<CatalogSaree[]>(INITIAL_CATALOG);
+  const [catalog, setCatalog] = useState<CatalogSaree[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'SINGLE_PIECE' | 'DRAFT' | 'ARCHIVED'
@@ -114,16 +73,21 @@ export default function AdminCatalogPage() {
     fetch('/api/admin/products')
       .then((res) => res.json())
       .then((data) => {
-        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+        if (data.products && Array.isArray(data.products)) {
           const formatted: CatalogSaree[] = data.products.map((p: any, idx: number) => {
             const firstVariant = p.product_variants?.[0] || {};
             const invData = Array.isArray(firstVariant.inventory) ? firstVariant.inventory[0] : firstVariant.inventory;
-            const actualStock = invData ? Math.max(0, (invData.quantity || 0) - (invData.reserved_quantity || 0)) : 10;
+            const actualStock = invData ? Math.max(0, (invData.quantity || 0) - (invData.reserved_quantity || 0)) : 0;
             const weave = p.weavings?.name || 'Mysore Silk Crepe';
             const fabric = p.fabrics?.name || '100% Pure Mulberry Silk';
             const zari = p.zari_specifications?.name || 'Pure 24K Gold Zari';
             const priceINR = Math.round((p.base_selling_price_paise || 2850000) / 100);
             const mrpINR = Math.round((p.base_mrp_paise || 3200000) / 100);
+
+            const mediaList = firstVariant.product_variant_media || [];
+            const displayImages = mediaList.length > 0 ? mediaList.map((m: any) => m.url) : [
+              'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+            ];
 
             return {
               id: p.id,
@@ -140,10 +104,8 @@ export default function AdminCatalogPage() {
               stock: actualStock,
               hasAiAvatar: true,
               isActive: p.is_published !== false,
-              status: p.is_published ? 'ACTIVE' : 'DRAFT',
-              images: [
-                'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-              ],
+              status: p.is_published ? (actualStock <= 3 && actualStock > 0 ? 'LOW_STOCK' : actualStock === 0 ? 'DRAFT' : 'ACTIVE') : 'DRAFT',
+              images: displayImages,
               silkMarkNumber: `CSB-2026-MYS-${1000 + idx}`,
             };
           });

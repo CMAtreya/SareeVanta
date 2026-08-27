@@ -135,15 +135,19 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Product Information Details */}
       <div className="flex flex-1 flex-col p-4 sm:p-5 bg-white">
         {/* Weave & Fabric Subheader */}
-        <div className="flex items-center justify-between text-[11px] font-mono text-[#773D21] mb-1">
-          <span className="uppercase font-semibold tracking-wider">
-            {product.weave} • {product.fabric}
-          </span>
-          <div className="flex items-center gap-1 text-amber-700">
-            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-            <span className="font-sans font-medium">{product.rating}</span>
+        {((product.weave || product.fabric) || product.rating) && (
+          <div className="flex items-center justify-between text-[11px] font-mono text-[#773D21] mb-1">
+            <span className="uppercase font-semibold tracking-wider truncate">
+              {[product.weave, product.fabric].filter(Boolean).join(' • ')}
+            </span>
+            {product.rating ? (
+              <div className="flex items-center gap-1 text-amber-700 flex-shrink-0">
+                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                <span className="font-sans font-medium">{product.rating}</span>
+              </div>
+            ) : null}
           </div>
-        </div>
+        )}
 
         {/* Product Title */}
         <Link href={`/products/${product.slug}`} className="block group-hover:text-[#C87F4A] transition-colors">

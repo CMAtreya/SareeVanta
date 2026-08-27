@@ -14,7 +14,7 @@ export async function GET() {
       patterns(name),
       border_stylings(name),
       zari_specifications(name),
-      product_variants(*, colors(name, hex_code), inventory(*))
+      product_variants(*, colors(name, hex_code), inventory(*), product_variant_media(*))
     `)
     .order('created_at', { ascending: false });
 
@@ -35,6 +35,10 @@ export async function POST(request: Request) {
     description,
     base_mrp_inr,
     base_selling_price_inr,
+    weave,
+    fabric,
+    zari,
+    occasion,
     weaving_id,
     fabric_id,
     occasion_id,
@@ -43,11 +47,28 @@ export async function POST(request: Request) {
     zari_specification_id,
     sku,
     color_id,
+    initial_stock,
+    images = [],
   } = body;
 
   if (!title || !slug || !base_selling_price_inr) {
     return NextResponse.json({ error: 'Title, slug, and selling price are required' }, { status: 400 });
   }
+
+  // Resolve named taxonomy IDs if not explicitly passed
+  const getOrInsertId = async (table: string, val?: string) => {
+    if (!val || !val.trim()) return null;
+    const clean = val.trim();
+    const { data: existing } = await supabase.from(table).select('id').ilike('name', clean).maybeSingle();
+    if (existing?.id) return existing.id;
+    const { data: created } = await supabase.from(table).insert({ name: clean }).select('id').maybeSingle();
+    return created?.id || null;
+  };
+
+  const finalWeavingId = weaving_id || (await getOrInsertId('weavings', weave));
+  const finalFabricId = fabric_id || (await getOrInsertId('fabrics', fabric));
+  const finalOccasionId = occasion_id || (await getOrInsertId('occasions', occasion));
+  const finalZariId = zari_specification_id || (await getOrInsertId('zari_specifications', zari));
 
   const baseMrpPaise = Math.round((base_mrp_inr || base_selling_price_inr) * 100);
   const baseSellingPricePaise = Math.round(base_selling_price_inr * 100);
@@ -61,12 +82,12 @@ export async function POST(request: Request) {
       description: description || '',
       base_mrp_paise: baseMrpPaise,
       base_selling_price_paise: baseSellingPricePaise,
-      weaving_id: weaving_id || null,
-      fabric_id: fabric_id || null,
-      occasion_id: occasion_id || null,
+      weaving_id: finalWeavingId,
+      fabric_id: finalFabricId,
+      occasion_id: finalOccasionId,
       pattern_id: pattern_id || null,
       border_styling_id: border_styling_id || null,
-      zari_specification_id: zari_specification_id || null,
+      zari_specification_id: finalZariId,
       is_published: true,
     })
     .select('id')
@@ -104,11 +125,25 @@ export async function POST(request: Request) {
       .single();
 
     if (variant) {
+      // Upsert Inventory
       await supabase.from('inventory').upsert({
         variant_id: variant.id,
-        quantity: body.initial_stock || 10,
+        quantity: Number(initial_stock) || 10,
         reserved_quantity: 0,
       });
+
+      // Insert Media Photos if provided
+      if (Array.isArray(images) && images.length > 0) {
+        const mediaInserts = images.filter(Boolean).map((url: string, index: number) => ({
+          variant_id: variant.id,
+          url,
+          is_primary: index === 0,
+          display_order: index,
+        }));
+        if (mediaInserts.length > 0) {
+          await supabase.from('product_variant_media').insert(mediaInserts);
+        }
+      }
     }
   }
 
@@ -134,5 +169,5 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   }
 
-  return NextResponse.json({ error: 'id or ids query parameter is required' }, { status: 400 });
+  return NextResponse.json({ error: 'Missing product ID parameter' }, { status: 400 });
 }

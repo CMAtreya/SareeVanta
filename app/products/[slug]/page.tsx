@@ -159,12 +159,38 @@ export default function ProductDetailPage() {
     setZoomCoords({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
   };
 
-  if (loading || !product) {
+  if (loading) {
     return (
       <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-16 flex items-center justify-center">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-[#C87F4A] border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="font-serif text-lg text-stone-700">Loading Atelier Masterpiece...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-24 px-4 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-16 h-16 rounded-full bg-[#7A1C30]/10 border border-[#7A1C30]/20 flex items-center justify-center mx-auto text-[#7A1C30]">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          <h1 className="font-editorial text-2xl sm:text-3xl text-stone-900 font-bold">
+            Saree Creation Not Found
+          </h1>
+          <p className="text-sm font-sans text-stone-600 leading-relaxed">
+            The requested saree listing could not be located or has been archived from our digital atelier.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#7A1C30] hover:bg-[#5E1524] text-white text-xs font-mono font-bold uppercase tracking-wider transition-all shadow-md"
+            >
+              <span>Explore All Sarees</span>
+            </Link>
+          </div>
         </div>
       </div>
     );

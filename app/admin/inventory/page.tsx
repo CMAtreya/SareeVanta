@@ -61,174 +61,9 @@ interface AuditLogRecord {
   notes?: string;
 }
 
-const INITIAL_INVENTORY: InventoryItem[] = [
-  {
-    id: 'inv-1',
-    sku: 'NSH-SKU-MYS-01',
-    title: 'Royal Wodeyar Crimson Crepe Silk',
-    weave: 'Mysore Silk',
-    fabric: '100% Pure Mulberry Silk',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Vault-MYS-04',
-    loomBatch: 'LOOM-KA-MYS-28',
-    costPrice: 18500,
-    retailPrice: 28500,
-    physicalStock: 4,
-    reservedStock: 1,
-    reorderPoint: 2,
-    silkMarkAuditId: 'CSB-2026-MYS-8942',
-  },
-  {
-    id: 'inv-2',
-    sku: 'NSH-SKU-KAN-04',
-    title: 'Bridal Kanchipuram Korvai Gold Brocade',
-    weave: 'Kanchipuram',
-    fabric: 'Pure Mulberry Raw Silk',
-    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Bin K-12-Top',
-    loomBatch: 'LOOM-TN-KAN-14',
-    costPrice: 45000,
-    retailPrice: 68000,
-    physicalStock: 2,
-    reservedStock: 1,
-    reorderPoint: 2,
-    silkMarkAuditId: 'CSB-2026-KAN-1102',
-  },
-  {
-    id: 'inv-3',
-    sku: 'NSH-SKU-BAN-03',
-    title: 'Varanasi Kadwa Katan Meenakari Boota',
-    weave: 'Banarasi',
-    fabric: 'Pure Katan Silk',
-    image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Bin B-08-Mid',
-    loomBatch: 'LOOM-UP-BAN-09',
-    costPrice: 35000,
-    retailPrice: 54000,
-    physicalStock: 1,
-    reservedStock: 0,
-    reorderPoint: 2,
-    silkMarkAuditId: 'CSB-2026-BAN-5510',
-  },
-  {
-    id: 'inv-4',
-    sku: 'NSH-SKU-PAI-02',
-    title: 'Yeola Paithani Royal Peacock Asawali',
-    weave: 'Paithani',
-    fabric: '100% Pure Silk',
-    image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Bin P-03-Gold',
-    loomBatch: 'LOOM-MH-PAI-02',
-    costPrice: 30000,
-    retailPrice: 46000,
-    physicalStock: 3,
-    reservedStock: 1,
-    reorderPoint: 2,
-    silkMarkAuditId: 'CSB-2026-PAI-9920',
-  },
-  {
-    id: 'inv-5',
-    sku: 'NSH-SKU-TIS-08',
-    title: 'Champagne Tissue Georgette Floral Zari',
-    weave: 'Tissue Georgette',
-    fabric: 'Metallic Tissue Silk',
-    image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Bin T-05-Aisle',
-    loomBatch: 'LOOM-KA-TIS-18',
-    costPrice: 22000,
-    retailPrice: 36000,
-    physicalStock: 5,
-    reservedStock: 1,
-    reorderPoint: 3,
-    silkMarkAuditId: 'CSB-2026-TIS-4421',
-  },
-  {
-    id: 'inv-6',
-    sku: 'NSH-SKU-MYS-07',
-    title: 'Mysuru Sandalwood Crepe Gold Kasuti',
-    weave: 'Mysore Silk',
-    fabric: '100% Pure Mulberry Silk',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Vault-MYS-02',
-    loomBatch: 'LOOM-KA-MYS-33',
-    costPrice: 20000,
-    retailPrice: 32000,
-    physicalStock: 1,
-    reservedStock: 1,
-    reorderPoint: 2,
-    silkMarkAuditId: 'CSB-2026-MYS-3319',
-  },
-  {
-    id: 'inv-7',
-    sku: 'NSH-SKU-PAT-01',
-    title: 'Patan Double Ikkat Royal Elephant Votive',
-    weave: 'Patola',
-    fabric: 'Pure Mulberry Silk',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-    binLocation: 'Vault-PAT-01',
-    loomBatch: 'LOOM-GJ-PAT-03',
-    costPrice: 85000,
-    retailPrice: 125000,
-    physicalStock: 0,
-    reservedStock: 0,
-    reorderPoint: 1,
-    silkMarkAuditId: 'CSB-2026-PAT-0012',
-  },
-];
-
-const INITIAL_AUDIT_LOGS: AuditLogRecord[] = [
-  {
-    id: 'log-1',
-    timestamp: '22 Aug 2026, 06:15 PM',
-    sku: 'NSH-SKU-MYS-01',
-    title: 'Royal Wodeyar Crimson Crepe Silk',
-    delta: -1,
-    previousStock: 5,
-    newStock: 4,
-    reason: 'Committed to Order #NSH-2026-8941',
-    staffMember: 'System (Online Checkout)',
-    notes: 'Order placed by Dr. Ananya Rao',
-  },
-  {
-    id: 'log-2',
-    timestamp: '22 Aug 2026, 03:40 PM',
-    sku: 'NSH-SKU-KAN-04',
-    title: 'Bridal Kanchipuram Korvai Gold Brocade',
-    delta: -1,
-    previousStock: 3,
-    newStock: 2,
-    reason: 'Committed to Order #NSH-2026-8940',
-    staffMember: 'System (Online Checkout)',
-  },
-  {
-    id: 'log-3',
-    timestamp: '21 Aug 2026, 11:20 AM',
-    sku: 'NSH-SKU-PAT-01',
-    title: 'Patan Double Ikkat Royal Elephant Votive',
-    delta: -1,
-    previousStock: 1,
-    newStock: 0,
-    reason: 'Offline Showroom Transfer',
-    staffMember: 'Suresh (Sayyaji Rao Lead)',
-    notes: 'Transferred to VIP Salon for in-person bridal viewing',
-  },
-  {
-    id: 'log-4',
-    timestamp: '20 Aug 2026, 04:30 PM',
-    sku: 'NSH-SKU-TIS-08',
-    title: 'Champagne Tissue Georgette Floral Zari',
-    delta: +3,
-    previousStock: 2,
-    newStock: 5,
-    reason: 'Restocked from Loom Cluster',
-    staffMember: 'Ramesh (Loom Supervisor)',
-    notes: 'Batch LOOM-KA-TIS-18 received with Central Silk Board tags',
-  },
-];
-
 export default function InventoryMatrixPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(INITIAL_INVENTORY);
-  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>(INITIAL_AUDIT_LOGS);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'MATRIX' | 'LOGS'>('MATRIX');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSegment, setFilterSegment] = useState<'ALL' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'SINGLE_PIECE'>('ALL');
@@ -238,7 +73,7 @@ export default function InventoryMatrixPage() {
     fetch('/api/admin/inventory')
       .then((res) => res.json())
       .then((data) => {
-        if (data.inventory && Array.isArray(data.inventory) && data.inventory.length > 0) {
+        if (data.inventory && Array.isArray(data.inventory)) {
           const formatted: InventoryItem[] = data.inventory.map((inv: any, idx: number) => ({
             id: inv.id || `inv-${idx}`,
             sku: inv.product_variants?.sku || `NSH-SKU-MYS-0${idx + 1}`,
@@ -248,9 +83,9 @@ export default function InventoryMatrixPage() {
             image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
             binLocation: `Vault-MYS-${10 + idx}`,
             loomBatch: `LOOM-KA-MYS-${10 + idx}`,
-            costPrice: 20000,
-            retailPrice: 28500,
-            physicalStock: inv.quantity ?? inv.physical_quantity ?? 1,
+            costPrice: Math.round(((inv.product_variants?.price_paise || 2000000) * 0.7) / 100),
+            retailPrice: Math.round((inv.product_variants?.price_paise || 2850000) / 100),
+            physicalStock: inv.quantity ?? inv.physical_quantity ?? 0,
             reservedStock: inv.reserved_quantity ?? 0,
             reorderPoint: 2,
             silkMarkAuditId: `CSB-2026-MYS-${3310 + idx}`,
@@ -260,6 +95,7 @@ export default function InventoryMatrixPage() {
       })
       .catch((err) => console.error('Error fetching live inventory:', err));
   }, []);
+
 
   // Modal State for stock adjustment
   const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);

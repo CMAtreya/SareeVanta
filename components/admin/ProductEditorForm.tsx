@@ -349,6 +349,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       base_mrp_inr: Number(mrp) || Number(sellingPrice) * 1.18,
       base_selling_price_inr: Number(sellingPrice) || 28000,
       sku: sku || `NSH-SKU-MYS-${Math.floor(1000 + Math.random() * 9000)}`,
+      weave,
+      fabric,
+      zari: zariSpec,
+      occasion: selectedOccasions[0] || 'Bridal & Heritage',
+      initial_stock: Number(stock) || 10,
+      images: images.filter(Boolean),
     };
 
     try {

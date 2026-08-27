@@ -60,7 +60,7 @@ export async function GET(
             .from('inventory')
             .select('quantity, reserved_quantity')
             .eq('variant_id', firstVariant.id)
-            .single();
+            .maybeSingle();
           if (inv) {
             totalStockCount = Math.max(0, inv.quantity - (inv.reserved_quantity || 0));
           }
