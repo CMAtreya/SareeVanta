@@ -15,7 +15,7 @@ import {
   Scissors,
   Star,
 } from 'lucide-react';
-import { products, sixCategoriesWithThumbnails } from '@/lib/products';
+import { sixCategoriesWithThumbnails } from '@/lib/products';
 import ProductCard from '@/components/ecommerce/ProductCard';
 import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarousel';
 import { useProducts } from '@/hooks/useProducts';
@@ -72,39 +72,12 @@ export default function HomePage() {
   // 2. Fetch Live Products from Supabase Backend
   // ----------------------------------------------------
   const { products: dbProducts } = useProducts();
-  const activeProducts = dbProducts.length > 0 ? dbProducts : products;
+  const activeProducts = dbProducts;
 
   // ----------------------------------------------------
   // 3. Dynamic Category Curator with Live Counts & Photos
   // ----------------------------------------------------
-  const [curatedCategoryList, setCuratedCategoryList] = useState(sixCategoriesWithThumbnails);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('nsh_category_curations');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const reordered = parsed.map((pCat: any) => {
-              const matched = sixCategoriesWithThumbnails.find(
-                (c) => c.name.toLowerCase() === (pCat.name || '').toLowerCase() || c.name.toLowerCase() === (pCat.slug || '').toLowerCase()
-              );
-              return matched || {
-                id: pCat.id || pCat.name,
-                name: pCat.name,
-                desc: pCat.subtitle || 'Royal Weave Heritage',
-                image: pCat.coverImage || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
-                count: '12 Designs',
-                thumbnails: [],
-              };
-            });
-            setCuratedCategoryList(reordered);
-          }
-        } catch (e) {}
-      }
-    }
-  }, []);
+  const curatedCategoryList = sixCategoriesWithThumbnails;
 
   const dynamicCategories = curatedCategoryList.map((cat) => {
     const matching = activeProducts.filter(

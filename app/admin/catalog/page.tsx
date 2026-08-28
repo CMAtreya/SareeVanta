@@ -277,17 +277,29 @@ export default function AdminCatalogPage() {
     setActiveActionMenuId(null);
   };
 
-  // Delete Saree
-  const handleDeleteSaree = (id: string) => {
-    setCatalog((prev) => prev.filter((item) => item.id !== id));
+  // Delete Saree Permanently
+  const handleDeleteSaree = async (id: string) => {
+    setCatalog((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      adminCatalogCache = updated;
+      return updated;
+    });
     setSelectedIds((prev) => prev.filter((i) => i !== id));
     setActiveActionMenuId(null);
+
+    try {
+      await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.error('[Catalog] Error deleting product from DB:', err);
+    }
   };
 
   // Bulk Apply Price Change
   const handleApplyBulkPrice = () => {
-    setCatalog((prev) =>
-      prev.map((item) => {
+    setCatalog((prev) => {
+      const updated = prev.map((item) => {
         if (!selectedIds.includes(item.id)) return item;
 
         let delta = 0;
@@ -303,42 +315,54 @@ export default function AdminCatalogPage() {
             : Math.max(1000, item.priceINR - delta);
 
         return { ...item, priceINR: newPrice };
-      })
-    );
+      });
+      adminCatalogCache = updated;
+      return updated;
+    });
     setIsBulkPriceModalOpen(false);
   };
 
   // Bulk Change Category
   const handleApplyBulkCategory = () => {
-    setCatalog((prev) =>
-      prev.map((item) =>
+    setCatalog((prev) => {
+      const updated = prev.map((item) =>
         selectedIds.includes(item.id) ? { ...item, weave: bulkNewWeave } : item
-      )
-    );
+      );
+      adminCatalogCache = updated;
+      return updated;
+    });
     setIsBulkCategoryModalOpen(false);
   };
 
   // Bulk Mark Out of Stock
   const handleBulkMarkOutOfStock = () => {
-    setCatalog((prev) =>
-      prev.map((item) =>
+    setCatalog((prev) => {
+      const updated = prev.map((item) =>
         selectedIds.includes(item.id)
-          ? { ...item, stock: 0, status: 'DRAFT', isActive: false }
+          ? { ...item, stock: 0, status: 'DRAFT' as const, isActive: false }
           : item
-      )
-    );
+      );
+      adminCatalogCache = updated;
+      return updated;
+    });
     setSelectedIds([]);
   };
 
-  // Bulk Delete
+  // Bulk Delete Permanently
   const handleBulkDelete = async () => {
+    const idsToDelete = [...selectedIds];
+    setCatalog((prev) => {
+      const updated = prev.filter((item) => !idsToDelete.includes(item.id));
+      adminCatalogCache = updated;
+      return updated;
+    });
+    setSelectedIds([]);
+
     try {
-      await fetch(`/api/admin/products?ids=${selectedIds.join(',')}`, { method: 'DELETE' });
+      await fetch(`/api/admin/products?ids=${idsToDelete.join(',')}`, { method: 'DELETE' });
     } catch (err) {
       console.error('[Catalog] Error deleting products:', err);
     }
-    setCatalog((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
-    setSelectedIds([]);
   };
 
   // Export CSV
@@ -595,7 +619,7 @@ export default function AdminCatalogPage() {
                   </td>
                 </tr>
               ) : (
-                filteredCatalog.map((saree) => {
+                filteredCatalog.map((saree, idx) => {
                   const isSelected = selectedIds.includes(saree.id);
                   const discountPercent = saree.originalPriceINR
                     ? Math.round(
@@ -786,44 +810,63 @@ export default function AdminCatalogPage() {
 
                         {/* Action Menu Dropdown */}
                         {activeActionMenuId === saree.id && (
-                          <div className="absolute right-3 top-10 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-30 text-left text-xs font-sans space-y-0.5">
-                            <Link
-                              href={`/admin/catalog/${saree.id}/edit`}
-                              className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                            >
-                              <Edit className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Full Specs Editor</span>
-                            </Link>
+                          <>
+                            {/* Transparent click-outside backdrop */}
+                            <div
+                              className="fixed inset-0 z-30"
+                              onClick={() => setActiveActionMenuId(null)}
+                            />
 
-                            <button
-                              type="button"
-                              onClick={() => handleDuplicateSaree(saree)}
-                              className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                            <div
+                              className={`absolute right-3 ${
+                                idx >= Math.max(0, filteredCatalog.length - 3) ? 'bottom-8' : 'top-10'
+                              } w-44 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-40 text-left text-xs font-sans space-y-0.5`}
                             >
-                              <Copy className="w-3.5 h-3.5 text-purple-600" />
-                              <span>Duplicate SKU</span>
-                            </button>
+                              <Link
+                                href={`/admin/catalog/${saree.id}/edit`}
+                                onClick={() => setActiveActionMenuId(null)}
+                                className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                              >
+                                <Edit className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Full Specs Editor</span>
+                              </Link>
 
-                            <button
-                              type="button"
-                              onClick={() => handleArchiveSaree(saree.id)}
-                              className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                            >
-                              <Archive className="w-3.5 h-3.5 text-amber-600" />
-                              <span>Archive to Vault</span>
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleDuplicateSaree(saree);
+                                  setActiveActionMenuId(null);
+                                }}
+                                className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Copy className="w-3.5 h-3.5 text-purple-600" />
+                                <span>Duplicate SKU</span>
+                              </button>
 
-                            <div className="border-t border-slate-100 my-1" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleArchiveSaree(saree.id);
+                                  setActiveActionMenuId(null);
+                                }}
+                                className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
+                              >
+                                <Archive className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Archive to Vault</span>
+                              </button>
 
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteSaree(saree.id)}
-                              className="w-full px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-semibold"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              <span>Delete SKU</span>
-                            </button>
-                          </div>
+                              <div className="border-t border-slate-100 my-1" />
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteSaree(saree.id)}
+                                className="w-full px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-semibold cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Delete SKU</span>
+                              </button>
+                            </div>
+                          </>
                         )}
                       </td>
                     </tr>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Product, products as fallbackProducts } from '@/lib/products';
+import { Product } from '@/lib/products';
 
 export interface UseProductsOptions {
   weave?: string;
@@ -35,15 +35,15 @@ export function useProducts(options: UseProductsOptions = {}) {
         if (res.ok) {
           const data = await res.json();
           if (isMounted && data.products && Array.isArray(data.products)) {
-            setProducts(data.products.length > 0 ? data.products : fallbackProducts);
+            setProducts(data.products);
           }
         } else if (isMounted) {
-          setProducts(fallbackProducts);
+          setProducts([]);
         }
       } catch (err: any) {
-        console.warn('[useProducts Hook] API error, using static fallback:', err);
+        console.warn('[useProducts Hook] API error:', err);
         if (isMounted) {
-          setProducts(fallbackProducts);
+          setProducts([]);
           setError(err?.message || 'Failed to fetch products');
         }
       } finally {

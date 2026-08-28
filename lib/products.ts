@@ -1,3 +1,21 @@
+export interface AvailableColor {
+  name: string;
+  hex: string;
+  matchKey: string;
+}
+
+export const availableColors: AvailableColor[] = [
+  { name: 'Crimson Red', hex: '#8B1E28', matchKey: 'crimson' },
+  { name: 'Pure Gold', hex: '#D4AF37', matchKey: 'gold' },
+  { name: 'Emerald Green', hex: '#1B4D3E', matchKey: 'emerald' },
+  { name: 'Royal Violet', hex: '#4A154B', matchKey: 'violet' },
+  { name: 'Powder Blue', hex: '#B0E0E6', matchKey: 'blue' },
+  { name: 'Rani Pink', hex: '#C2185B', matchKey: 'pink' },
+  { name: 'Ruby Red', hex: '#9B111E', matchKey: 'ruby' },
+  { name: 'Peacock Teal', hex: '#005F73', matchKey: 'teal' },
+  { name: 'Sandalwood Beige', hex: '#C2B280', matchKey: 'sandalwood' },
+];
+
 export interface ColorVariant {
   name: string;
   hex: string;

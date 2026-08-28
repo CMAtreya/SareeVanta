@@ -32,7 +32,7 @@ import {
   CheckCircle2,
   Camera,
 } from 'lucide-react';
-import { products, Product, Review } from '@/lib/products';
+import { Product, Review } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
 import ProductCard from '@/components/ecommerce/ProductCard';
 import ProductDetailSkeleton from '@/components/ecommerce/ProductDetailSkeleton';
@@ -48,14 +48,14 @@ export default function ProductDetailPage() {
   const { addToCart, toggleWishlist, isInWishlist, currency } = useCart();
 
   // Local / API Product Data
-  const initialProduct = products.find((p) => p.slug === slug || p.id === slug);
-  const [product, setProduct] = useState<Product | null>(initialProduct || null);
+  const initialCached = pdpCache.get(slug)?.product || null;
+  const [product, setProduct] = useState<Product | null>(initialCached);
   const [relatedItems, setRelatedItems] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(!initialProduct);
+  const [loading, setLoading] = useState(!initialCached);
 
   // Gallery & Variant State
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const [galleryImages, setGalleryImages] = useState<string[]>(initialProduct?.images || []);
+  const [galleryImages, setGalleryImages] = useState<string[]>(initialCached?.images || []);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
 
   // Zoom on Hover State
@@ -83,7 +83,7 @@ export default function ProductDetailPage() {
   const [infoTab, setInfoTab] = useState<'moreInformation' | 'moreInfo'>('moreInformation');
 
   // Reviews State
-  const [reviews, setReviews] = useState<Review[]>(initialProduct?.reviewsList || []);
+  const [reviews, setReviews] = useState<Review[]>(initialCached?.reviewsList || []);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [newReviewAuthor, setNewReviewAuthor] = useState('');
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
@@ -164,22 +164,8 @@ export default function ProductDetailPage() {
         console.error('Error fetching product from API:', err);
       }
 
-      // Fallback local lookup
-      const found = products.find((p) => p.slug === slug || p.id === slug);
       if (isMounted) {
-        if (found) {
-          setProduct(found);
-          const rel = products
-            .filter((p) => p.id !== found.id && (p.weave === found.weave || p.occasion === found.occasion))
-            .slice(0, 4);
-          setRelatedItems(rel);
-          const fallbackImgs = (found.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
-          setGalleryImages(fallbackImgs);
-          setSelectedImageIdx(0);
-          if (found.reviewsList) {
-            setReviews(found.reviewsList);
-          }
-        }
+        setProduct(null);
         setLoading(false);
       }
     };

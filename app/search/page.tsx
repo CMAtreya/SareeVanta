@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react';
-import { products, Product } from '@/lib/products';
+import { Product } from '@/lib/products';
 import ProductCard from '@/components/ecommerce/ProductCard';
 
 interface SearchSuggestion {
@@ -104,32 +104,16 @@ function SearchResultsContent() {
             else if (sortBy === 'popularity') items.sort((a, b) => b.reviewCount - a.reviewCount);
 
             setSearchResults(items);
-            setIsLoading(false);
           }
+          if (isMounted) setIsLoading(false);
           return;
         }
       } catch (err) {
-        console.error('API search failed, falling back to client search:', err);
+        console.error('Error fetching search results from API:', err);
       }
 
-      // Client Fallback
       if (isMounted) {
-        if (!activeQuery.trim()) {
-          setSearchResults(products);
-        } else {
-          const lower = activeQuery.toLowerCase();
-          const filtered = products.filter(
-            (p) =>
-              p.title.toLowerCase().includes(lower) ||
-              p.weave.toLowerCase().includes(lower) ||
-              p.fabric.toLowerCase().includes(lower) ||
-              p.occasion.toLowerCase().includes(lower) ||
-              p.color.toLowerCase().includes(lower) ||
-              p.zariGrade.toLowerCase().includes(lower) ||
-              p.description.toLowerCase().includes(lower)
-          );
-          setSearchResults(filtered);
-        }
+        setSearchResults([]);
         setIsLoading(false);
       }
     };

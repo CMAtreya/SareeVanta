@@ -15,7 +15,7 @@ import {
   RotateCcw,
   Search,
 } from 'lucide-react';
-import { products, Product } from '@/lib/products';
+import { Product } from '@/lib/products';
 import ProductCard from '@/components/ecommerce/ProductCard';
 import ProductCardSkeleton from '@/components/ecommerce/ProductCardSkeleton';
 import ProductFilters, { FilterCounts } from '@/components/ecommerce/ProductFilters';
@@ -31,7 +31,9 @@ function ProductsListingContent() {
   const weaveParam = searchParams.get('weave');
   const fabricParam = searchParams.get('fabric');
   const occasionParam = searchParams.get('occasion');
+  const patternParam = searchParams.get('pattern');
   const colorParam = searchParams.get('color');
+  const searchParam = searchParams.get('q') || searchParams.get('search');
   const priceMinParam = searchParams.get('price_min');
   const priceMaxParam = searchParams.get('price_max');
   const silkMarkParam = searchParams.get('silk_mark');
@@ -41,17 +43,21 @@ function ProductsListingContent() {
 
   // Filter States
   const [selectedWeaves, setSelectedWeaves] = useState<string[]>(
-    weaveParam ? weaveParam.split(',').map((w) => w.trim()) : []
+    weaveParam ? weaveParam.split(',').map((w) => w.trim()).filter(Boolean) : []
   );
   const [selectedFabrics, setSelectedFabrics] = useState<string[]>(
-    fabricParam ? fabricParam.split(',').map((f) => f.trim()) : []
+    fabricParam ? fabricParam.split(',').map((f) => f.trim()).filter(Boolean) : []
   );
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>(
-    occasionParam ? occasionParam.split(',').map((o) => o.trim()) : []
+    occasionParam ? occasionParam.split(',').map((o) => o.trim()).filter(Boolean) : []
+  );
+  const [selectedPatterns, setSelectedPatterns] = useState<string[]>(
+    patternParam ? patternParam.split(',').map((pt) => pt.trim()).filter(Boolean) : []
   );
   const [selectedColors, setSelectedColors] = useState<string[]>(
-    colorParam ? colorParam.split(',').map((c) => c.trim()) : []
+    colorParam ? colorParam.split(',').map((c) => c.trim()).filter(Boolean) : []
   );
+  const [searchQuery, setSearchQuery] = useState<string>(searchParam || '');
   const [priceRange, setPriceRange] = useState<[number, number]>([
     priceMinParam ? parseInt(priceMinParam, 10) : 10000,
     priceMaxParam ? parseInt(priceMaxParam, 10) : 100000,
@@ -74,7 +80,9 @@ function ProductsListingContent() {
     if (selectedWeaves.length > 0) params.set('weave', selectedWeaves.join(','));
     if (selectedFabrics.length > 0) params.set('fabric', selectedFabrics.join(','));
     if (selectedOccasions.length > 0) params.set('occasion', selectedOccasions.join(','));
+    if (selectedPatterns.length > 0) params.set('pattern', selectedPatterns.join(','));
     if (selectedColors.length > 0) params.set('color', selectedColors.join(','));
+    if (searchQuery.trim()) params.set('q', searchQuery.trim());
     if (priceRange[0] > 10000) params.set('price_min', priceRange[0].toString());
     if (priceRange[1] < 100000) params.set('price_max', priceRange[1].toString());
     if (silkMarkOnly) params.set('silk_mark', 'true');
@@ -89,7 +97,9 @@ function ProductsListingContent() {
     selectedWeaves,
     selectedFabrics,
     selectedOccasions,
+    selectedPatterns,
     selectedColors,
+    searchQuery,
     priceRange,
     silkMarkOnly,
     sortBy,
@@ -103,17 +113,21 @@ function ProductsListingContent() {
     const w = searchParams.get('weave');
     const f = searchParams.get('fabric');
     const o = searchParams.get('occasion');
+    const pt = searchParams.get('pattern');
     const c = searchParams.get('color');
+    const q = searchParams.get('q') || searchParams.get('search');
     const pMin = searchParams.get('price_min');
     const pMax = searchParams.get('price_max');
     const sMark = searchParams.get('silk_mark');
     const s = searchParams.get('sort') || 'featured';
     const p = parseInt(searchParams.get('page') || '1', 10);
 
-    setSelectedWeaves(w ? w.split(',').map((item) => item.trim()) : []);
-    setSelectedFabrics(f ? f.split(',').map((item) => item.trim()) : []);
-    setSelectedOccasions(o ? o.split(',').map((item) => item.trim()) : []);
-    setSelectedColors(c ? c.split(',').map((item) => item.trim()) : []);
+    setSelectedWeaves(w ? w.split(',').map((item) => item.trim()).filter(Boolean) : []);
+    setSelectedFabrics(f ? f.split(',').map((item) => item.trim()).filter(Boolean) : []);
+    setSelectedOccasions(o ? o.split(',').map((item) => item.trim()).filter(Boolean) : []);
+    setSelectedPatterns(pt ? pt.split(',').map((item) => item.trim()).filter(Boolean) : []);
+    setSelectedColors(c ? c.split(',').map((item) => item.trim()).filter(Boolean) : []);
+    setSearchQuery(q ? q.trim() : '');
     setPriceRange([pMin ? parseInt(pMin, 10) : 10000, pMax ? parseInt(pMax, 10) : 100000]);
     setSilkMarkOnly(sMark === 'true');
     setSortBy(s);
@@ -129,7 +143,9 @@ function ProductsListingContent() {
       if (selectedWeaves.length > 0) params.set('weave', selectedWeaves.join(','));
       if (selectedFabrics.length > 0) params.set('fabric', selectedFabrics.join(','));
       if (selectedOccasions.length > 0) params.set('occasion', selectedOccasions.join(','));
+      if (selectedPatterns.length > 0) params.set('pattern', selectedPatterns.join(','));
       if (selectedColors.length > 0) params.set('color', selectedColors.join(','));
+      if (searchQuery.trim()) params.set('q', searchQuery.trim());
       if (priceRange[0] > 10000) params.set('price_min', priceRange[0].toString());
       if (priceRange[1] < 100000) params.set('price_max', priceRange[1].toString());
       if (silkMarkOnly) params.set('silk_mark', 'true');
@@ -166,29 +182,13 @@ function ProductsListingContent() {
           return;
         }
       } catch (err) {
-        console.error('Error fetching from /api/products, falling back to local dataset', err);
+        console.error('Error fetching from /api/products:', err);
       }
 
       if (isMounted) {
-        let filtered = products.filter((p) => {
-          if (selectedWeaves.length > 0 && !selectedWeaves.includes(p.weave)) return false;
-          if (selectedFabrics.length > 0 && !selectedFabrics.includes(p.fabric)) return false;
-          if (selectedOccasions.length > 0 && !selectedOccasions.includes(p.occasion)) return false;
-          if (selectedColors.length > 0 && !selectedColors.some((c) => p.color.toLowerCase().includes(c))) return false;
-          if (p.priceINR < priceRange[0] || p.priceINR > priceRange[1]) return false;
-          if (silkMarkOnly && !p.silkMarkCertified) return false;
-          if (filterParam === 'new' && !p.isNew) return false;
-          return true;
-        });
-
-        if (sortBy === 'price-low') filtered.sort((a, b) => a.priceINR - b.priceINR);
-        else if (sortBy === 'price-high') filtered.sort((a, b) => b.priceINR - a.priceINR);
-        else if (sortBy === 'popularity') filtered.sort((a, b) => b.reviewCount - a.reviewCount);
-        else if (sortBy === 'newest') filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
-
-        setApiProducts(filtered);
-        setApiTotal(filtered.length);
-        setApiTotalPages(Math.ceil(filtered.length / 9) || 1);
+        setApiProducts([]);
+        setApiTotal(0);
+        setApiTotalPages(1);
         setIsLoading(false);
       }
     };
@@ -202,7 +202,9 @@ function ProductsListingContent() {
     selectedWeaves,
     selectedFabrics,
     selectedOccasions,
+    selectedPatterns,
     selectedColors,
+    searchQuery,
     priceRange,
     silkMarkOnly,
     sortBy,
@@ -216,48 +218,114 @@ function ProductsListingContent() {
     setSelectedWeaves([]);
     setSelectedFabrics([]);
     setSelectedOccasions([]);
+    setSelectedPatterns([]);
     setSelectedColors([]);
+    setSearchQuery('');
     setPriceRange([10000, 100000]);
     setSilkMarkOnly(false);
     setCurrentPage(1);
+    router.replace('/products', { scroll: false });
   };
 
   // Dynamic Header Title & Breadcrumbs
   const dynamicCategoryTitle = useMemo(() => {
+    if (searchQuery.trim()) return `Search: "${searchQuery}"`;
+    if (selectedPatterns.length === 1) return `${selectedPatterns[0]} Pattern Sarees`;
     if (selectedWeaves.length === 1) return `${selectedWeaves[0]} Sarees`;
     if (selectedFabrics.length === 1) return `${selectedFabrics[0]} Sarees`;
     if (selectedOccasions.length === 1) return `${selectedOccasions[0]} Sarees`;
     if (filterParam === 'new') return 'New Arrivals';
     if (filterParam === 'bridal') return 'Bridal & Muhurtham Trousseau';
     return 'All Heritage Silk Sarees';
-  }, [selectedWeaves, selectedFabrics, selectedOccasions, filterParam]);
+  }, [searchQuery, selectedPatterns, selectedWeaves, selectedFabrics, selectedOccasions, filterParam]);
 
   // Active filter chip removable tags
   const activeChips = useMemo(() => {
     const chips: { label: string; onRemove: () => void }[] = [];
+    if (searchQuery.trim()) {
+      chips.push({
+        label: `Search: "${searchQuery}"`,
+        onRemove: () => {
+          setSearchQuery('');
+          setCurrentPage(1);
+        },
+      });
+    }
     selectedWeaves.forEach((w) =>
-      chips.push({ label: `Weave: ${w}`, onRemove: () => setSelectedWeaves(selectedWeaves.filter((i) => i !== w)) })
+      chips.push({
+        label: `Weave: ${w}`,
+        onRemove: () => {
+          setSelectedWeaves(selectedWeaves.filter((i) => i !== w));
+          setCurrentPage(1);
+        },
+      })
     );
     selectedFabrics.forEach((f) =>
-      chips.push({ label: `Fabric: ${f}`, onRemove: () => setSelectedFabrics(selectedFabrics.filter((i) => i !== f)) })
+      chips.push({
+        label: `Fabric: ${f}`,
+        onRemove: () => {
+          setSelectedFabrics(selectedFabrics.filter((i) => i !== f));
+          setCurrentPage(1);
+        },
+      })
     );
     selectedOccasions.forEach((o) =>
-      chips.push({ label: `Occasion: ${o}`, onRemove: () => setSelectedOccasions(selectedOccasions.filter((i) => i !== o)) })
+      chips.push({
+        label: `Occasion: ${o}`,
+        onRemove: () => {
+          setSelectedOccasions(selectedOccasions.filter((i) => i !== o));
+          setCurrentPage(1);
+        },
+      })
+    );
+    selectedPatterns.forEach((pt) =>
+      chips.push({
+        label: `Pattern: ${pt}`,
+        onRemove: () => {
+          setSelectedPatterns(selectedPatterns.filter((i) => i !== pt));
+          setCurrentPage(1);
+        },
+      })
     );
     selectedColors.forEach((c) =>
-      chips.push({ label: `Color: ${c}`, onRemove: () => setSelectedColors(selectedColors.filter((i) => i !== c)) })
+      chips.push({
+        label: `Color: ${c}`,
+        onRemove: () => {
+          setSelectedColors(selectedColors.filter((i) => i !== c));
+          setCurrentPage(1);
+        },
+      })
     );
     if (priceRange[0] > 10000 || priceRange[1] < 100000) {
       chips.push({
         label: `₹${priceRange[0].toLocaleString()} – ₹${priceRange[1].toLocaleString()}`,
-        onRemove: () => setPriceRange([10000, 100000]),
+        onRemove: () => {
+          setPriceRange([10000, 100000]);
+          setCurrentPage(1);
+        },
       });
     }
     if (silkMarkOnly) {
-      chips.push({ label: 'Silk Mark Certified', onRemove: () => setSilkMarkOnly(false) });
+      chips.push({
+        label: 'Silk Mark Certified',
+        onRemove: () => {
+          setSilkMarkOnly(false);
+          setCurrentPage(1);
+        },
+      });
     }
     return chips;
-  }, [selectedWeaves, selectedFabrics, selectedOccasions, selectedColors, priceRange, silkMarkOnly]);
+  }, [
+    searchQuery,
+    selectedWeaves,
+    selectedFabrics,
+    selectedOccasions,
+    selectedPatterns,
+    selectedColors,
+    priceRange,
+    silkMarkOnly,
+  ]);
+
 
   return (
     <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-6 sm:py-10">

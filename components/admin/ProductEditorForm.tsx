@@ -18,7 +18,6 @@ import {
   Calendar,
   ChevronDown,
 } from 'lucide-react';
-import { products } from '@/lib/products';
 
 interface ProductEditorFormProps {
   mode: 'create' | 'edit';
@@ -213,6 +212,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           const mainVariant = found.product_variants?.[0];
           const dbVariants = found.product_variants || [];
 
+          // Extract all live images across all variants
+          const allMediaUrls: string[] = [];
+          dbVariants.forEach((v: any) => {
+            if (Array.isArray(v.product_variant_media)) {
+              v.product_variant_media.forEach((m: any) => {
+                if (m.url && !allMediaUrls.includes(m.url)) {
+                  allMediaUrls.push(m.url);
+                }
+              });
+            }
+          });
+
           if (dbVariants.length > 0) {
             const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
               const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
@@ -232,13 +243,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             setColorVariants(mappedColorVars);
           }
 
-          const liveImages = mainVariant?.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [];
-
-          setTitle(found.title);
+          setTitle(found.title || '');
           setDescription(found.description || '');
           setWeave(found.weavings?.name || 'Mysore Silk');
           if (found.fabrics?.name) setFabric(found.fabrics.name);
           if (found.zari_specifications?.name) setZariSpec(found.zari_specifications.name);
+          if (found.patterns?.name) setPattern(found.patterns.name);
           if (found.occasions?.name) setSelectedOccasions([found.occasions.name]);
           setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
           setMrp(String(Math.round((found.base_mrp_paise || 0) / 100)));
@@ -250,8 +260,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           setSku(fixedSku);
           setBarcode(fixedBarcode);
 
-          if (liveImages.length > 0) {
-            setImages(liveImages);
+          if (allMediaUrls.length > 0) {
+            setImages(allMediaUrls);
           }
         }
       } catch (err) {
@@ -308,24 +318,49 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const handleAddImage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newImageUrl.trim()) return;
-    setImages([...images, newImageUrl.trim()]);
+    setImages((prev) => [...prev, newImageUrl.trim()]);
     setNewImageUrl('');
     setIsDirty(true);
   };
 
+  // Handle Multi-File Local Upload (Instant Data URL Preview)
+  const handleLocalImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Url = event.target?.result as string;
+        if (base64Url) {
+          setImages((prev) => [...prev, base64Url]);
+          setIsDirty(true);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Remove Image
   const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
     setIsDirty(true);
   };
 
   // Save / Publish Action
   const handleSave = async (targetStatus: 'PUBLISHED' | 'DRAFT') => {
     setIsSaving(true);
-    const variantUploadedImages = colorVariants.flatMap((v) => v.images || []).filter((url) => typeof url === 'string' && url.trim().length > 5);
-    const finalImages = (variantUploadedImages.length > 0 ? variantUploadedImages : images.filter((url) => typeof url === 'string' && url.trim().length > 5)).slice(0, 3);
+    const variantUploadedImages = colorVariants
+      .flatMap((v) => v.images || [])
+      .filter((url) => typeof url === 'string' && url.trim().length > 5);
+
+    // Merge standalone uploaded images and variant uploaded images without duplicates
+    const allImagesList = Array.from(new Set([...images, ...variantUploadedImages])).filter(
+      (url) => typeof url === 'string' && url.trim().length > 5
+    );
 
     const updatedProductPayload = {
+      ...(mode === 'edit' && productId ? { id: productId } : {}),
       title: title.trim() || 'Untitled Saree Creation',
       slug: (title.trim() || 'saree').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
       description: description.trim(),
@@ -337,16 +372,23 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       zari: zariSpec,
       pattern,
       occasion: selectedOccasions[0] || 'Bridal & Heritage',
+      color_name: colorVariants[0]?.name || 'Royal Crimson',
+      color_hex: colorVariants[0]?.hex || '#8B1E28',
       initial_stock: Number(stock) || 10,
-      images: finalImages,
+      images: allImagesList,
     };
 
     try {
-      await fetch('/api/admin/products', {
+      const res = await fetch('/api/admin/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedProductPayload),
       });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error('API save error:', errData);
+      }
     } catch (err) {
       console.error('Error dispatching product save to API:', err);
     }
@@ -358,7 +400,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     setTimeout(() => {
       setSaveToast(false);
       router.push('/admin/catalog');
-    }, 1200);
+    }, 1000);
   };
 
   if (isLoading) {
@@ -1223,6 +1265,99 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               <Plus className="w-4 h-4 text-[#7A1C30]" />
               <span>+ Add Saree Color Variant</span>
             </button>
+          </div>
+
+          {/* Master Media Gallery & Drape Uploads */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-[#7A1C30]" />
+                  <span>Master Product Media & Drape Gallery</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  Upload local image files or attach image URLs. First photo acts as primary storefront cover.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono font-bold text-[#7A1C30] bg-[#FAF3E4] px-2.5 py-1 rounded-lg border border-[#C87F4A]/30">
+                {images.length} {images.length === 1 ? 'Photo' : 'Photos'} Attached
+              </span>
+            </div>
+
+            {/* Upload Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Local File Upload */}
+              <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-[#7A1C30]/40 hover:border-[#7A1C30] bg-[#FAF6F0] hover:bg-[#F5ECE0] rounded-xl cursor-pointer transition-colors text-xs font-bold text-[#7A1C30]">
+                <Plus className="w-4 h-4 text-[#7A1C30]" />
+                <span>Upload Local Images (Multiple)</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleLocalImageUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {/* URL Input Form */}
+              <form onSubmit={handleAddImage} className="flex gap-2">
+                <input
+                  type="url"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  placeholder="Paste direct image URL..."
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+                />
+                <button
+                  type="submit"
+                  disabled={!newImageUrl.trim()}
+                  className="px-3 py-2 bg-[#7A1C30] hover:bg-[#601625] text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-40 cursor-pointer"
+                >
+                  + Add
+                </button>
+              </form>
+            </div>
+
+            {/* Gallery Grid */}
+            {images.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                {images.map((imgUrl, imgIdx) => (
+                  <div
+                    key={imgIdx}
+                    className="group relative rounded-xl border border-slate-200 overflow-hidden bg-slate-50 shadow-2xs aspect-3/4 flex flex-col items-center justify-center"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Product media ${imgIdx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+
+                    {/* Primary Badge */}
+                    {imgIdx === 0 && (
+                      <span className="absolute top-2 left-2 bg-[#7A1C30] text-white text-[9px] font-mono font-bold px-2 py-0.5 rounded-md shadow-sm">
+                        ★ Cover
+                      </span>
+                    )}
+
+                    {/* Delete Overlay */}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(imgIdx)}
+                      className="absolute top-2 right-2 p-1.5 bg-rose-600/90 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-rose-700 cursor-pointer shadow-md"
+                      title="Remove Photo"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <ImageIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-600">No media photos attached yet</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Upload photos from your computer or paste image links above</p>
+              </div>
+            )}
           </div>
         </div>
 

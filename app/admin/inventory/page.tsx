@@ -29,7 +29,6 @@ import {
   Eye,
   SlidersHorizontal,
 } from 'lucide-react';
-import { products } from '@/lib/products';
 
 interface InventoryItem {
   id: string;
@@ -79,22 +78,33 @@ export default function InventoryMatrixPage() {
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.inventory && Array.isArray(data.inventory)) {
-          const formatted: InventoryItem[] = data.inventory.map((inv: any, idx: number) => ({
-            id: inv.id || `inv-${idx}`,
-            sku: inv.product_variants?.sku || `NSH-SKU-MYS-0${idx + 1}`,
-            title: inv.product_variants?.products?.title || 'Heirloom Mulberry Silk Saree',
-            weave: 'Pure Mulberry Silk',
-            fabric: '100% Pure Mulberry Silk',
-            image: inv.product_variants?.product_variant_media?.[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-            binLocation: `Vault-MYS-${10 + idx}`,
-            loomBatch: `LOOM-KA-MYS-${10 + idx}`,
-            costPrice: Math.round(((inv.product_variants?.price_paise || 2000000) * 0.7) / 100),
-            retailPrice: Math.round((inv.product_variants?.price_paise || 2850000) / 100),
-            physicalStock: inv.quantity ?? inv.physical_quantity ?? 0,
-            reservedStock: inv.reserved_quantity ?? 0,
-            reorderPoint: 2,
-            silkMarkAuditId: `CSB-2026-MYS-${3310 + idx}`,
-          }));
+          const formatted: InventoryItem[] = data.inventory.map((inv: any, idx: number) => {
+            const variant = inv.product_variants || {};
+            const product = variant.products || {};
+            const media = variant.product_variant_media || [];
+            const primaryMedia = media.find((m: any) => m.is_primary) || media[0];
+            const weave = product.weavings?.name || 'Mysore Silk';
+            const fabric = product.fabrics?.name || 'Pure Mulberry Silk';
+            const priceINR = Math.round((variant.price_paise || 2850000) / 100);
+            const costINR = Math.round(priceINR * 0.65);
+
+            return {
+              id: inv.id || `inv-${idx}`,
+              sku: variant.sku || `NSH-SKU-MYS-0${idx + 1}`,
+              title: product.title || 'Pure Silk Handloom Saree',
+              weave,
+              fabric,
+              image: primaryMedia?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
+              binLocation: `Vault-${(product.slug || 'LOC').toUpperCase().slice(0, 4)}-${10 + idx}`,
+              loomBatch: `LOOM-${(product.slug || 'KA').toUpperCase().slice(0, 4)}-${100 + idx}`,
+              costPrice: costINR,
+              retailPrice: priceINR,
+              physicalStock: inv.quantity ?? 0,
+              reservedStock: inv.reserved_quantity ?? 0,
+              reorderPoint: 2,
+              silkMarkAuditId: `CSB-2026-${(product.slug || 'MYS').toUpperCase().slice(0, 4)}-${1000 + idx}`,
+            };
+          });
           cachedInventoryData = formatted;
           setInventory(formatted);
           setLoading(false);

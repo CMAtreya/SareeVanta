@@ -1,9 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const supabase = createAdminClient();
 
+  // 1. Fetch existing inventory records with all variant and product metadata
   const { data: inventory, error } = await supabase
     .from('inventory')
     .select(`
@@ -12,12 +15,24 @@ export async function GET() {
         id,
         sku,
         price_paise,
-        colors(name),
-        products(id, title)
+        mrp_paise,
+        colors ( name, hex_code ),
+        product_variant_media ( url, is_primary, display_order ),
+        products (
+          id,
+          title,
+          slug,
+          weavings ( name ),
+          fabrics ( name ),
+          occasions ( name ),
+          zari_specifications ( name )
+        )
       )
-    `);
+    `)
+    .order('created_at', { ascending: false });
 
   if (error) {
+    console.error('[Admin Inventory GET] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

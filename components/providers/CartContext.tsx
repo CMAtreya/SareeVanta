@@ -392,11 +392,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = async () => {
     setCart([]);
     setAppliedCoupon(null);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem('sareevanta_guest_cart');
-      } catch (e) {}
-    }
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {

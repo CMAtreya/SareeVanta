@@ -49,6 +49,8 @@ export async function POST(request: Request) {
   const body = await request.json();
 
   const {
+    id,
+    product_id,
     title,
     slug,
     description,
@@ -67,13 +69,18 @@ export async function POST(request: Request) {
     zari_specification_id,
     sku,
     color_id,
+    color_name,
+    color_hex,
     initial_stock,
     images = [],
+    color_variants = [],
   } = body;
 
-  if (!title || !slug || !base_selling_price_inr) {
-    return NextResponse.json({ error: 'Title, slug, and selling price are required' }, { status: 400 });
+  if (!title || !base_selling_price_inr) {
+    return NextResponse.json({ error: 'Title and selling price are required' }, { status: 400 });
   }
+
+  const effectiveSlug = (slug || title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
   // Resolve named taxonomy IDs if not explicitly passed
   const getOrInsertId = async (table: string, val?: string) => {
@@ -94,82 +101,120 @@ export async function POST(request: Request) {
   const baseMrpPaise = Math.round((base_mrp_inr || base_selling_price_inr) * 100);
   const baseSellingPricePaise = Math.round(base_selling_price_inr * 100);
 
-  // Check if product already exists by slug
-  const { data: existingProduct } = await supabase
-    .from('products')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
+  const targetProductId = id || product_id;
+  let productId = targetProductId;
 
-  let productId = existingProduct?.id;
-
-  if (productId) {
-    // Update existing product
-    await supabase
+  if (targetProductId) {
+    // Check if product exists by ID
+    const { data: existingById } = await supabase
       .from('products')
-      .update({
-        title,
-        description: description || '',
-        base_mrp_paise: baseMrpPaise,
-        base_selling_price_paise: baseSellingPricePaise,
-        weaving_id: finalWeavingId,
-        fabric_id: finalFabricId,
-        occasion_id: finalOccasionId,
-        zari_specification_id: finalZariId,
-        pattern_id: finalPatternId,
-        is_published: true,
-      })
-      .eq('id', productId);
-  } else {
-    // Insert new product
-    const { data: newProd, error: productError } = await supabase
-      .from('products')
-      .insert({
-        title,
-        slug,
-        description: description || '',
-        base_mrp_paise: baseMrpPaise,
-        base_selling_price_paise: baseSellingPricePaise,
-        weaving_id: finalWeavingId,
-        fabric_id: finalFabricId,
-        occasion_id: finalOccasionId,
-        zari_specification_id: finalZariId,
-        pattern_id: finalPatternId,
-        border_styling_id: border_styling_id || null,
-        is_published: true,
-      })
       .select('id')
-      .single();
+      .eq('id', targetProductId)
+      .maybeSingle();
 
-    if (productError) {
-      return NextResponse.json({ error: productError.message }, { status: 500 });
+    if (existingById?.id) {
+      await supabase
+        .from('products')
+        .update({
+          title,
+          slug: effectiveSlug,
+          description: description || '',
+          base_mrp_paise: baseMrpPaise,
+          base_selling_price_paise: baseSellingPricePaise,
+          weaving_id: finalWeavingId,
+          fabric_id: finalFabricId,
+          occasion_id: finalOccasionId,
+          zari_specification_id: finalZariId,
+          pattern_id: finalPatternId,
+          is_published: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', targetProductId);
+      productId = targetProductId;
     }
-    productId = newProd.id;
   }
 
-  // 2. Create or Update Variant & Inventory
-  const targetSku = sku || `NSH-SKU-${slug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+  if (!productId) {
+    // Check if product already exists by slug
+    const { data: existingProduct } = await supabase
+      .from('products')
+      .select('id')
+      .eq('slug', effectiveSlug)
+      .maybeSingle();
+
+    if (existingProduct?.id) {
+      await supabase
+        .from('products')
+        .update({
+          title,
+          description: description || '',
+          base_mrp_paise: baseMrpPaise,
+          base_selling_price_paise: baseSellingPricePaise,
+          weaving_id: finalWeavingId,
+          fabric_id: finalFabricId,
+          occasion_id: finalOccasionId,
+          zari_specification_id: finalZariId,
+          pattern_id: finalPatternId,
+          is_published: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingProduct.id);
+      productId = existingProduct.id;
+    } else {
+      // Insert new product
+      const { data: newProd, error: productError } = await supabase
+        .from('products')
+        .insert({
+          title,
+          slug: effectiveSlug,
+          description: description || '',
+          base_mrp_paise: baseMrpPaise,
+          base_selling_price_paise: baseSellingPricePaise,
+          weaving_id: finalWeavingId,
+          fabric_id: finalFabricId,
+          occasion_id: finalOccasionId,
+          zari_specification_id: finalZariId,
+          pattern_id: finalPatternId,
+          border_styling_id: border_styling_id || null,
+          is_published: true,
+        })
+        .select('id')
+        .single();
+
+      if (productError) {
+        return NextResponse.json({ error: productError.message }, { status: 500 });
+      }
+      productId = newProd.id;
+    }
+  }
+
+  // 2. Manage Product Variants & Media Photos
+  const targetSku = sku || `NSH-SKU-${effectiveSlug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 
   let targetColorId = color_id;
   if (!targetColorId) {
-    const { data: firstColor } = await supabase.from('colors').select('id').limit(1).maybeSingle();
-    if (firstColor) {
-      targetColorId = firstColor.id;
+    if (color_name) {
+      const { data: existingColor } = await supabase.from('colors').select('id').ilike('name', color_name.trim()).maybeSingle();
+      if (existingColor?.id) {
+        targetColorId = existingColor.id;
+      } else {
+        const { data: newColor } = await supabase.from('colors').insert({ name: color_name.trim(), hex_code: color_hex || '#8B1E28' }).select('id').single();
+        targetColorId = newColor?.id;
+      }
     } else {
-      const { data: newColor } = await supabase.from('colors').insert({ name: 'Heritage Gold', hex_code: '#D4AF37' }).select('id').single();
-      targetColorId = newColor?.id;
+      const { data: firstColor } = await supabase.from('colors').select('id').limit(1).maybeSingle();
+      targetColorId = firstColor?.id;
     }
   }
 
-  if (targetColorId && productId) {
-    // Check existing variant by product_id or sku
-    const { data: existingVariant } = await supabase
+  if (productId) {
+    // Check existing variant by product_id
+    const { data: existingVariants } = await supabase
       .from('product_variants')
-      .select('id')
-      .eq('product_id', productId)
-      .maybeSingle();
+      .select('id, sku')
+      .eq('product_id', productId);
 
-    let variantId = existingVariant?.id;
+    let variantId = existingVariants?.[0]?.id;
 
     if (variantId) {
       await supabase
@@ -178,6 +223,7 @@ export async function POST(request: Request) {
           sku: targetSku,
           price_paise: baseSellingPricePaise,
           mrp_paise: baseMrpPaise,
+          ...(targetColorId ? { color_id: targetColorId } : {}),
         })
         .eq('id', variantId);
     } else {
@@ -205,12 +251,12 @@ export async function POST(request: Request) {
 
       // Update Media Photos: Delete old, insert new
       if (Array.isArray(images) && images.length > 0) {
-        const validImages = images.filter(Boolean);
+        const validImages = images.filter((img: any) => typeof img === 'string' && img.trim().length > 5);
         if (validImages.length > 0) {
           await supabase.from('product_variant_media').delete().eq('variant_id', variantId);
           const mediaInserts = validImages.map((url: string, index: number) => ({
             variant_id: variantId,
-            url,
+            url: url.trim(),
             is_primary: index === 0,
             display_order: index,
           }));
@@ -229,18 +275,46 @@ export async function DELETE(request: Request) {
   const id = searchParams.get('id');
   const ids = searchParams.get('ids');
 
-  if (ids) {
-    const idList = ids.split(',').filter(Boolean);
-    const { error } = await supabase.from('products').delete().in('id', idList);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const idList = ids ? ids.split(',').map((s) => s.trim()).filter(Boolean) : id ? [id.trim()] : [];
+
+  if (idList.length === 0) {
+    return NextResponse.json({ error: 'Missing product ID parameter' }, { status: 400 });
+  }
+
+  try {
+    // 1. Get all variant IDs for these products
+    const { data: variants } = await supabase
+      .from('product_variants')
+      .select('id')
+      .in('product_id', idList);
+
+    const variantIds = variants?.map((v) => v.id) || [];
+
+    if (variantIds.length > 0) {
+      // 2. Delete inventory records for variants
+      await supabase.from('inventory').delete().in('variant_id', variantIds);
+
+      // 3. Delete media records for variants
+      await supabase.from('product_variant_media').delete().in('variant_id', variantIds);
+
+      // 4. Delete variants
+      await supabase.from('product_variants').delete().in('id', variantIds);
+    }
+
+    // 5. Delete products permanently
+    const { error: prodDeleteError } = await supabase
+      .from('products')
+      .delete()
+      .in('id', idList);
+
+    if (prodDeleteError) {
+      console.error('[Admin Products DELETE] Error deleting products:', prodDeleteError);
+      return NextResponse.json({ error: prodDeleteError.message }, { status: 500 });
+    }
+
     return NextResponse.json({ success: true, deletedCount: idList.length });
+  } catch (err: any) {
+    console.error('[Admin Products DELETE] Exception:', err);
+    return NextResponse.json({ error: err.message || 'Failed to delete products' }, { status: 500 });
   }
-
-  if (id) {
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true });
-  }
-
-  return NextResponse.json({ error: 'Missing product ID parameter' }, { status: 400 });
 }

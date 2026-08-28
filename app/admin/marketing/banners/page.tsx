@@ -192,9 +192,6 @@ export default function StorefrontDisplayManagerPage() {
     updated[index] = updated[newIndex];
     updated[newIndex] = temp;
     setCategories(updated);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('nsh_category_curations', JSON.stringify(updated));
-    }
     triggerToast('Homepage category tile sequence updated.');
   };
 
@@ -236,19 +233,6 @@ export default function StorefrontDisplayManagerPage() {
         }
       })
       .catch((err) => console.error('[Marquee API] Fetch error:', err));
-
-    // Load category curations from storage
-    if (typeof window !== 'undefined') {
-      const savedCats = localStorage.getItem('nsh_category_curations');
-      if (savedCats) {
-        try {
-          const parsed = JSON.parse(savedCats);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setCategories(parsed);
-          }
-        } catch (e) {}
-      }
-    }
   }, []);
 
   // Toggle Slide Active
