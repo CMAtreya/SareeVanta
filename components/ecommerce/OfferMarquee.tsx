@@ -7,7 +7,7 @@ export default function OfferMarquee() {
   const [liveMessages, setLiveMessages] = useState<string[] | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/marquee')
+    fetch('/api/marquee')
       .then((res) => res.json())
       .then((data) => {
         if (data.messages && Array.isArray(data.messages) && data.messages.length > 0) {

@@ -596,64 +596,63 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                   <span>Cost Price (Internal)</span>
                 </label>
-                <input
-                  type="number"
-                  value={costPrice}
-                  onChange={(e) => {
-                    setCostPrice(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="18500"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
-                />
-                <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">
-                  {costPrice ? `₹${Number(costPrice).toLocaleString('en-IN')}` : 'Admin Only'}
-                </span>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">₹</span>
+                  <input
+                    type="text"
+                    value={costPrice ? Number(costPrice).toLocaleString('en-IN') : ''}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '');
+                      setCostPrice(raw);
+                      setIsDirty(true);
+                    }}
+                    placeholder="18,500"
+                    className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">MRP (₹)</label>
-                <input
-                  type="number"
-                  value={mrp}
-                  onChange={(e) => {
-                    setMrp(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="34000"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900"
-                />
-                {mrp && (
-                  <span className="text-[10px] text-slate-500 font-mono mt-0.5 block">
-                    ₹{Number(mrp).toLocaleString('en-IN')}
-                  </span>
-                )}
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">₹</span>
+                  <input
+                    type="text"
+                    value={mrp ? Number(mrp).toLocaleString('en-IN') : ''}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '');
+                      setMrp(raw);
+                      setIsDirty(true);
+                    }}
+                    placeholder="34,000"
+                    className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Selling Price (₹) *</label>
-                <input
-                  type="number"
-                  required
-                  value={sellingPrice}
-                  onChange={(e) => {
-                    setSellingPrice(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  placeholder="28000"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900"
-                />
-                <div className="flex items-center justify-between text-[10px] font-mono mt-0.5">
-                  {sellingPrice && (
-                    <span className="text-[#7A1C30] font-bold">
-                      ₹{Number(sellingPrice).toLocaleString('en-IN')}
-                    </span>
-                  )}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">Selling Price (₹) *</label>
                   {discountPercent > 0 && (
-                    <span className="text-emerald-700 font-bold">
-                      {discountPercent}% Discount
+                    <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
+                      {discountPercent}% OFF
                     </span>
                   )}
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">₹</span>
+                  <input
+                    type="text"
+                    required
+                    value={sellingPrice ? Number(sellingPrice).toLocaleString('en-IN') : ''}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9]/g, '');
+                      setSellingPrice(raw);
+                      setIsDirty(true);
+                    }}
+                    placeholder="28,000"
+                    className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+                  />
                 </div>
               </div>
 
@@ -667,7 +666,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     setStock(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
                 />
               </div>
             </div>
@@ -678,18 +677,25 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 <input
                   type="text"
                   value={hsnCode}
-                  onChange={(e) => setHsnCode(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono text-slate-900"
+                  onChange={(e) => {
+                    setHsnCode(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  placeholder="5007 (Pure Silk Handloom)"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">GST Rate</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">GST Rate (%)</label>
                 <input
-                  type="text"
-                  value={`${gstRate}%`}
-                  readOnly
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-mono text-slate-700 bg-slate-50 cursor-default"
+                  type="number"
+                  value={gstRate}
+                  onChange={(e) => {
+                    setGstRate(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  placeholder="5"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono text-xs text-slate-900"
                 />
               </div>
             </div>
@@ -721,7 +727,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     </button>
 
                     {isFabricDropdownOpen && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs">
+                      <div
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        style={{ overscrollBehavior: 'contain' }}
+                        className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs"
+                      >
                         <button
                           type="button"
                           onClick={() => {
@@ -737,7 +748,11 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         {/* Subtle Horizontal Divider Line (Per Reference Image) */}
                         <div className="my-1 border-b border-[#E8DCC9]" />
 
-                        <div className="max-h-48 overflow-y-auto space-y-0.5 custom-scrollbar">
+                        <div
+                          onWheel={(e) => e.stopPropagation()}
+                          style={{ overscrollBehavior: 'contain' }}
+                          className="max-h-48 overflow-y-auto overscroll-contain touch-pan-y space-y-0.5 custom-scrollbar"
+                        >
                           {fabricOptions.map((opt) => (
                             <button
                               key={opt}
@@ -816,7 +831,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     </button>
 
                     {isZariDropdownOpen && (
-                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs">
+                      <div
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        style={{ overscrollBehavior: 'contain' }}
+                        className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs"
+                      >
                         <button
                           type="button"
                           onClick={() => {
@@ -832,7 +852,11 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         {/* Subtle Horizontal Divider Line (Per Reference Image) */}
                         <div className="my-1 border-b border-[#E8DCC9]" />
 
-                        <div className="max-h-48 overflow-y-auto space-y-0.5 custom-scrollbar">
+                        <div
+                          onWheel={(e) => e.stopPropagation()}
+                          style={{ overscrollBehavior: 'contain' }}
+                          className="max-h-48 overflow-y-auto overscroll-contain touch-pan-y space-y-0.5 custom-scrollbar"
+                        >
                           {zariOptions.map((opt) => (
                             <button
                               key={opt}
@@ -913,7 +937,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   </button>
 
                   {isPatternDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs max-h-56 overflow-y-auto">
+                    <div
+                      onWheel={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                      style={{ overscrollBehavior: 'contain' }}
+                      className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs max-h-56 overflow-y-auto overscroll-contain touch-pan-y"
+                    >
                       <button
                         type="button"
                         onClick={() => {

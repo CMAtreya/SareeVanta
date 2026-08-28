@@ -1,11 +1,20 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache } from '@/lib/cache';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
   { params }: { params: { slug: string } }
 ) {
   const { slug } = params;
+  const cacheKey = `pdp_product_${slug}`;
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json({ ...cached, cached: true });
+  }
+
   const supabase = createAdminClient();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -64,33 +73,41 @@ export async function GET(
         const zariData: any = Array.isArray(data.zari_specifications) ? data.zari_specifications[0] : data.zari_specifications;
         const colorData: any = Array.isArray(firstVariant?.colors) ? firstVariant?.colors[0] : firstVariant?.colors;
 
-        // Fetch physical inventory count if variant exists
+        const variantIds = variants.map((v: any) => v.id).filter(Boolean);
+
+        // Run inventory, reviews, and related products concurrently
+        const [invRes, revsRes, relatedRes] = await Promise.all([
+          firstVariant?.id
+            ? supabase.from('inventory').select('quantity, reserved_quantity').eq('variant_id', firstVariant.id).maybeSingle()
+            : Promise.resolve({ data: null }),
+          variantIds.length > 0
+            ? supabase
+                .from('reviews')
+                .select(`id, rating, review_text, title, created_at, reviewer_name, review_photos ( storage_path )`)
+                .in('variant_id', variantIds)
+                .eq('moderation_status', 'APPROVED')
+            : Promise.resolve({ data: [] }),
+          supabase
+            .from('products')
+            .select(`
+              id, slug, title, base_mrp_paise, base_selling_price_paise,
+              weavings ( name ),
+              product_variants ( id, product_variant_media ( url ) )
+            `)
+            .neq('id', data.id)
+            .limit(6),
+        ]);
+
         let totalStockCount = 5;
-        if (firstVariant?.id) {
-          const { data: inv } = await supabase
-            .from('inventory')
-            .select('quantity, reserved_quantity')
-            .eq('variant_id', firstVariant.id)
-            .maybeSingle();
-          if (inv) {
-            totalStockCount = Math.max(0, inv.quantity - (inv.reserved_quantity || 0));
-          }
+        if (invRes.data) {
+          totalStockCount = Math.max(0, invRes.data.quantity - (invRes.data.reserved_quantity || 0));
         }
 
-        // Fetch approved customer reviews for product
         let rating = 0;
         let reviewCount = 0;
         let reviewsList: any[] = [];
 
-        const { data: revs } = await supabase
-          .from('reviews')
-          .select(`
-            id, rating, review_text, title, created_at, reviewer_name,
-            review_photos ( storage_path )
-          `)
-          .eq('product_id', data.id)
-          .eq('moderation_status', 'APPROVED');
-
+        const revs = revsRes.data;
         if (revs && revs.length > 0) {
           reviewCount = revs.length;
           rating = Number((revs.reduce((acc, r: any) => acc + (r.rating || 5), 0) / revs.length).toFixed(1));
@@ -111,21 +128,7 @@ export async function GET(
           });
         }
 
-        // Fetch live related products from Supabase
-        const { data: relatedData } = await supabase
-          .from('products')
-          .select(`
-            id, slug, title, base_mrp_paise, base_selling_price_paise,
-            weavings ( name ),
-            product_variants (
-              id,
-              product_variant_media ( url )
-            )
-          `)
-          .neq('id', data.id)
-          .limit(6);
-
-        const relatedProducts = (relatedData || []).map((rp: any) => {
+        const relatedProducts = (relatedRes.data || []).map((rp: any) => {
           const rpImages = rp.product_variants?.flatMap((v: any) => v.product_variant_media?.map((m: any) => m.url)) || [];
           return {
             id: rp.id,
@@ -171,8 +174,11 @@ export async function GET(
           })),
         };
 
+        const responsePayload = { product: formatted, relatedProducts, source: 'database' };
+        setCache(cacheKey, responsePayload, 60);
+
         return NextResponse.json(
-          { product: formatted, relatedProducts, source: 'database' },
+          responsePayload,
           {
             headers: {
               'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',

@@ -94,12 +94,19 @@ export default function Header() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const [liveMarqueeLines, setLiveMarqueeLines] = useState<string[]>([]);
+  const [marqueeBgColor, setMarqueeBgColor] = useState<string>('#7A1C30');
+  const [marqueeTextColor, setMarqueeTextColor] = useState<string>('#FEF3C7');
+  const [isMarqueeActive, setIsMarqueeActive] = useState<boolean>(true);
 
-  // Fetch live published marquee announcements from database
+  // Fetch live published marquee announcements and colors from database
   useEffect(() => {
-    fetch('/api/admin/marquee')
+    fetch('/api/marquee')
       .then((res) => res.json())
       .then((data) => {
+        if (data.bgColor) setMarqueeBgColor(data.bgColor);
+        if (data.textColor) setMarqueeTextColor(data.textColor);
+        if (data.isActive !== undefined) setIsMarqueeActive(Boolean(data.isActive));
+
         if (data.activeLines && Array.isArray(data.activeLines) && data.activeLines.length > 0) {
           setLiveMarqueeLines(data.activeLines);
         } else if (data.activeMarquee?.message_text && data.activeMarquee.is_active !== false) {
@@ -113,11 +120,16 @@ export default function Header() {
     if (liveMarqueeLines.length > 0) {
       return liveMarqueeLines.map((line, idx) => ({
         id: idx,
-        content: <span className="font-medium text-amber-200">{line}</span>,
+        content: <span style={{ color: marqueeTextColor }}>{line}</span>,
       }));
     }
-    return announcements;
-  }, [liveMarqueeLines]);
+    return [
+      {
+        id: 1,
+        content: <span style={{ color: marqueeTextColor }}>✨ Silk Mark Certified 100% Pure Handloom Silks Direct from Master Weavers</span>,
+      },
+    ];
+  }, [liveMarqueeLines, marqueeTextColor]);
 
   // Rotate announcement bar every 4.5 seconds
   useEffect(() => {
@@ -235,43 +247,51 @@ export default function Header() {
 
   return (
     <header className="w-full z-40 sticky top-0">
-      {/* 1. TOP PROMOTIONAL ANNOUNCEMENT BAR (Deep Crimson / Maroon) */}
-      <div className="bg-[#7A1C30] text-white py-1.5 px-3 sm:px-6 relative z-50 text-[11px] sm:text-xs font-sans tracking-wide w-full">
-        <div className="w-full px-2 sm:px-6 md:px-8 lg:px-10 xl:px-12 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={prevAnnouncement}
-            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0 cursor-pointer"
-            aria-label="Previous announcement"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+      {/* 1. TOP PROMOTIONAL ANNOUNCEMENT BAR */}
+      {isMarqueeActive && (
+        <div
+          style={{ backgroundColor: marqueeBgColor, color: marqueeTextColor }}
+          className="py-1.5 px-3 sm:px-6 relative z-50 text-[11px] sm:text-xs font-sans tracking-wide w-full transition-colors duration-300"
+        >
+          <div className="w-full px-2 sm:px-6 md:px-8 lg:px-10 xl:px-12 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={prevAnnouncement}
+              style={{ color: marqueeTextColor }}
+              className="p-1 opacity-80 hover:opacity-100 transition-opacity focus:outline-none flex-shrink-0 cursor-pointer"
+              aria-label="Previous announcement"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          <div className="flex-1 text-center overflow-hidden px-2 h-5 flex items-center justify-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={announcementIndex}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.28, ease: 'easeInOut' }}
-                className="truncate font-medium text-stone-100"
-              >
-                {dynamicAnnouncements[announcementIndex]?.content || announcements[0].content}
-              </motion.div>
-            </AnimatePresence>
+            <div className="flex-1 text-center overflow-hidden px-2 h-5 flex items-center justify-center">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={announcementIndex}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.28, ease: 'easeInOut' }}
+                  className="truncate font-medium"
+                  style={{ color: marqueeTextColor }}
+                >
+                  {dynamicAnnouncements[announcementIndex]?.content}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <button
+              type="button"
+              onClick={nextAnnouncement}
+              style={{ color: marqueeTextColor }}
+              className="p-1 opacity-80 hover:opacity-100 transition-opacity focus:outline-none flex-shrink-0 cursor-pointer"
+              aria-label="Next announcement"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={nextAnnouncement}
-            className="p-1 hover:text-amber-200 transition-colors focus:outline-none flex-shrink-0 cursor-pointer"
-            aria-label="Next announcement"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
         </div>
-      </div>
+      )}
 
       {/* 2. MAIN HEADER ROW (Glassmorphism, Centered Scrolling Search Pill, Action Icons) */}
       <div

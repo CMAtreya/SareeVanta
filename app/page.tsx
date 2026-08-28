@@ -66,7 +66,7 @@ export default function HomePage() {
   const [liveHeroSlides, setLiveHeroSlides] = useState<any[] | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/banners')
+    fetch('/api/banners')
       .then((res) => res.json())
       .then((data) => {
         if (data.slides && Array.isArray(data.slides) && data.slides.length > 0) {

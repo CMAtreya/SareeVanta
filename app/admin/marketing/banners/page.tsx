@@ -222,10 +222,13 @@ export default function StorefrontDisplayManagerPage() {
       })
       .catch((err) => console.error('[Banners API] Fetch error:', err));
 
-    // Load active marquee lines
+    // Load active marquee lines & colors
     fetch('/api/admin/marquee')
       .then((res) => res.json())
       .then((data) => {
+        if (data.bgColor) setMarqueeBgColor(data.bgColor);
+        if (data.textColor) setMarqueeTextColor(data.textColor);
+        if (data.isActive !== undefined) setMarqueeEnabled(Boolean(data.isActive));
         if (data.activeLines && Array.isArray(data.activeLines) && data.activeLines.length > 0) {
           setMarqueeLines(data.activeLines);
         } else if (data.activeMarquee?.message_text) {
@@ -743,10 +746,12 @@ export default function StorefrontDisplayManagerPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       message_lines: marqueeLines,
+                      bg_color: marqueeBgColor,
+                      text_color: marqueeTextColor,
                       is_active: marqueeEnabled,
                     }),
                   });
-                  triggerToast('Marquee announcements published to database & storefront header.');
+                  triggerToast('Marquee announcements and colors published to database & storefront header.');
                 } catch (err) {
                   console.error('[Marquee API] Error saving marquee:', err);
                   triggerToast('Marquee settings updated.');

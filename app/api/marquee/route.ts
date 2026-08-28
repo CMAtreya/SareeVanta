@@ -1,10 +1,10 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
-import { getCache, setCache, invalidateCache } from '@/lib/cache';
-
-const MARQUEE_CACHE_KEY = 'marquee_active_lines';
+import { getCache, setCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
+
+const MARQUEE_CACHE_KEY = 'marquee_active_lines';
 
 export async function GET() {
   const cached = getCache<any>(MARQUEE_CACHE_KEY);
@@ -67,58 +67,4 @@ export async function GET() {
   setCache(MARQUEE_CACHE_KEY, result, 60);
 
   return NextResponse.json({ ...result, cached: false });
-}
-
-export async function POST(request: Request) {
-  const supabase = createAdminClient();
-  const body = await request.json();
-
-  const { message_text, message_lines, bg_color = '#7A1C30', text_color = '#FEF3C7', is_active = true } = body;
-
-  const linesToSave: string[] = Array.isArray(message_lines) && message_lines.length > 0
-    ? message_lines.map((l: string) => l.trim()).filter(Boolean)
-    : message_text
-    ? [message_text.trim()]
-    : [];
-
-  if (linesToSave.length === 0) {
-    return NextResponse.json({ error: 'At least one announcement line is required' }, { status: 400 });
-  }
-
-  // Deactivate old messages
-  await supabase
-    .from('marquee_messages')
-    .update({ is_active: false })
-    .neq('id', '00000000-0000-0000-0000-000000000000');
-
-  // Insert all new announcement lines as active + metadata row
-  const insertRows = linesToSave.map((text: string) => ({
-    message_text: text,
-    is_active: Boolean(is_active),
-  }));
-
-  // Append config metadata row
-  insertRows.push({
-    message_text: `__CONFIG__:${JSON.stringify({ bg_color, text_color, is_active: Boolean(is_active) })}`,
-    is_active: true,
-  });
-
-  const { data: inserted, error } = await supabase
-    .from('marquee_messages')
-    .insert(insertRows)
-    .select('*');
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  invalidateCache(MARQUEE_CACHE_KEY);
-  return NextResponse.json({
-    success: true,
-    messages: inserted,
-    activeLines: linesToSave,
-    bgColor: bg_color,
-    textColor: text_color,
-    isActive: Boolean(is_active),
-  });
 }
