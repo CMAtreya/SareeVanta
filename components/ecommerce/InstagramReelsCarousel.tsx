@@ -40,13 +40,13 @@ function ActualInstagramReelCard({ reel }: { reel: ActiveReel }) {
   const embedUrl = `https://www.instagram.com/reel/${shortcode}/embed/`;
 
   return (
-    <div className="relative w-[280px] sm:w-[320px] h-[520px] sm:h-[580px] flex-shrink-0 rounded-2xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-xl snap-start flex flex-col justify-between select-none transition-transform duration-300 hover:scale-[1.01] group/reel">
+    <div className="relative w-[320px] sm:w-[340px] min-w-[320px] sm:min-w-[340px] h-[610px] flex-shrink-0 rounded-2xl overflow-hidden bg-white border border-[#C87F4A]/30 shadow-xl snap-start flex flex-col justify-between select-none transition-transform duration-300 hover:scale-[1.01] group/reel">
       {/* Official Instagram Reel Embed Player */}
       <iframe
         ref={iframeRef}
         src={embedUrl}
         title={reel.caption || `Instagram Reel ${shortcode}`}
-        className="w-full h-full border-0 rounded-2xl bg-[#1F1B16]"
+        className="w-full h-full border-0 rounded-2xl bg-white"
         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
         allowFullScreen
         scrolling="no"
