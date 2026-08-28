@@ -202,12 +202,12 @@ export default function CustomerDirectoryPage() {
                   </span>
                   <span className="font-semibold text-stone-800">{customer.phone}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-stone-500">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-stone-500 flex-shrink-0">
                     <Mail className="w-3 h-3" />
                     <span>Email</span>
                   </span>
-                  <span className="truncate max-w-[170px] text-stone-800">{customer.email}</span>
+                  <span className="font-mono text-stone-800 text-[11px] select-all break-all text-right">{customer.email}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-stone-500">

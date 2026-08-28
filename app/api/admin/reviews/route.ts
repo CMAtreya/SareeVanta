@@ -15,7 +15,12 @@ export async function GET(request: Request) {
       *,
       customers ( name, email, phone ),
       review_photos ( storage_path ),
-      products ( title, slug, weavings(name), product_variants ( sku, product_variant_media ( url ) ) )
+      product_variants (
+        id,
+        sku,
+        product_variant_media ( url ),
+        products ( id, title, slug, weavings ( name ) )
+      )
     `)
     .order('created_at', { ascending: false });
 
@@ -32,9 +37,9 @@ export async function GET(request: Request) {
 
   const list = dbReviews || [];
   const formatted = list.map((r: any) => {
-    const productData = r.products;
-    const firstVariant = productData?.product_variants?.[0];
-    const variantMedia = firstVariant?.product_variant_media || [];
+    const variantData = r.product_variants;
+    const productData = variantData?.products;
+    const variantMedia = variantData?.product_variant_media || [];
     const sareeImage = variantMedia[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=400&auto=format&fit=crop';
     const headline = r.title || (r.rating >= 4 ? 'Exceptional Pure Silk Quality' : 'Authentic Handloom Drape');
     const comment = r.review_text || r.comment || 'Luster and drape comfort is truly extraordinary.';
@@ -58,8 +63,8 @@ export async function GET(request: Request) {
       reviewText: comment,
       productSlug: productData?.slug || 'saree',
       sareeTitle: productData?.title || 'Heirloom Silk Saree',
-      sareeSku: firstVariant?.sku || 'NSH-SKU-MYS-01',
-      sku: firstVariant?.sku || 'NSH-SKU-MYS-01',
+      sareeSku: variantData?.sku || 'NSH-SKU-MYS-01',
+      sku: variantData?.sku || 'NSH-SKU-MYS-01',
       sareeWeave: productData?.weavings?.name || 'Pure Mulberry Silk',
       weave: productData?.weavings?.name || 'Pure Mulberry Silk',
       sareeThumbnail: sareeImage,

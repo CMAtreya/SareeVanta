@@ -115,7 +115,36 @@ export default function HomePage() {
   // ----------------------------------------------------
   // 3. Dynamic Category Curator with Live Counts & Photos
   // ----------------------------------------------------
-  const dynamicCategories = sixCategoriesWithThumbnails.map((cat) => {
+  const [curatedCategoryList, setCuratedCategoryList] = useState(sixCategoriesWithThumbnails);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('nsh_category_curations');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const reordered = parsed.map((pCat: any) => {
+              const matched = sixCategoriesWithThumbnails.find(
+                (c) => c.name.toLowerCase() === (pCat.name || '').toLowerCase() || c.name.toLowerCase() === (pCat.slug || '').toLowerCase()
+              );
+              return matched || {
+                id: pCat.id || pCat.name,
+                name: pCat.name,
+                desc: pCat.subtitle || 'Royal Weave Heritage',
+                image: pCat.coverImage || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+                count: '12 Designs',
+                thumbnails: [],
+              };
+            });
+            setCuratedCategoryList(reordered);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
+
+  const dynamicCategories = curatedCategoryList.map((cat) => {
     const matching = activeProducts.filter(
       (p) => p.weave?.toLowerCase().includes(cat.name.toLowerCase()) || cat.name.toLowerCase().includes((p.weave || '').toLowerCase())
     );

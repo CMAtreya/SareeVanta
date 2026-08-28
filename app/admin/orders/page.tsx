@@ -201,7 +201,7 @@ export default function RedesignedAdminOrdersPage() {
   const [newCustPincode, setNewCustPincode] = useState('');
   const [newCustAddress, setNewCustAddress] = useState('');
   const [newOrderWeave, setNewOrderWeave] = useState('Mysore Silk');
-  const [newOrderAmount, setNewOrderAmount] = useState('28000');
+  const [newOrderAmount, setNewOrderAmount] = useState('');
   const [newOrderPayment, setNewOrderPayment] = useState<string>('POS Card Terminal (PineLabs)');
 
   // Load catalog products for showroom POS

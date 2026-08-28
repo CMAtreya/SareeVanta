@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Megaphone,
   LayoutTemplate,
@@ -28,6 +29,8 @@ import {
   RotateCcw,
   Save,
   Grid,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { products } from '@/lib/products';
 
@@ -124,15 +127,27 @@ export default function StorefrontDisplayManagerPage() {
 
   // 2. MARQUEE TICKER STATE
   const [marqueeEnabled, setMarqueeEnabled] = useState(true);
-  const [marqueeText, setMarqueeText] = useState(
-    '✨ FESTIVE MUHURTHAM SEASON: Flat 10% Off with Code MYSORE10 • Free BlueDart Air Shipping On All Domestic Orders • Silk Mark Certified 100% Pure Handlooms'
-  );
-  const [marqueeBgColor, setMarqueeBgColor] = useState('#0F172A');
+  const [marqueeLines, setMarqueeLines] = useState<string[]>([
+    '✨ FESTIVE MUHURTHAM SEASON: Flat 10% Off with Code MYSORE10',
+    '✈️ Free BlueDart Express Air Shipping on all Domestic Orders Above ₹5,000',
+    '🏷️ Silk Mark Certified 100% Pure Handloom Silks Direct from Master Weavers',
+  ]);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [marqueeBgColor, setMarqueeBgColor] = useState('#7A1C30');
   const [marqueeTextColor, setMarqueeTextColor] = useState('#FEF3C7');
   const [marqueeSpeed, setMarqueeSpeed] = useState<'SLOW' | 'NORMAL' | 'FAST'>('NORMAL');
 
   // 3. CATEGORY CURATOR STATE
   const [categories, setCategories] = useState<CategoryCuratorItem[]>(INITIAL_CATEGORIES);
+
+  // Auto-rotate preview announcement vertically every 3.5 seconds
+  React.useEffect(() => {
+    if (marqueeLines.length <= 1) return;
+    const timer = setInterval(() => {
+      setPreviewIndex((prev) => (prev + 1) % marqueeLines.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [marqueeLines.length]);
 
   // Reorder Slide
   const moveSlide = async (index: number, direction: 'UP' | 'DOWN') => {
@@ -157,6 +172,17 @@ export default function StorefrontDisplayManagerPage() {
     }
   };
 
+  // Delete Slide Permanently
+  const handleDeleteSlide = async (id: string, title: string) => {
+    setSlides((prev) => prev.filter((s) => s.id !== id));
+    triggerToast(`Slide "${title}" deleted.`);
+    try {
+      await fetch(`/api/admin/banners?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch (err) {
+      console.error('[Banners API] Delete error:', err);
+    }
+  };
+
   // Reorder Category
   const moveCategory = (index: number, direction: 'UP' | 'DOWN') => {
     const newIndex = direction === 'UP' ? index - 1 : index + 1;
@@ -166,11 +192,14 @@ export default function StorefrontDisplayManagerPage() {
     updated[index] = updated[newIndex];
     updated[newIndex] = temp;
     setCategories(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('nsh_category_curations', JSON.stringify(updated));
+    }
     triggerToast('Homepage category tile sequence updated.');
-    // Fetch live hero slides from database API
   };
 
   React.useEffect(() => {
+    // Load hero slides
     fetch('/api/admin/banners')
       .then((res) => res.json())
       .then((data) => {
@@ -193,16 +222,30 @@ export default function StorefrontDisplayManagerPage() {
       })
       .catch((err) => console.error('[Banners API] Fetch error:', err));
 
-    // Fetch live active marquee
+    // Load active marquee lines
     fetch('/api/admin/marquee')
       .then((res) => res.json())
       .then((data) => {
-        if (data.activeMarquee) {
-          if (data.activeMarquee.message_text) setMarqueeText(data.activeMarquee.message_text);
-          if (data.activeMarquee.is_active !== undefined) setMarqueeEnabled(Boolean(data.activeMarquee.is_active));
+        if (data.activeLines && Array.isArray(data.activeLines) && data.activeLines.length > 0) {
+          setMarqueeLines(data.activeLines);
+        } else if (data.activeMarquee?.message_text) {
+          setMarqueeLines([data.activeMarquee.message_text]);
         }
       })
       .catch((err) => console.error('[Marquee API] Fetch error:', err));
+
+    // Load category curations from storage
+    if (typeof window !== 'undefined') {
+      const savedCats = localStorage.getItem('nsh_category_curations');
+      if (savedCats) {
+        try {
+          const parsed = JSON.parse(savedCats);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCategories(parsed);
+          }
+        } catch (e) {}
+      }
+    }
   }, []);
 
   // Toggle Slide Active
@@ -458,11 +501,8 @@ export default function StorefrontDisplayManagerPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setSlides(slides.filter((s) => s.id !== slide.id));
-                      triggerToast('Slide removed from carousel.');
-                    }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                    onClick={() => handleDeleteSlide(slide.id, slide.title)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
                     title="Delete Slide"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -482,11 +522,11 @@ export default function StorefrontDisplayManagerPage() {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h3 className="font-bold text-sm text-slate-900 font-sans flex items-center gap-2">
-                <Megaphone className="w-4 h-4 text-blue-600" />
-                <span>Top Scrolling Offer Bar (Marquee)</span>
+                <Megaphone className="w-4 h-4 text-[#7A1C30]" />
+                <span>Top Promotional Announcement Bar (Storefront Header)</span>
               </h3>
               <p className="text-xs text-slate-500 font-mono">
-                Persistent header ticker bar for promotional alerts, festive coupons & shipping notices
+                Multi-line vertical rotating ticker displayed at the very top of the customer storefront
               </p>
             </div>
 
@@ -499,7 +539,7 @@ export default function StorefrontDisplayManagerPage() {
                   setMarqueeEnabled(!marqueeEnabled);
                   triggerToast(`Marquee ticker ${!marqueeEnabled ? 'enabled' : 'disabled'}.`);
                 }}
-                className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all cursor-pointer ${
                   marqueeEnabled
                     ? 'bg-emerald-600 text-white'
                     : 'bg-slate-200 text-slate-700'
@@ -510,42 +550,116 @@ export default function StorefrontDisplayManagerPage() {
             </div>
           </div>
 
-          {/* Real-time Live Animated Preview */}
+          {/* Storefront-Identical Live Animated Preview (Vertical Bottom-to-Top Rotation) */}
           <div className="space-y-2">
-            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-              Live Animated Storefront Preview
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase text-slate-500 font-bold block">
+                Live Storefront Rotating Preview (Bottom-to-Top Animation)
+              </span>
+              <span className="text-[10px] font-mono text-slate-400">
+                Line {previewIndex + 1} of {marqueeLines.length}
+              </span>
+            </div>
+
             <div
-              className="py-2.5 px-4 rounded-xl overflow-hidden border border-slate-300 font-mono text-xs font-semibold shadow-inner"
+              className="py-2 px-3 sm:px-6 rounded-2xl overflow-hidden font-sans text-xs font-medium shadow-md transition-colors flex items-center justify-between gap-2"
               style={{
                 backgroundColor: marqueeBgColor,
                 color: marqueeTextColor,
               }}
             >
-              <div className="whitespace-nowrap overflow-hidden">
-                <span className="inline-block animate-marquee">{marqueeText}</span>
+              <button
+                type="button"
+                onClick={() => setPreviewIndex((prev) => (prev - 1 + marqueeLines.length) % marqueeLines.length)}
+                className="p-1 hover:opacity-80 transition-opacity focus:outline-none cursor-pointer"
+                title="Previous Line"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              <div className="flex-1 text-center overflow-hidden px-2 h-6 flex items-center justify-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={previewIndex}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.28, ease: 'easeInOut' }}
+                    className="truncate font-medium"
+                  >
+                    {marqueeLines[previewIndex] || '✨ Add an announcement below'}
+                  </motion.div>
+                </AnimatePresence>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setPreviewIndex((prev) => (prev + 1) % marqueeLines.length)}
+                className="p-1 hover:opacity-80 transition-opacity focus:outline-none cursor-pointer"
+                title="Next Line"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          {/* Marquee Configuration Form */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1">
-                Marquee Announcement Text *
-              </label>
-              <textarea
-                rows={2}
-                value={marqueeText}
-                onChange={(e) => setMarqueeText(e.target.value)}
-                className="w-full p-3 border border-slate-300 rounded-xl text-xs font-sans text-slate-900"
-              />
+          {/* Multi-Line Announcement Inputs */}
+          <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700">
+                Announcement Messages ({marqueeLines.length} Active Lines)
+              </span>
+              <button
+                type="button"
+                onClick={() => setMarqueeLines([...marqueeLines, '✨ New Promotional Alert'])}
+                className="px-3 py-1 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-2xs cursor-pointer transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Announcement Line</span>
+              </button>
             </div>
 
-            {/* Color Selectors */}
+            <div className="space-y-2">
+              {marqueeLines.map((line, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-xs bg-white px-2.5 py-2 rounded-xl border border-slate-200 text-slate-700">
+                    #{idx + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={line}
+                    onChange={(e) => {
+                      const updated = [...marqueeLines];
+                      updated[idx] = e.target.value;
+                      setMarqueeLines(updated);
+                    }}
+                    placeholder={`Announcement line #${idx + 1}`}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs font-sans text-slate-900 bg-white focus:border-[#7A1C30]"
+                  />
+                  {marqueeLines.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = marqueeLines.filter((_, i) => i !== idx);
+                        setMarqueeLines(updated);
+                        if (previewIndex >= updated.length) setPreviewIndex(0);
+                      }}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Remove Line"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Color Selectors & Storefront Palette */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Background Canvas Color
+                Background Canvas Color (Storefront Header)
               </label>
               <div className="flex items-center gap-2">
                 <input
@@ -561,14 +675,20 @@ export default function StorefrontDisplayManagerPage() {
                   className="w-28 px-2.5 py-1.5 border border-slate-300 rounded-lg font-mono text-xs text-slate-900"
                 />
                 <div className="flex gap-1">
-                  {['#0F172A', '#831843', '#1E3A8A', '#14532D'].map((c) => (
+                  {[
+                    { hex: '#7A1C30', label: 'Royal Maroon' },
+                    { hex: '#5F1424', label: 'Deep Wine' },
+                    { hex: '#18110E', label: 'Heritage Charcoal' },
+                    { hex: '#0F172A', label: 'Royal Navy' },
+                    { hex: '#1B3B2B', label: 'Emerald Silk' },
+                  ].map((c) => (
                     <button
-                      key={c}
+                      key={c.hex}
                       type="button"
-                      onClick={() => setMarqueeBgColor(c)}
-                      className="w-6 h-6 rounded-md border border-slate-300"
-                      style={{ backgroundColor: c }}
-                      title={c}
+                      onClick={() => setMarqueeBgColor(c.hex)}
+                      className="w-6 h-6 rounded-md border border-slate-300 cursor-pointer"
+                      style={{ backgroundColor: c.hex }}
+                      title={c.label}
                     />
                   ))}
                 </div>
@@ -593,47 +713,22 @@ export default function StorefrontDisplayManagerPage() {
                   className="w-28 px-2.5 py-1.5 border border-slate-300 rounded-lg font-mono text-xs text-slate-900"
                 />
                 <div className="flex gap-1">
-                  {['#FEF3C7', '#FFFFFF', '#FDE047', '#BBF7D0'].map((c) => (
+                  {[
+                    { hex: '#FEF3C7', label: 'Warm Gold' },
+                    { hex: '#FFFFFF', label: 'Pure White' },
+                    { hex: '#FDE047', label: 'Amber Gold' },
+                    { hex: '#A7F3D0', label: 'Mint Gold' },
+                  ].map((c) => (
                     <button
-                      key={c}
+                      key={c.hex}
                       type="button"
-                      onClick={() => setMarqueeTextColor(c)}
-                      className="w-6 h-6 rounded-md border border-slate-300"
-                      style={{ backgroundColor: c }}
-                      title={c}
+                      onClick={() => setMarqueeTextColor(c.hex)}
+                      className="w-6 h-6 rounded-md border border-slate-300 cursor-pointer"
+                      style={{ backgroundColor: c.hex }}
+                      title={c.label}
                     />
                   ))}
                 </div>
-              </div>
-            </div>
-
-            {/* Speed Controller */}
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-slate-700 mb-1.5">
-                Scroll Velocity
-              </label>
-              <div className="grid grid-cols-3 gap-3 max-w-md">
-                {[
-                  { key: 'SLOW', label: 'Slow (35s)', speed: '35s' },
-                  { key: 'NORMAL', label: 'Normal (25s)', speed: '25s' },
-                  { key: 'FAST', label: 'Fast (15s)', speed: '15s' },
-                ].map((s) => (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => {
-                      setMarqueeSpeed(s.key as any);
-                      triggerToast(`Scroll velocity set to ${s.label}.`);
-                    }}
-                    className={`py-2 rounded-xl text-xs font-bold transition-all border ${
-                      marqueeSpeed === s.key
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-2xs'
-                        : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
               </div>
             </div>
           </div>
@@ -647,17 +742,17 @@ export default function StorefrontDisplayManagerPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      message_text: marqueeText,
+                      message_lines: marqueeLines,
                       is_active: marqueeEnabled,
                     }),
                   });
-                  triggerToast('Marquee settings published to database & storefront.');
+                  triggerToast('Marquee announcements published to database & storefront header.');
                 } catch (err) {
                   console.error('[Marquee API] Error saving marquee:', err);
                   triggerToast('Marquee settings updated.');
                 }
               }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs"
+              className="px-5 py-2.5 bg-[#7A1C30] hover:bg-[#5F1424] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-colors"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Publish Marquee Updates</span>

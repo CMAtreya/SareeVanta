@@ -47,7 +47,7 @@ interface CatalogSaree {
   hsnCode: string;
   weave: string;
   fabric: string;
-  zariType: 'Pure Gold Zari' | 'Tested Gold Zari' | 'Antiqued Silver Zari' | 'Tapestry Zari';
+  zariType: string;
   priceINR: number;
   originalPriceINR: number;
   stock: number;
@@ -84,7 +84,7 @@ export default function AdminCatalogPage() {
             const actualStock = invData ? Math.max(0, (invData.quantity || 0) - (invData.reserved_quantity || 0)) : 0;
             const weave = p.weavings?.name || 'Mysore Silk Crepe';
             const fabric = p.fabrics?.name || '100% Pure Mulberry Silk';
-            const zari = p.zari_specifications?.name || 'Pure 24K Gold Zari';
+            const zari = p.zari_specifications?.name || 'Pure 24K Tested Zari';
             const priceINR = Math.round((p.base_selling_price_paise || 2850000) / 100);
             const mrpINR = Math.round((p.base_mrp_paise || 3200000) / 100);
 
@@ -666,11 +666,19 @@ export default function AdminCatalogPage() {
                       <td className="p-3">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
-                            saree.zariType === 'Pure Gold Zari'
+                            saree.zariType.toLowerCase().includes('24k') || saree.zariType.toLowerCase().includes('pure zari')
                               ? 'bg-amber-50 text-amber-900 border-amber-300'
-                              : saree.zariType === 'Antiqued Silver Zari'
+                              : saree.zariType.toLowerCase().includes('silver')
                               ? 'bg-slate-100 text-slate-800 border-slate-300'
-                              : 'bg-blue-50 text-blue-900 border-blue-200'
+                              : saree.zariType.toLowerCase().includes('tested gold')
+                              ? 'bg-yellow-50 text-yellow-900 border-yellow-300'
+                              : saree.zariType.toLowerCase().includes('antique')
+                              ? 'bg-orange-50 text-orange-900 border-orange-300'
+                              : saree.zariType.toLowerCase().includes('copper')
+                              ? 'bg-rose-50 text-rose-900 border-rose-300'
+                              : saree.zariType.toLowerCase().includes('no zari') || saree.zariType.toLowerCase().includes('resham')
+                              ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                              : 'bg-indigo-50 text-indigo-900 border-indigo-200'
                           }`}
                         >
                           {saree.zariType}

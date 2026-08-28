@@ -1,8 +1,18 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache } from '@/lib/cache';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const url = new URL(request.url);
+  const cacheKey = `storefront_products_${url.search}`;
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json({ ...cached, cached: true });
+  }
+
+  const { searchParams } = url;
   const weave = searchParams.get('weave');
   const fabric = searchParams.get('fabric');
   const occasion = searchParams.get('occasion');
@@ -23,8 +33,6 @@ export async function GET(request: Request) {
         id,
         title,
         slug,
-        description,
-        care_instructions,
         base_mrp_paise,
         base_selling_price_paise,
         is_published,
@@ -43,7 +51,6 @@ export async function GET(request: Request) {
           is_active,
           colors ( name, hex_code ),
           product_variant_media ( url, is_primary )
-        )
       `)
       .eq('is_published', true);
 
@@ -146,14 +153,18 @@ export async function GET(request: Request) {
       }
       if (color) formattedProducts = formattedProducts.filter(p => p.color.toLowerCase().includes(color.toLowerCase()));
 
+      const responsePayload = {
+        products: formattedProducts,
+        total: formattedProducts.length,
+        totalPages: Math.ceil(formattedProducts.length / limit) || 1,
+        counts,
+        source: 'database',
+      };
+
+      setCache(cacheKey, responsePayload, 60);
+
       return NextResponse.json(
-        {
-          products: formattedProducts,
-          total: formattedProducts.length,
-          totalPages: Math.ceil(formattedProducts.length / limit) || 1,
-          counts,
-          source: 'database',
-        },
+        responsePayload,
         {
           headers: {
             'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',

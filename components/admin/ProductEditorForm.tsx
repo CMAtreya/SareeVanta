@@ -56,8 +56,8 @@ const Code128BarcodeVisual = ({ value }: { value: string }) => {
 export default function ProductEditorForm({ mode, productId }: ProductEditorFormProps) {
   const router = useRouter();
 
-  // Find existing product if edit mode
-  const existingProduct = products.find((p) => p.id === productId);
+  // Loading state for edit mode to prevent showing dummy data
+  const [isLoading, setIsLoading] = useState(mode === 'edit');
 
   // Auto-generated SKU and Barcode for new items (NSH-SKU-[WEAVE_CODE]-[SEQ])
   const autoSku = `NSH-SKU-MYS-${Math.floor(10 + Math.random() * 90)}`;
@@ -141,16 +141,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       name: 'Royal Crimson',
       hex: '#8B1E28',
       sku: `${autoSku}-CRM`,
-      stockCount: 3,
+      stockCount: 1,
       images: ['', '', ''],
     },
   ]);
 
   // Form State: Occasions (Multi-Select Tags)
-  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([
-    'Bridal',
-    'Muhurtham',
-  ]);
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const availableOccasions = [
     'Bridal',
     'Muhurtham',
@@ -161,10 +158,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   ];
 
   // Form State: Special Marketing Badges & Tags
-  const [selectedBadges, setSelectedBadges] = useState<string[]>([
-    'Best Seller',
-    'Silk Mark Certified',
-  ]);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [availableBadges, setAvailableBadges] = useState<string[]>([
     'Best Seller',
     'New Arrival',
@@ -176,10 +170,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [customTagInput, setCustomTagInput] = useState('');
 
   // Form State: Pricing & Financials (Order: Cost Price -> MRP -> Selling Price -> Stock)
-  const [costPrice, setCostPrice] = useState('18500'); // Internal editable
-  const [mrp, setMrp] = useState('34000');
-  const [sellingPrice, setSellingPrice] = useState('28000');
-  const [stock, setStock] = useState('5');
+  const [costPrice, setCostPrice] = useState('');
+  const [mrp, setMrp] = useState('');
+  const [sellingPrice, setSellingPrice] = useState('');
+  const [stock, setStock] = useState('1');
   const [gstRate, setGstRate] = useState('18');
   const [hsnCode, setHsnCode] = useState('5007');
 
@@ -211,67 +205,63 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       if (mode !== 'edit' || !productId) return;
 
       try {
-        const res = await fetch('/api/admin/products');
+        setIsLoading(true);
+        const res = await fetch(`/api/admin/products?id=${encodeURIComponent(productId)}`);
         const data = await res.json();
-        if (data.products && Array.isArray(data.products)) {
-          const found = data.products.find((p: any) => p.id === productId || p.slug === productId);
-          if (found) {
-            const mainVariant = found.product_variants?.[0];
-            const dbVariants = found.product_variants || [];
+        const found = data.product || (data.products && Array.isArray(data.products) ? data.products.find((p: any) => p.id === productId || p.slug === productId) : null);
+        if (found) {
+          const mainVariant = found.product_variants?.[0];
+          const dbVariants = found.product_variants || [];
 
-            if (dbVariants.length > 0) {
-              const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
-                const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
-                return {
-                  id: v.id || `var-${vIdx + 1}`,
-                  name: v.colors?.name || 'Royal Crimson',
-                  hex: v.colors?.hex_code || '#8B1E28',
-                  sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
-                  stockCount: v.inventory?.[0]?.quantity || 10,
-                  images: [
-                    vImgs[0] || '',
-                    vImgs[1] || '',
-                    vImgs[2] || '',
-                  ] as [string, string, string],
-                };
-              });
-              setColorVariants(mappedColorVars);
-            }
+          if (dbVariants.length > 0) {
+            const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
+              const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
+              return {
+                id: v.id || `var-${vIdx + 1}`,
+                name: v.colors?.name || 'Royal Crimson',
+                hex: v.colors?.hex_code || '#8B1E28',
+                sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
+                stockCount: v.inventory?.[0]?.quantity || 10,
+                images: [
+                  vImgs[0] || '',
+                  vImgs[1] || '',
+                  vImgs[2] || '',
+                ] as [string, string, string],
+              };
+            });
+            setColorVariants(mappedColorVars);
+          }
 
-            const liveImages = mainVariant?.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [];
+          const liveImages = mainVariant?.product_variant_media?.map((m: any) => m.url).filter(Boolean) || [];
 
-            setTitle(found.title);
-            setDescription(found.description || '');
-            setWeave(found.weavings?.name || 'Mysore Silk');
-            if (found.fabrics?.name) setFabric(found.fabrics.name);
-            if (found.zari_specifications?.name) setZariSpec(found.zari_specifications.name);
-            setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
-            setMrp(String(Math.round((found.base_mrp_paise || 0) / 100)));
-            setCostPrice(String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
+          setTitle(found.title);
+          setDescription(found.description || '');
+          setWeave(found.weavings?.name || 'Mysore Silk');
+          if (found.fabrics?.name) setFabric(found.fabrics.name);
+          if (found.zari_specifications?.name) setZariSpec(found.zari_specifications.name);
+          if (found.occasions?.name) setSelectedOccasions([found.occasions.name]);
+          setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
+          setMrp(String(Math.round((found.base_mrp_paise || 0) / 100)));
+          setCostPrice(String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
+          setStock(String(mainVariant?.inventory?.[0]?.quantity || 1));
 
-            const fixedSku = mainVariant?.sku || `NSH-SKU-${found.id.slice(0, 6).toUpperCase()}`;
-            const fixedBarcode = `890${found.id.replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '5')}`;
-            setSku(fixedSku);
-            setBarcode(fixedBarcode);
+          const fixedSku = mainVariant?.sku || `NSH-SKU-${found.id.slice(0, 6).toUpperCase()}`;
+          const fixedBarcode = `890${found.id.replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '5')}`;
+          setSku(fixedSku);
+          setBarcode(fixedBarcode);
 
-            if (liveImages.length > 0) {
-              setImages(liveImages);
-            }
+          if (liveImages.length > 0) {
+            setImages(liveImages);
           }
         }
       } catch (err) {
-        console.error('[ProductEditorForm] Error fetching live product for edit:', err);
+        console.error('[Product Editor] Fetch error:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
 
-    if (mode === 'edit') {
-      fetchProductDetails();
-    } else if (mode === 'create') {
-      setTitle('Kanchipuram Heavy Korvai Bridal Silk Saree');
-      setDescription(
-        'Opulent Kanchipuram silk saree featuring double-shuttle Korvai interlocked temple borders and pure gold zari bullion.'
-      );
-    }
+    fetchProductDetails();
   }, [mode, productId]);
 
   // Calculated Discount Percent
@@ -370,6 +360,69 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       router.push('/admin/catalog');
     }, 1200);
   };
+
+  if (isLoading) {
+    return (
+      <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-pulse max-w-6xl mx-auto">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-stone-200" />
+            <div className="space-y-2">
+              <div className="w-64 h-6 bg-stone-200 rounded-lg" />
+              <div className="w-48 h-3 bg-stone-200 rounded" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="w-28 h-10 bg-stone-200 rounded-xl" />
+            <div className="w-36 h-10 bg-stone-200 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Grid Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
+              <div className="w-32 h-4 bg-stone-200 rounded" />
+              <div className="w-full h-10 bg-stone-100 rounded-xl" />
+              <div className="w-full h-24 bg-stone-100 rounded-xl" />
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
+              <div className="w-32 h-4 bg-stone-200 rounded" />
+              <div className="grid grid-cols-4 gap-3">
+                <div className="h-10 bg-stone-100 rounded-xl" />
+                <div className="h-10 bg-stone-100 rounded-xl" />
+                <div className="h-10 bg-stone-100 rounded-xl" />
+                <div className="h-10 bg-stone-100 rounded-xl" />
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
+              <div className="w-32 h-4 bg-stone-200 rounded" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="h-28 bg-stone-100 rounded-xl" />
+                <div className="h-28 bg-stone-100 rounded-xl" />
+                <div className="h-28 bg-stone-100 rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
+              <div className="w-32 h-4 bg-stone-200 rounded" />
+              <div className="flex flex-wrap gap-2">
+                <div className="w-20 h-7 bg-stone-100 rounded-lg" />
+                <div className="w-24 h-7 bg-stone-100 rounded-lg" />
+                <div className="w-28 h-7 bg-stone-100 rounded-lg" />
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl border border-stone-200 space-y-4">
+              <div className="w-32 h-4 bg-stone-200 rounded" />
+              <div className="w-full h-32 bg-stone-100 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-sans text-slate-900 select-none pb-28 space-y-6 animate-fade-in max-w-6xl mx-auto">

@@ -93,29 +93,31 @@ export default function Header() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [liveMarqueeText, setLiveMarqueeText] = useState<string | null>(null);
+  const [liveMarqueeLines, setLiveMarqueeLines] = useState<string[]>([]);
 
-  // Fetch live published marquee announcement from database
+  // Fetch live published marquee announcements from database
   useEffect(() => {
     fetch('/api/admin/marquee')
       .then((res) => res.json())
       .then((data) => {
-        if (data.activeMarquee?.message_text && data.activeMarquee.is_active !== false) {
-          setLiveMarqueeText(data.activeMarquee.message_text);
+        if (data.activeLines && Array.isArray(data.activeLines) && data.activeLines.length > 0) {
+          setLiveMarqueeLines(data.activeLines);
+        } else if (data.activeMarquee?.message_text && data.activeMarquee.is_active !== false) {
+          setLiveMarqueeLines([data.activeMarquee.message_text]);
         }
       })
       .catch((err) => console.error('[Header] Marquee fetch error:', err));
   }, []);
 
   const dynamicAnnouncements = useMemo(() => {
-    if (liveMarqueeText) {
-      return [
-        { id: 0, content: <span className="font-bold text-amber-200">{liveMarqueeText}</span> },
-        ...announcements,
-      ];
+    if (liveMarqueeLines.length > 0) {
+      return liveMarqueeLines.map((line, idx) => ({
+        id: idx,
+        content: <span className="font-medium text-amber-200">{line}</span>,
+      }));
     }
     return announcements;
-  }, [liveMarqueeText]);
+  }, [liveMarqueeLines]);
 
   // Rotate announcement bar every 4.5 seconds
   useEffect(() => {

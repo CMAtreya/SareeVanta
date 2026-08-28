@@ -1,7 +1,15 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache, invalidateCache } from '@/lib/cache';
+
+const BANNERS_CACHE_KEY = 'banners_list';
 
 export async function GET() {
+  const cached = getCache<any[]>(BANNERS_CACHE_KEY);
+  if (cached) {
+    return NextResponse.json({ slides: cached, cached: true });
+  }
+
   const supabase = createAdminClient();
 
   const { data: slides, error } = await supabase
@@ -13,7 +21,10 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ slides: slides || [] });
+  const result = slides || [];
+  setCache(BANNERS_CACHE_KEY, result, 60);
+
+  return NextResponse.json({ slides: result, cached: false });
 }
 
 export async function POST(request: Request) {
@@ -52,6 +63,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  invalidateCache(BANNERS_CACHE_KEY);
   return NextResponse.json({ success: true, slide });
 }
 
@@ -68,6 +80,7 @@ export async function PATCH(request: Request) {
           .eq('id', item.id);
       }
     }
+    invalidateCache(BANNERS_CACHE_KEY);
     return NextResponse.json({ success: true });
   }
 
@@ -92,6 +105,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  invalidateCache(BANNERS_CACHE_KEY);
   return NextResponse.json({ success: true, slide });
 }
 
@@ -110,5 +124,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  invalidateCache(BANNERS_CACHE_KEY);
   return NextResponse.json({ success: true });
 }

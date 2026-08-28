@@ -116,6 +116,59 @@ export async function POST(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  try {
+    const supabase = createAdminClient();
+    const body = await request.json();
+
+    // 1. Bulk Reorder
+    if (body.reorder && Array.isArray(body.reorder)) {
+      for (const item of body.reorder) {
+        if (item.id && item.display_order !== undefined) {
+          await supabase
+            .from('instagram_reels')
+            .update({ display_order: item.display_order })
+            .eq('id', item.id);
+        }
+      }
+      return NextResponse.json({ success: true, message: 'Reels reordered successfully.' });
+    }
+
+    // 2. Single Reel Update / Edit
+    const { id, url, caption, thumbnail_url, is_active, display_order } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, message: 'Reel id is required for update.' }, { status: 400 });
+    }
+
+    const updates: any = {};
+    if (url !== undefined && typeof url === 'string') updates.instagram_url = url.trim();
+    if (caption !== undefined && typeof caption === 'string') updates.caption = caption.trim();
+    if (thumbnail_url !== undefined) updates.thumbnail_storage_path = thumbnail_url ? thumbnail_url.trim() : null;
+    if (is_active !== undefined) updates.is_active = Boolean(is_active);
+    if (display_order !== undefined) updates.display_order = Number(display_order);
+
+    const { data: updated, error } = await supabase
+      .from('instagram_reels')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Reel updated successfully.',
+      data: updated,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error?.message || 'Failed to update reel.' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: Request) {
   try {
     const supabase = createAdminClient();

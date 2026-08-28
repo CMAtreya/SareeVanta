@@ -1,10 +1,16 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  const slug = searchParams.get('slug');
+
   const supabase = createAdminClient();
 
-  const { data: products, error } = await supabase
+  let query = supabase
     .from('products')
     .select(`
       *,
@@ -15,14 +21,27 @@ export async function GET() {
       border_stylings(name),
       zari_specifications(name),
       product_variants(*, colors(name, hex_code), inventory(*), product_variant_media(*))
-    `)
-    .order('created_at', { ascending: false });
+    `);
+
+  if (id) {
+    query = query.eq('id', id);
+  } else if (slug) {
+    query = query.eq('slug', slug);
+  } else {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  const { data: products, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ products: products || [] });
+  if ((id || slug) && products && products.length > 0) {
+    return NextResponse.json({ success: true, product: products[0], products: products });
+  }
+
+  return NextResponse.json({ success: true, products: products || [] });
 }
 
 export async function POST(request: Request) {

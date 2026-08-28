@@ -53,10 +53,10 @@ export default function NewProductModal({ isOpen, onClose, onAddProduct }: NewPr
   const [occasion, setOccasion] = useState('Bridal / Wedding');
 
   // Pricing (Order: Cost Price (Internal) -> MRP -> Selling Price -> Stock)
-  const [costPrice, setCostPrice] = useState('18500');
-  const [mrp, setMrp] = useState('34000');
-  const [sellingPrice, setSellingPrice] = useState('28000');
-  const [stockCount, setStockCount] = useState('5');
+  const [costPrice, setCostPrice] = useState('');
+  const [mrp, setMrp] = useState('');
+  const [sellingPrice, setSellingPrice] = useState('');
+  const [stockCount, setStockCount] = useState('1');
   const [gstRate, setGstRate] = useState('18');
   const [hsn, setHsn] = useState('5007');
 

@@ -15,3 +15,20 @@
 4. **Product Edit Form & Review Thumbnail Image Preservation**:
    - **Mistake**: `ProductEditorForm` checked static `products.find` first in edit mode, loading static Unsplash mock images and overwriting user uploaded photos upon save. In `GET /api/admin/reviews`, `product_variant_media` was not selected, causing review product thumbnails to render broken.
    - **Correction**: In form edit components, bypass static mock arrays completely and always fetch live product details, SKUs, and media from `/api/admin/products`. In review APIs, select `product_variant_media` and map `sareeImage` / `productImage` so thumbnails render clearly!
+
+5. **Foreign Key & Schema Cache Verification**:
+   - **Mistake**: Assuming direct table relationships (e.g. joining `products` directly on `reviews`), causing PostgREST schema cache errors and silently returning empty arrays.
+   - **Correction**: Always verify foreign keys in PostgreSQL before writing nested queries (e.g. `reviews` -> `product_variants` -> `products`). Test the query against live data before finalizing.
+
+6. **Zero Mock Defaults in Form State & Mandatory Skeleton Loaders**:
+   - **Mistake**: Initializing component `useState` with mock dummy numbers (`18500`, `28000`) and omitting loading states during async edit fetching, which caused a 2-second flash of wrong data.
+   - **Correction**: Initialize form inputs cleanly with empty strings/blank defaults. In edit mode, initialize `isLoading = true` and render a full skeleton loader until the real database record is loaded.
+
+7. **Complete API Method Coverage (GET, POST, PATCH, DELETE)**:
+   - **Mistake**: Providing only `POST` and `DELETE` on management endpoints, leaving `PATCH` unimplemented and causing edit/reorder requests to fail with 405.
+   - **Correction**: Every management route must support all required CRUD methods (`GET`, `POST`, `PATCH`, `DELETE`) with proper request body validation and error handling.
+
+8. **No Arbitrary Fixed-Width Truncation on User Data**:
+   - **Mistake**: Using `truncate max-w-[170px]` on email and user detail fields, causing long real-world email addresses (`podarvishwasgowda@gmail.com`) to be cut off.
+   - **Correction**: Never hardcode tight max-widths that truncate essential user data. Use responsive flex layouts, `break-all`, and `select-all` so full text is always visible and accessible.
+

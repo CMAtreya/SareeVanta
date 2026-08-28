@@ -20,6 +20,8 @@ import {
   Eye,
   RefreshCw,
   SlidersHorizontal,
+  Edit2,
+  Save,
 } from 'lucide-react';
 
 interface AdminInstagramReel {
@@ -38,13 +40,21 @@ export default function AdminInstagramReelsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Form States
+  // Form States (Create)
   const [urlInput, setUrlInput] = useState('');
   const [captionInput, setCaptionInput] = useState('');
   const [thumbnailInput, setThumbnailInput] = useState('');
   const [thumbnailFilePreview, setThumbnailFilePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
+
+  // Edit Reel Modal State
+  const [editingReel, setEditingReel] = useState<AdminInstagramReel | null>(null);
+  const [editCaption, setEditCaption] = useState('');
+  const [editUrl, setEditUrl] = useState('');
+  const [editThumbnail, setEditThumbnail] = useState('');
+  const [editThumbnailPreview, setEditThumbnailPreview] = useState<string | null>(null);
+  const [editIsActive, setEditIsActive] = useState(true);
 
   // Delete Confirmation Modal State
   const [deletingReel, setDeletingReel] = useState<AdminInstagramReel | null>(null);
@@ -148,6 +158,50 @@ export default function AdminInstagramReelsPage() {
     }
   };
 
+  // Open Edit Reel Modal
+  const handleOpenEdit = (reel: AdminInstagramReel) => {
+    setEditingReel(reel);
+    setEditCaption(reel.caption);
+    setEditUrl(reel.url);
+    setEditThumbnail(reel.thumbnail_url || '');
+    setEditThumbnailPreview(null);
+    setEditIsActive(reel.is_active);
+  };
+
+  // Submit Edit Reel
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReel) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/instagram-reels', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingReel.id,
+          caption: editCaption.trim(),
+          url: editUrl.trim(),
+          thumbnail_url: editThumbnailPreview || editThumbnail.trim() || null,
+          is_active: editIsActive,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setFeedback({ type: 'success', message: 'Reel updated successfully!' });
+        setEditingReel(null);
+        await fetchReels();
+      } else {
+        setFeedback({ type: 'error', message: data.message || 'Failed to update reel.' });
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', message: 'An unexpected error occurred while updating reel.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Toggle Reel Active/Inactive
   const handleToggleActive = async (reel: AdminInstagramReel) => {
     const updatedStatus = !reel.is_active;
@@ -155,10 +209,10 @@ export default function AdminInstagramReelsPage() {
     setReels((prev) => prev.map((r) => (r.id === reel.id ? { ...r, is_active: updatedStatus } : r)));
 
     try {
-      const res = await fetch(`/api/admin/instagram-reels/${encodeURIComponent(reel.id)}`, {
+      const res = await fetch('/api/admin/instagram-reels', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: updatedStatus }),
+        body: JSON.stringify({ id: reel.id, is_active: updatedStatus }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -609,13 +663,24 @@ export default function AdminInstagramReelsPage() {
                   </div>
                 </div>
 
-                {/* Right Block: Active Toggle + Preview + Delete */}
-                <div className="flex items-center gap-3 self-end sm:self-center">
+                {/* Right Block: Edit + Preview + Active Toggle + Delete */}
+                <div className="flex items-center gap-2 self-end sm:self-center">
+                  {/* Edit Modal Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(reel)}
+                    className="p-2 bg-stone-100 hover:bg-[#FAF3E4] hover:text-[#C87F4A] rounded-xl text-stone-600 transition-colors flex items-center gap-1 font-mono text-[11px] cursor-pointer"
+                    title="Edit Reel Details"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Edit</span>
+                  </button>
+
                   {/* Preview Modal Button */}
                   <button
                     type="button"
                     onClick={() => setPreviewReel(reel)}
-                    className="p-2 bg-stone-100 hover:bg-[#FAF3E4] hover:text-[#C87F4A] rounded-xl text-stone-600 transition-colors flex items-center gap-1 font-mono text-[11px]"
+                    className="p-2 bg-stone-100 hover:bg-[#FAF3E4] hover:text-[#C87F4A] rounded-xl text-stone-600 transition-colors flex items-center gap-1 font-mono text-[11px] cursor-pointer"
                     title="Preview Reel Player"
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -642,7 +707,7 @@ export default function AdminInstagramReelsPage() {
                   <button
                     type="button"
                     onClick={() => setDeletingReel(reel)}
-                    className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                     title="Delete Reel"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -768,6 +833,161 @@ export default function AdminInstagramReelsPage() {
               <div className="p-4 bg-[#1F1B16] border-t border-white/10">
                 <p className="font-editorial text-sm font-bold">{previewReel.caption}</p>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ==================================================== */}
+      {/* 5. EDIT REEL MODAL                                   */}
+      {/* ==================================================== */}
+      <AnimatePresence>
+        {editingReel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setEditingReel(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl max-w-lg w-full border border-stone-200 shadow-2xl overflow-hidden text-slate-900"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-stone-100 flex items-center justify-between bg-[#FAF6F0]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#7A1C30]/10 flex items-center justify-center text-[#7A1C30]">
+                    <Edit2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-sans font-bold text-base text-[#1F1B16]">Edit Instagram Reel</h3>
+                    <p className="text-[11px] text-stone-500 font-mono">Update caption, poster thumbnail & visibility</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingReel(null)}
+                  className="p-1.5 rounded-full hover:bg-stone-200 text-stone-500 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Form Body */}
+              <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
+                {/* Reel Caption / Headline */}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Display Caption / Headline
+                  </label>
+                  <input
+                    type="text"
+                    value={editCaption}
+                    onChange={(e) => setEditCaption(e.target.value)}
+                    placeholder="e.g. Royal Mysore Crepe Silk Draping Masterclass"
+                    required
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:border-[#7A1C30] focus:ring-1 focus:ring-[#7A1C30]"
+                  />
+                </div>
+
+                {/* Instagram URL */}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Instagram Reel URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editUrl}
+                    onChange={(e) => setEditUrl(e.target.value)}
+                    placeholder="https://www.instagram.com/reel/..."
+                    required
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:border-[#7A1C30] focus:ring-1 focus:ring-[#7A1C30] font-mono"
+                  />
+                </div>
+
+                {/* Custom Thumbnail URL / Upload */}
+                <div>
+                  <label className="block text-xs font-semibold text-stone-700 mb-1">
+                    Poster Thumbnail Image URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editThumbnail}
+                    onChange={(e) => {
+                      setEditThumbnail(e.target.value);
+                      setEditThumbnailPreview(null);
+                    }}
+                    placeholder="https://images.unsplash.com/... or direct image link"
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-stone-200 focus:outline-none focus:border-[#7A1C30] focus:ring-1 focus:ring-[#7A1C30] font-mono text-[11px]"
+                  />
+
+                  {/* Thumbnail Preview Box */}
+                  <div className="mt-2 flex items-center gap-3 p-2 bg-stone-50 rounded-xl border border-stone-200">
+                    <img
+                      src={editThumbnailPreview || editThumbnail || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80'}
+                      alt="Thumbnail Preview"
+                      className="w-12 h-16 rounded-lg object-cover bg-stone-200 border border-stone-300 shadow-2xs"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80';
+                      }}
+                    />
+                    <div className="text-[11px] text-stone-600">
+                      <p className="font-semibold text-stone-800">Poster Frame Preview</p>
+                      <p className="text-[10px] text-stone-400">High-resolution 9:16 portrait orientation</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Active Toggle */}
+                <div className="flex items-center justify-between p-3 bg-stone-50 rounded-xl border border-stone-200">
+                  <div>
+                    <p className="text-xs font-semibold text-stone-800">Storefront Visibility</p>
+                    <p className="text-[10px] text-stone-500">Show this reel on customer homepage carousel</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editIsActive}
+                      onChange={(e) => setEditIsActive(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-5 bg-stone-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#7A1C30]" />
+                  </label>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
+                  <button
+                    type="button"
+                    onClick={() => setEditingReel(null)}
+                    disabled={isSubmitting}
+                    className="px-4 py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-100 font-semibold text-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 rounded-xl bg-[#7A1C30] hover:bg-[#5F1424] text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}
