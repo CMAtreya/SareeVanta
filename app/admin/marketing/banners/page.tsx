@@ -223,7 +223,7 @@ export default function StorefrontDisplayManagerPage() {
       .catch((err) => console.error('[Banners API] Fetch error:', err));
 
     // Load active marquee lines & colors
-    fetch('/api/admin/marquee')
+    fetch(`/api/admin/marquee?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.bgColor) setMarqueeBgColor(data.bgColor);

@@ -64,9 +64,16 @@ export async function GET() {
     },
   };
 
-  setCache(MARQUEE_CACHE_KEY, result, 60);
+  setCache(MARQUEE_CACHE_KEY, result, 10);
 
-  return NextResponse.json({ ...result, cached: false });
+  return NextResponse.json(
+    { ...result, cached: false },
+    {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      },
+    }
+  );
 }
 
 export async function POST(request: Request) {

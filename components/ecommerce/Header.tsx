@@ -100,7 +100,7 @@ export default function Header() {
 
   // Fetch live published marquee announcements and colors from database
   useEffect(() => {
-    fetch('/api/marquee')
+    fetch(`/api/marquee?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.bgColor) setMarqueeBgColor(data.bgColor);
