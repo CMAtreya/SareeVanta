@@ -22,76 +22,38 @@ import { useProducts } from '@/hooks/useProducts';
 
 export default function HomePage() {
   // ----------------------------------------------------
-  // 1. Hero Promo Carousel State (Auto-advances every 5s)
+  // 1. Hero Promo Carousel State (Live Database Banners)
   // ----------------------------------------------------
-  const heroSlides = [
-    {
-      id: 1,
-      tag: 'Royal Festive Curation 2026',
-      title: 'The Mysore Crepe Silk Edit',
-      subtitle: 'Pure Mulberry Sericulture & Authentic Royal Wodeyar Insignia Borders',
-      link: '/products?weave=Mysore+Silk',
-      ctaText: 'Shop Festive Edit',
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1800&q=85',
-    },
-    {
-      id: 2,
-      tag: 'Auspicious Muhurtham Collection',
-      title: 'Heirloom Bridal Kanchipuram',
-      subtitle: 'Tested 24-Karat Real Gold & Silver Zari with Authentic Korvai Interlock',
-      link: '/products?occasion=Bridal+%26+Muhurtham',
-      ctaText: 'Explore Bridal Collection',
-      image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=1800&q=85',
-    },
-    {
-      id: 3,
-      tag: 'Varanasi Loom Heritage',
-      title: 'Banarasi Katan & Kadwa Weaves',
-      subtitle: 'Individually Engraved Floral Bootas & Antique Zari Without Reverse Floats',
-      link: '/products?weave=Banarasi',
-      ctaText: 'Shop Banarasi Edit',
-      image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1800&q=85',
-    },
-    {
-      id: 4,
-      tag: 'Guild Gifting & Curations',
-      title: 'New Season Arrivals & Gift Cards',
-      subtitle: 'Discover the Latest Handloom Drops with Complimentary Fall & Pico',
-      link: '/products?filter=new',
-      ctaText: 'Discover New In',
-      image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1800&q=85',
-    },
-  ];
-
-  const [liveHeroSlides, setLiveHeroSlides] = useState<any[] | null>(null);
+  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>([]);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
 
   useEffect(() => {
-    fetch('/api/banners')
+    fetch(`/api/banners?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
-        if (data.slides && Array.isArray(data.slides) && data.slides.length > 0) {
+        if (data.slides && Array.isArray(data.slides)) {
           const activeOnly = data.slides.filter((s: any) => s.is_active);
-          if (activeOnly.length > 0) {
-            const formatted = activeOnly.map((s: any, idx: number) => ({
-              id: s.id || idx + 1,
-              tag: s.badge_text || 'Heritage Handloom Collection',
-              title: s.heading,
-              subtitle: s.tagline || '100% Pure Silk Mark Certified',
-              link: '/products',
-              ctaText: s.cta_text || 'Explore Collection',
-              image: s.desktop_image_path,
-            }));
-            setLiveHeroSlides(formatted);
-          }
+          const formatted = activeOnly.map((s: any, idx: number) => ({
+            id: s.id || idx + 1,
+            tag: s.badge_text || 'Heritage Handloom Collection',
+            title: s.heading,
+            subtitle: s.tagline || '100% Pure Silk Mark Certified',
+            link: s.cta_link || '/products',
+            ctaText: s.cta_text || 'Explore Collection',
+            image: s.desktop_image_path,
+          }));
+          setLiveHeroSlides(formatted);
         }
       })
-      .catch((err) => console.error('[Homepage Hero] Error fetching banners:', err));
+      .catch((err) => console.error('[Homepage Hero] Error fetching banners:', err))
+      .finally(() => setIsLoadingBanners(false));
   }, []);
 
-  const activeSlides = liveHeroSlides || heroSlides;
+  const activeSlides = liveHeroSlides;
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
+    if (activeSlides.length <= 1) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % activeSlides.length);
     }, 5000);
@@ -212,98 +174,111 @@ export default function HomePage() {
   return (
     <div className="relative w-full bg-[#FAF3E4] text-[#1F1B16]">
       {/* ==================================================== */}
-      {/* 2. HERO PROMO CAROUSEL (Full-Width, 5s Auto-Advance) */}
+      {/* 2. HERO PROMO CAROUSEL (Live Supabase Hero Slides)  */}
       {/* ==================================================== */}
       <section className="relative w-full overflow-hidden bg-[#1F1B16] text-[#FAF3E4]">
         <div className="relative w-full h-[420px] sm:h-[520px] md:h-[580px] lg:h-[640px]">
-          {activeSlides.map((slide, idx) => (
-            <div
-              key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-                currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
-              }`}
-            >
-              {/* Slide Background Image with Vignette Overlay */}
-              <img
-                src={slide.image}
-                alt={slide.title}
-                className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-[6000ms]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#1F1B16]/90 via-[#1F1B16]/60 to-transparent" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1F1B16]/80 via-transparent to-[#1F1B16]/40" />
+          {isLoadingBanners ? (
+            <div className="absolute inset-0 bg-[#1F1B16] flex items-center justify-center">
+              <div className="text-center space-y-4 animate-pulse">
+                <div className="w-12 h-12 rounded-full border-2 border-[#C87F4A]/40 border-t-[#C87F4A] animate-spin mx-auto" />
+                <p className="text-xs font-mono tracking-[0.25em] text-[#FAF3E4]/60 uppercase">
+                  Loading Curations...
+                </p>
+              </div>
+            </div>
+          ) : (
+            activeSlides.map((slide, idx) => (
+              <div
+                key={slide.id}
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                  currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                }`}
+              >
+                {/* Slide Background Image with Vignette Overlay */}
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-[6000ms]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#1F1B16]/90 via-[#1F1B16]/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1F1B16]/80 via-transparent to-[#1F1B16]/40" />
 
-              {/* Slide Editorial Copy Container */}
-              <div className="absolute inset-0 flex items-center">
-                <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
-                  <div className="max-w-2xl space-y-4 sm:space-y-5 animate-fade-in">
-                    {/* Eyebrow */}
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF3E4]/15 backdrop-blur-md border border-white/20 text-[#FAF3E4] text-[11px] font-mono font-semibold uppercase tracking-[0.25em]">
-                      <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
-                      <span>{slide.tag}</span>
-                    </div>
+                {/* Slide Editorial Copy Container */}
+                <div className="absolute inset-0 flex items-center">
+                  <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
+                    <div className="max-w-2xl space-y-4 sm:space-y-5 animate-fade-in">
+                      {/* Eyebrow */}
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF3E4]/15 backdrop-blur-md border border-white/20 text-[#FAF3E4] text-[11px] font-mono font-semibold uppercase tracking-[0.25em]">
+                        <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
+                        <span>{slide.tag}</span>
+                      </div>
 
-                    {/* Headline */}
-                    <h2 className="font-editorial text-4xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.05] tracking-tight">
-                      {slide.title}
-                    </h2>
+                      {/* Headline */}
+                      <h2 className="font-editorial text-4xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.05] tracking-tight">
+                        {slide.title}
+                      </h2>
 
-                    {/* Subtitle */}
-                    <p className="text-xs sm:text-sm md:text-base text-stone-200 font-sans leading-relaxed max-w-lg">
-                      {slide.subtitle}
-                    </p>
+                      {/* Subtitle */}
+                      <p className="text-xs sm:text-sm md:text-base text-stone-200 font-sans leading-relaxed max-w-lg">
+                        {slide.subtitle}
+                      </p>
 
-                    {/* Action Link Button */}
-                    <div className="pt-2 sm:pt-4">
-                      <Link
-                        href={slide.link}
-                        className="inline-flex items-center gap-2.5 bg-[#C87F4A] hover:bg-[#B36737] text-white px-8 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg shadow-black/40"
-                      >
-                        <span>{slide.ctaText}</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
+                      {/* Action Link Button */}
+                      <div className="pt-2 sm:pt-4">
+                        <Link
+                          href={slide.link}
+                          className="inline-flex items-center gap-2.5 bg-[#C87F4A] hover:bg-[#B36737] text-white px-8 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg shadow-black/40"
+                        >
+                          <span>{slide.ctaText}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
 
           {/* Carousel Manual Arrows */}
-          <button
-            type="button"
-            onClick={handlePrevSlide}
-            className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-[#FAF3E4]/20 hover:bg-[#C87F4A] text-white backdrop-blur-md transition-all duration-300 shadow-md"
-            aria-label="Previous Slide"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNextSlide}
-            className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-[#FAF3E4]/20 hover:bg-[#C87F4A] text-white backdrop-blur-md transition-all duration-300 shadow-md"
-            aria-label="Next Slide"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-
-          {/* Carousel Dots Navigation */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/15">
-            {heroSlides.map((_, dotIdx) => (
+          {activeSlides.length > 1 && (
+            <>
               <button
-                key={dotIdx}
                 type="button"
-                onClick={() => setCurrentSlide(dotIdx)}
-                className={`transition-all duration-300 rounded-full ${
-                  currentSlide === dotIdx
-                    ? 'w-7 h-2 bg-[#C87F4A]'
-                    : 'w-2 h-2 bg-white/50 hover:bg-white'
-                }`}
-                aria-label={`Go to slide ${dotIdx + 1}`}
-              />
-            ))}
+                onClick={handlePrevSlide}
+                className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-[#FAF3E4]/20 hover:bg-[#C87F4A] text-white backdrop-blur-md transition-all duration-300 shadow-md cursor-pointer"
+                aria-label="Previous Slide"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleNextSlide}
+                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-20 p-2.5 sm:p-3 rounded-full bg-[#FAF3E4]/20 hover:bg-[#C87F4A] text-white backdrop-blur-md transition-all duration-300 shadow-md cursor-pointer"
+                aria-label="Next Slide"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+
+              {/* Carousel Dots Navigation */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/15">
+                {activeSlides.map((_, dotIdx) => (
+                  <button
+                    key={dotIdx}
+                    type="button"
+                    onClick={() => setCurrentSlide(dotIdx)}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      currentSlide === dotIdx ? 'w-8 bg-[#C87F4A]' : 'w-2 bg-white/40 hover:bg-white/70'
+                    }`}
+                    aria-label={`Slide ${dotIdx + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
           </div>
-        </div>
       </section>
 
       {/* ==================================================== */}
