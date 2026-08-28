@@ -5,13 +5,9 @@ import { getCache, setCache, invalidateCache } from '@/lib/cache';
 const MARQUEE_CACHE_KEY = 'marquee_active_lines';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
-  const cached = getCache<any>(MARQUEE_CACHE_KEY);
-  if (cached) {
-    return NextResponse.json({ ...cached, cached: true });
-  }
-
   const supabase = createAdminClient();
 
   const { data: messages, error } = await supabase
@@ -24,8 +20,8 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  let bgColor = '#7A1C30';
-  let textColor = '#FEF3C7';
+  let bgColor = '#0F172A';
+  let textColor = '#FDE047';
   let isActive = true;
 
   const rawRows = messages || [];
@@ -64,16 +60,13 @@ export async function GET() {
     },
   };
 
-  setCache(MARQUEE_CACHE_KEY, result, 10);
-
-  return NextResponse.json(
-    { ...result, cached: false },
-    {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-      },
-    }
-  );
+  return NextResponse.json(result, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      Pragma: 'no-cache',
+      Expires: '0',
+    },
+  });
 }
 
 export async function POST(request: Request) {
