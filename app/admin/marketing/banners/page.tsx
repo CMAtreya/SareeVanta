@@ -162,7 +162,7 @@ export default function StorefrontDisplayManagerPage() {
 
     try {
       const reorderPayload = updated.map((s, idx) => ({ id: s.id, display_order: idx + 1 }));
-      await fetch('/api/admin/banners', {
+      await fetch(`/api/admin/banners?_t=${Date.now()}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reorder: reorderPayload }),
@@ -177,7 +177,7 @@ export default function StorefrontDisplayManagerPage() {
     setSlides((prev) => prev.filter((s) => s.id !== id));
     triggerToast(`Slide "${title}" deleted.`);
     try {
-      await fetch(`/api/admin/banners?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await fetch(`/api/admin/banners?id=${encodeURIComponent(id)}&_t=${Date.now()}`, { method: 'DELETE' });
     } catch (err) {
       console.error('[Banners API] Delete error:', err);
     }
@@ -197,7 +197,7 @@ export default function StorefrontDisplayManagerPage() {
 
   React.useEffect(() => {
     // Load hero slides
-    fetch('/api/admin/banners')
+    fetch(`/api/admin/banners?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.slides && Array.isArray(data.slides) && data.slides.length > 0) {
@@ -245,7 +245,7 @@ export default function StorefrontDisplayManagerPage() {
     );
 
     try {
-      await fetch('/api/admin/banners', {
+      await fetch(`/api/admin/banners?_t=${Date.now()}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slide_id: id, is_active: newActiveState }),
@@ -262,10 +262,12 @@ export default function StorefrontDisplayManagerPage() {
     if (!editingSlide) return;
 
     try {
-      const res = await fetch('/api/admin/banners', {
+      const res = await fetch(`/api/admin/banners?_t=${Date.now()}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: editingSlide.id,
+          slide_id: editingSlide.id,
           heading: editingSlide.title,
           tagline: editingSlide.subtitle,
           badge_text: editingSlide.badgeText,
@@ -383,15 +385,15 @@ export default function StorefrontDisplayManagerPage() {
               onClick={() => {
                 setEditingSlide({
                   id: `slide-${Date.now()}`,
-                  title: 'Grand Festive Silk Showcase',
-                  subtitle: 'Authentic pure silk handlooms with certified Silk Mark provenance.',
+                  title: '',
+                  subtitle: '',
                   ctaText: 'Explore Collection',
                   destinationUrl: '/products',
-                  desktopImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1920&auto=format&fit=crop',
-                  mobileImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=800&auto=format&fit=crop',
-                  badgeText: 'ROYAL HERITAGE EXCLUSIVE',
-                  startDate: '2026-08-01',
-                  endDate: '2026-12-31',
+                  desktopImage: '',
+                  mobileImage: '',
+                  badgeText: '',
+                  startDate: new Date().toISOString().split('T')[0],
+                  endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                   isActive: true,
                 });
               }}
@@ -913,12 +915,31 @@ export default function StorefrontDisplayManagerPage() {
                       </span>
                     </label>
                   </div>
+                  <input
+                    type="text"
+                    value={editingSlide.desktopImage}
+                    onChange={(e) =>
+                      setEditingSlide({ ...editingSlide, desktopImage: e.target.value })
+                    }
+                    placeholder="Or paste Desktop Image URL directly..."
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] font-mono mt-1"
+                  />
                   {editingSlide.desktopImage && (
-                    <img
-                      src={editingSlide.desktopImage}
-                      alt="Desktop Preview"
-                      className="w-full h-24 rounded-lg object-cover mt-2 border border-slate-200"
-                    />
+                    <div className="relative mt-2">
+                      <img
+                        src={editingSlide.desktopImage}
+                        alt="Desktop Preview"
+                        className="w-full h-24 rounded-lg object-cover border border-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditingSlide({ ...editingSlide, desktopImage: '' })}
+                        className="absolute top-1.5 right-1.5 bg-red-600 text-white rounded-full p-1 shadow-md hover:bg-red-700 text-[10px]"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -957,12 +978,31 @@ export default function StorefrontDisplayManagerPage() {
                       </span>
                     </label>
                   </div>
+                  <input
+                    type="text"
+                    value={editingSlide.mobileImage}
+                    onChange={(e) =>
+                      setEditingSlide({ ...editingSlide, mobileImage: e.target.value })
+                    }
+                    placeholder="Or paste Mobile Image URL directly..."
+                    className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] font-mono mt-1"
+                  />
                   {editingSlide.mobileImage && (
-                    <img
-                      src={editingSlide.mobileImage}
-                      alt="Mobile Preview"
-                      className="w-20 h-24 rounded-lg object-cover mt-2 border border-slate-200"
-                    />
+                    <div className="relative mt-2 inline-block">
+                      <img
+                        src={editingSlide.mobileImage}
+                        alt="Mobile Preview"
+                        className="w-20 h-24 rounded-lg object-cover border border-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setEditingSlide({ ...editingSlide, mobileImage: '' })}
+                        className="absolute top-1.5 right-1.5 bg-red-600 text-white rounded-full p-1 shadow-md hover:bg-red-700 text-[10px]"
+                        title="Remove image"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

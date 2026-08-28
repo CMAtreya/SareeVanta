@@ -243,13 +243,35 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             setColorVariants(mappedColorVars);
           }
 
+          let parsedMeta: any = {};
+          if (found.care_instructions) {
+            try {
+              parsedMeta = JSON.parse(found.care_instructions);
+            } catch (e) {}
+          }
+
           setTitle(found.title || '');
           setDescription(found.description || '');
           setWeave(found.weavings?.name || 'Mysore Silk');
           if (found.fabrics?.name) setFabric(found.fabrics.name);
           if (found.zari_specifications?.name) setZariSpec(found.zari_specifications.name);
           if (found.patterns?.name) setPattern(found.patterns.name);
-          if (found.occasions?.name) setSelectedOccasions([found.occasions.name]);
+
+          // Restore multi-occasions
+          const restoredOccasions: string[] = [];
+          if (found.occasions?.name) restoredOccasions.push(found.occasions.name);
+          if (parsedMeta.occasions && Array.isArray(parsedMeta.occasions)) {
+            parsedMeta.occasions.forEach((o: string) => {
+              if (o && !restoredOccasions.includes(o)) restoredOccasions.push(o);
+            });
+          }
+          if (restoredOccasions.length > 0) setSelectedOccasions(restoredOccasions);
+
+          // Restore special badges
+          if (parsedMeta.badges && Array.isArray(parsedMeta.badges)) {
+            setSelectedBadges(parsedMeta.badges);
+          }
+
           setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
           setMrp(String(Math.round((found.base_mrp_paise || 0) / 100)));
           setCostPrice(String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
@@ -371,7 +393,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       fabric,
       zari: zariSpec,
       pattern,
-      occasion: selectedOccasions[0] || 'Bridal & Heritage',
+      occasion: selectedOccasions[0] || 'Bridal & Muhurtham',
+      occasions: selectedOccasions,
+      badges: selectedBadges,
       color_name: colorVariants[0]?.name || 'Royal Crimson',
       color_hex: colorVariants[0]?.hex || '#8B1E28',
       initial_stock: Number(stock) || 10,

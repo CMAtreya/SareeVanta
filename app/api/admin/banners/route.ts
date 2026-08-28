@@ -4,12 +4,9 @@ import { getCache, setCache, invalidateCache } from '@/lib/cache';
 
 const BANNERS_CACHE_KEY = 'banners_list';
 
-export async function GET() {
-  const cached = getCache<any[]>(BANNERS_CACHE_KEY);
-  if (cached) {
-    return NextResponse.json({ slides: cached, cached: true });
-  }
+export const dynamic = 'force-dynamic';
 
+export async function GET() {
   const supabase = createAdminClient();
 
   const { data: slides, error } = await supabase
@@ -21,10 +18,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const result = slides || [];
-  setCache(BANNERS_CACHE_KEY, result, 60);
-
-  return NextResponse.json({ slides: result, cached: false });
+  return NextResponse.json({ slides: slides || [], cached: false });
 }
 
 export async function POST(request: Request) {
@@ -32,6 +26,8 @@ export async function POST(request: Request) {
   const body = await request.json();
 
   const {
+    id,
+    slide_id,
     heading,
     tagline,
     badge_text,
@@ -43,6 +39,30 @@ export async function POST(request: Request) {
 
   if (!heading || !desktop_image_path) {
     return NextResponse.json({ error: 'Heading and desktop image path are required' }, { status: 400 });
+  }
+
+  const targetId = id || slide_id;
+
+  if (targetId && !targetId.startsWith('slide-')) {
+    const { data: updated, error: updateErr } = await supabase
+      .from('hero_slides')
+      .update({
+        heading,
+        tagline: tagline || '',
+        badge_text: badge_text || '',
+        cta_text,
+        desktop_image_path,
+        mobile_image_path: mobile_image_path || desktop_image_path,
+        is_active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', targetId)
+      .select('*')
+      .maybeSingle();
+
+    if (updated) {
+      return NextResponse.json({ success: true, slide: updated });
+    }
   }
 
   const { data: slide, error } = await supabase
@@ -63,7 +83,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  invalidateCache(BANNERS_CACHE_KEY);
   return NextResponse.json({ success: true, slide });
 }
 

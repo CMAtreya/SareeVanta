@@ -110,7 +110,7 @@ function ProductsListingContent() {
 
   // Sync URL searchParams to React filter state whenever searchParams changes
   useEffect(() => {
-    const w = searchParams.get('weave');
+    const w = searchParams.get('weave') || searchParams.get('category');
     const f = searchParams.get('fabric');
     const o = searchParams.get('occasion');
     const pt = searchParams.get('pattern');

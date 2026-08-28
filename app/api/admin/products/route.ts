@@ -60,6 +60,8 @@ export async function POST(request: Request) {
     fabric,
     zari,
     occasion,
+    occasions = [],
+    badges = [],
     pattern,
     weaving_id,
     fabric_id,
@@ -82,24 +84,48 @@ export async function POST(request: Request) {
 
   const effectiveSlug = (slug || title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-  // Resolve named taxonomy IDs if not explicitly passed
+  // Robust taxonomy resolver with code generation and partial match
   const getOrInsertId = async (table: string, val?: string) => {
     if (!val || !val.trim()) return null;
     const clean = val.trim();
-    const { data: existing } = await supabase.from(table).select('id').ilike('name', clean).maybeSingle();
+
+    // 1. Try exact or partial match
+    const { data: existing } = await supabase
+      .from(table)
+      .select('id')
+      .or(`name.ilike.%${clean}%,code.ilike.%${clean}%`)
+      .limit(1)
+      .maybeSingle();
+
     if (existing?.id) return existing.id;
-    const { data: created } = await supabase.from(table).insert({ name: clean }).select('id').maybeSingle();
+
+    // 2. Generate code and insert new entry
+    const code = clean.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/(^_|_$)/g, '').slice(0, 20);
+    const { data: created } = await supabase
+      .from(table)
+      .insert({ name: clean, code: code || 'TAXONOMY', is_active: true })
+      .select('id')
+      .maybeSingle();
+
     return created?.id || null;
   };
 
   const finalWeavingId = weaving_id || (await getOrInsertId('weavings', weave));
   const finalFabricId = fabric_id || (await getOrInsertId('fabrics', fabric));
-  const finalOccasionId = occasion_id || (await getOrInsertId('occasions', occasion));
+  const primaryOccasionName = (occasions && occasions.length > 0) ? occasions[0] : occasion;
+  const finalOccasionId = occasion_id || (await getOrInsertId('occasions', primaryOccasionName));
   const finalZariId = zari_specification_id || (await getOrInsertId('zari_specifications', zari));
   const finalPatternId = pattern_id || (await getOrInsertId('patterns', pattern));
 
   const baseMrpPaise = Math.round((base_mrp_inr || base_selling_price_inr) * 100);
   const baseSellingPricePaise = Math.round(base_selling_price_inr * 100);
+
+  // Metadata bundle stored in care_instructions
+  const metadataPayload = JSON.stringify({
+    occasions: Array.isArray(occasions) && occasions.length > 0 ? occasions : (occasion ? [occasion] : []),
+    badges: Array.isArray(badges) ? badges : [],
+    saved_at: new Date().toISOString(),
+  });
 
   const targetProductId = id || product_id;
   let productId = targetProductId;
@@ -119,6 +145,7 @@ export async function POST(request: Request) {
           title,
           slug: effectiveSlug,
           description: description || '',
+          care_instructions: metadataPayload,
           base_mrp_paise: baseMrpPaise,
           base_selling_price_paise: baseSellingPricePaise,
           weaving_id: finalWeavingId,
@@ -148,6 +175,7 @@ export async function POST(request: Request) {
         .update({
           title,
           description: description || '',
+          care_instructions: metadataPayload,
           base_mrp_paise: baseMrpPaise,
           base_selling_price_paise: baseSellingPricePaise,
           weaving_id: finalWeavingId,
@@ -168,6 +196,7 @@ export async function POST(request: Request) {
           title,
           slug: effectiveSlug,
           description: description || '',
+          care_instructions: metadataPayload,
           base_mrp_paise: baseMrpPaise,
           base_selling_price_paise: baseSellingPricePaise,
           weaving_id: finalWeavingId,
@@ -291,17 +320,38 @@ export async function DELETE(request: Request) {
     const variantIds = variants?.map((v) => v.id) || [];
 
     if (variantIds.length > 0) {
-      // 2. Delete inventory records for variants
+      // A. Delete review photos & reviews for these variants
+      const { data: revs } = await supabase
+        .from('reviews')
+        .select('id')
+        .in('variant_id', variantIds);
+      const revIds = revs?.map((r) => r.id) || [];
+      if (revIds.length > 0) {
+        await supabase.from('review_photos').delete().in('review_id', revIds);
+        await supabase.from('reviews').delete().in('id', revIds);
+      }
+
+      // B. Delete wishlist_items, cart_items, order_items
+      await supabase.from('wishlist_items').delete().in('variant_id', variantIds);
+      await supabase.from('cart_items').delete().in('variant_id', variantIds);
+      await supabase.from('order_items').delete().in('variant_id', variantIds);
+
+      // C. Delete inventory records for variants
       await supabase.from('inventory').delete().in('variant_id', variantIds);
 
-      // 3. Delete media records for variants
+      // D. Delete media records for variants
       await supabase.from('product_variant_media').delete().in('variant_id', variantIds);
 
-      // 4. Delete variants
+      // E. Delete variants
       await supabase.from('product_variants').delete().in('id', variantIds);
     }
 
-    // 5. Delete products permanently
+    // 2. Delete collection items
+    try {
+      await supabase.from('collection_items').delete().in('product_id', idList);
+    } catch (e) {}
+
+    // 3. Delete products permanently
     const { error: prodDeleteError } = await supabase
       .from('products')
       .delete()

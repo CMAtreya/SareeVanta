@@ -29,26 +29,26 @@ function formatDbProduct(p: any): Product {
   const originalPriceINR = Math.round(mrpPaise / 100);
 
   const weaveName = weaveData?.name || '';
+  const fabricName = fabricData?.name || '';
   const occasionName = occasionData?.name || '';
-  const title = p.title || '';
-
-  const isBridal = occasionName.toLowerCase().includes('bridal') || title.toLowerCase().includes('bridal');
+  const zariGrade = zariData?.name || '';
+  const isBridal = occasionName.toLowerCase().includes('bridal');
 
   return {
     id: p.id,
     slug: p.slug,
     title: p.title,
     weave: weaveName,
-    fabric: fabricData?.name || '',
+    fabric: fabricName,
     occasion: occasionName,
     priceINR,
     originalPriceINR,
     rating: 4.9,
     reviewCount: 28,
-    color: colorData?.name || 'Crimson Red',
-    colorHex: colorData?.hex_code || '#8B1E28',
+    color: colorData?.name || '',
+    colorHex: colorData?.hex_code || '',
     images,
-    zariGrade: zariData?.name || 'Tested Pure Gold Zari',
+    zariGrade: zariGrade,
     dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isBridal,
@@ -69,7 +69,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = url;
-  const weaveParam = searchParams.get('weave');
+  const weaveParam = searchParams.get('weave') || searchParams.get('category');
   const fabricParam = searchParams.get('fabric');
   const occasionParam = searchParams.get('occasion');
   const patternParam = searchParams.get('pattern');

@@ -31,69 +31,26 @@ function getShortcode(url: string, fallback?: string): string {
   return match ? match[1] : '';
 }
 
-// Inline Instagram Reel Card rendering the ACTUAL Instagram Reel Video Embed
+// Inline Instagram Reel Card rendering the clean vertical video embed
 function ActualInstagramReelCard({ reel }: { reel: ActiveReel }) {
   const shortcode = getShortcode(reel.url, reel.shortcode);
-  const [isAudioOn, setIsAudioOn] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const embedUrl = `https://www.instagram.com/reel/${shortcode}/embed/captioned/?autoplay=1`;
-
-  const handleToggleAudio = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsAudioOn((prev) => !prev);
-
-    try {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(
-          JSON.stringify({ type: 'unmute', value: !isAudioOn }),
-          '*'
-        );
-      }
-    } catch (err) {
-      // Ignored cross-origin restriction
-    }
-  };
+  // Clean uncaptioned embed URL for pure video focus
+  const embedUrl = `https://www.instagram.com/reel/${shortcode}/embed/`;
 
   return (
-    <div className="relative w-[300px] sm:w-[340px] h-[540px] flex-shrink-0 rounded-3xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-2xl snap-start flex flex-col justify-between select-none transition-transform duration-300 hover:scale-[1.01] group/reel">
+    <div className="relative w-[280px] sm:w-[320px] h-[520px] sm:h-[580px] flex-shrink-0 rounded-2xl overflow-hidden bg-[#1F1B16] border border-[#C87F4A]/40 shadow-xl snap-start flex flex-col justify-between select-none transition-transform duration-300 hover:scale-[1.01] group/reel">
       {/* Official Instagram Reel Embed Player */}
       <iframe
         ref={iframeRef}
         src={embedUrl}
         title={reel.caption || `Instagram Reel ${shortcode}`}
-        className="w-full h-full border-0 rounded-3xl bg-[#1F1B16]"
+        className="w-full h-full border-0 rounded-2xl bg-[#1F1B16]"
         allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
         allowFullScreen
         scrolling="no"
       />
-
-      {/* Website Interactive Controls */}
-      <div className="absolute bottom-3 right-3 z-30 flex items-center justify-end pointer-events-auto">
-        <button
-          type="button"
-          onClick={handleToggleAudio}
-          className={`px-3 py-1.5 rounded-full backdrop-blur-md border text-[11px] font-mono font-bold flex items-center gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer ${
-            isAudioOn
-              ? 'bg-emerald-700 text-white border-emerald-400'
-              : 'bg-[#18110E]/90 text-[#FAF3E4] border-[#C87F4A]/40 hover:bg-[#C87F4A]'
-          }`}
-          title={isAudioOn ? 'Mute Audio' : 'Audio Control'}
-        >
-          {isAudioOn ? (
-            <>
-              <Volume2 className="w-3.5 h-3.5 text-white" />
-              <span>Audio ON</span>
-            </>
-          ) : (
-            <>
-              <VolumeX className="w-3.5 h-3.5 text-stone-300" />
-              <span>Audio OFF</span>
-            </>
-          )}
-        </button>
-      </div>
     </div>
   );
 }

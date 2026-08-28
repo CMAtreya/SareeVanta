@@ -74,7 +74,7 @@ export default function AdminCatalogPage() {
   );
 
   useEffect(() => {
-    fetch('/api/admin/products')
+    fetch(`/api/admin/products?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.products && Array.isArray(data.products)) {
@@ -279,6 +279,7 @@ export default function AdminCatalogPage() {
 
   // Delete Saree Permanently
   const handleDeleteSaree = async (id: string) => {
+    // Optimistic UI removal
     setCatalog((prev) => {
       const updated = prev.filter((item) => item.id !== id);
       adminCatalogCache = updated;
@@ -288,9 +289,13 @@ export default function AdminCatalogPage() {
     setActiveActionMenuId(null);
 
     try {
-      await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
+      const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
+      if (!res.ok) {
+        const errJson = await res.json();
+        console.error('[Catalog] Delete failed on server:', errJson);
+      }
     } catch (err) {
       console.error('[Catalog] Error deleting product from DB:', err);
     }
@@ -359,7 +364,11 @@ export default function AdminCatalogPage() {
     setSelectedIds([]);
 
     try {
-      await fetch(`/api/admin/products?ids=${idsToDelete.join(',')}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/products?ids=${idsToDelete.join(',')}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const errJson = await res.json();
+        console.error('[Catalog] Bulk delete failed on server:', errJson);
+      }
     } catch (err) {
       console.error('[Catalog] Error deleting products:', err);
     }
