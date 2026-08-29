@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { invalidateCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -295,6 +296,9 @@ export async function POST(request: Request) {
     }
   }
 
+  invalidateCache('storefront_products_');
+  invalidateCache('product_');
+
   return NextResponse.json({ success: true, product_id: productId });
 }
 
@@ -361,6 +365,9 @@ export async function DELETE(request: Request) {
       console.error('[Admin Products DELETE] Error deleting products:', prodDeleteError);
       return NextResponse.json({ error: prodDeleteError.message }, { status: 500 });
     }
+
+    invalidateCache('storefront_products_');
+    invalidateCache('product_');
 
     return NextResponse.json({ success: true, deletedCount: idList.length });
   } catch (err: any) {

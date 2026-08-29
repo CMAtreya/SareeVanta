@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
+import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -108,7 +108,9 @@ function ProductsListingContent() {
     router,
   ]);
 
-  // Sync URL searchParams to React filter state whenever searchParams changes
+  // Sync URL searchParams to React filter state on mount / external URL navigation
+  const isInitialMount = useRef(true);
+
   useEffect(() => {
     const w = searchParams.get('weave') || searchParams.get('category');
     const f = searchParams.get('fabric');
@@ -134,7 +136,46 @@ function ProductsListingContent() {
     setCurrentPage(p);
   }, [searchParams]);
 
-  // Fetch products from GET /api/products
+  // Sync state changes back to browser URL
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (selectedWeaves.length > 0) params.set('weave', selectedWeaves.join(','));
+    if (selectedFabrics.length > 0) params.set('fabric', selectedFabrics.join(','));
+    if (selectedOccasions.length > 0) params.set('occasion', selectedOccasions.join(','));
+    if (selectedPatterns.length > 0) params.set('pattern', selectedPatterns.join(','));
+    if (selectedColors.length > 0) params.set('color', selectedColors.join(','));
+    if (searchQuery.trim()) params.set('q', searchQuery.trim());
+    if (priceRange[0] > 10000) params.set('price_min', priceRange[0].toString());
+    if (priceRange[1] < 100000) params.set('price_max', priceRange[1].toString());
+    if (silkMarkOnly) params.set('silk_mark', 'true');
+    if (sortBy !== 'featured') params.set('sort', sortBy);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    if (filterParam) params.set('filter', filterParam);
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `/products?${queryString}` : '/products';
+    router.replace(newUrl, { scroll: false });
+  }, [
+    selectedWeaves,
+    selectedFabrics,
+    selectedOccasions,
+    selectedPatterns,
+    selectedColors,
+    searchQuery,
+    priceRange,
+    silkMarkOnly,
+    sortBy,
+    currentPage,
+    filterParam,
+    router,
+  ]);
+
+  // Fetch products from GET /api/products with SWR cache
   useEffect(() => {
     let isMounted = true;
 

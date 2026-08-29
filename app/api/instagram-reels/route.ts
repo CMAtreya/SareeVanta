@@ -4,12 +4,6 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const fallbackThumbnails = [
-  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80',
-];
-
 export async function GET() {
   try {
     const supabase = createAdminClient();
@@ -24,7 +18,7 @@ export async function GET() {
         id: r.id,
         url: r.instagram_url,
         caption: r.caption || '',
-        thumbnail_url: r.thumbnail_storage_path || fallbackThumbnails[0],
+        thumbnail_url: r.thumbnail_storage_path || '',
         sort_order: r.display_order || 0,
         is_active: r.is_active,
         created_at: r.created_at,

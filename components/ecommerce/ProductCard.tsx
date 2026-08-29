@@ -140,7 +140,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         {((product.weave || product.fabric) || product.rating) && (
           <div className="flex items-center justify-between text-[11px] font-mono text-[#773D21] mb-1">
             <span className="uppercase font-semibold tracking-wider truncate">
-              {[product.weave, product.fabric].filter(Boolean).join(' • ')}
+              {(() => {
+                const w = (product.weave || '').trim();
+                const f = (product.fabric || '').trim();
+                if (w && f) {
+                  if (w.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(w.toLowerCase())) {
+                    return w;
+                  }
+                  return `${w} • ${f}`;
+                }
+                return w || f || 'Pure Handloom Silk';
+              })()}
             </span>
             {product.rating ? (
               <div className="flex items-center gap-1 text-amber-700 flex-shrink-0">

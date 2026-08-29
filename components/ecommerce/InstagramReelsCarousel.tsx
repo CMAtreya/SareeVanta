@@ -36,126 +36,21 @@ function getShortcode(url: string, fallback?: string): string {
   return match ? match[1] : '';
 }
 
-// Luxury Native Reel Card with Direct In-Place Video Playback (No Modal Popup)
+// Direct Live Instagram Reel Card (Real Video Embed, Zero Static Placeholders)
 function DirectInlineReelCard({ reel }: { reel: ActiveReel }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [likes, setLikes] = useState(() => Math.floor(180 + (reel.caption.length * 7) % 400));
-  const [hasLiked, setHasLiked] = useState(false);
-
   const shortcode = getShortcode(reel.url, reel.shortcode);
   const embedUrl = `https://www.instagram.com/reel/${shortcode}/embed/`;
 
-  const handleLikeClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!hasLiked) {
-      setLikes((prev) => prev + 1);
-      setHasLiked(true);
-    } else {
-      setLikes((prev) => prev - 1);
-      setHasLiked(false);
-    }
-  };
-
-  const imagePoster =
-    reel.thumbnail_url ||
-    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80';
-
   return (
-    <div className="relative w-[280px] sm:w-[320px] h-[520px] sm:h-[560px] flex-shrink-0 rounded-3xl overflow-hidden bg-[#18110E] border border-[#C87F4A]/30 shadow-2xl snap-start select-none transition-all duration-300 hover:scale-[1.02] hover:border-[#C87F4A] flex flex-col justify-between group">
-      {isPlaying ? (
-        /* 1. In-Place Live Video Player (Direct inside the card) */
-        <div className="w-full h-full relative bg-black flex flex-col">
-          <div className="absolute top-3 right-3 z-30">
-            <button
-              type="button"
-              onClick={() => setIsPlaying(false)}
-              className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 transition-all shadow-md cursor-pointer"
-              title="Close Player"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <iframe
-            src={`${embedUrl}?autoplay=1`}
-            title={reel.caption || `Instagram Reel ${shortcode}`}
-            className="w-full h-full border-0 bg-black"
-            allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-            allowFullScreen
-          />
-        </div>
-      ) : (
-        /* 2. Luxury Cover Card - Clicking Play Starts Video In-Place Directly */
-        <div
-          onClick={() => setIsPlaying(true)}
-          className="w-full h-full relative flex flex-col justify-between cursor-pointer"
-        >
-          {/* Background Poster */}
-          <img
-            src={imagePoster}
-            alt={reel.caption || 'Neel Saree House Silk Reel'}
-            className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-          />
-
-          {/* Vignette Gradients */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/25 to-black/70 pointer-events-none" />
-
-          {/* Top Brand Info */}
-          <div className="relative z-20 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full p-[1.5px] bg-gradient-to-tr from-[#F77737] via-[#FD1D1D] to-[#833AB4]">
-                <div className="w-full h-full rounded-full bg-[#18110E] flex items-center justify-center text-[10px] font-bold text-amber-200 font-serif">
-                  NSH
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center gap-1">
-                  <span className="text-white text-xs font-bold font-sans tracking-wide">
-                    neelsareehouse
-                  </span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 fill-blue-400" />
-                </div>
-                <span className="text-[10px] text-amber-200/80 font-mono block">Mysuru Silks</span>
-              </div>
-            </div>
-
-            <div className="w-7 h-7 rounded-full bg-black/40 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/90">
-              <Instagram className="w-3.5 h-3.5 text-pink-400" />
-            </div>
-          </div>
-
-          {/* Center Play Button */}
-          <div className="relative z-20 flex-1 flex items-center justify-center">
-            <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md border border-white/40 flex items-center justify-center text-white shadow-2xl transition-all duration-300 group-hover:scale-110 group-hover:bg-[#C87F4A] group-hover:border-[#C87F4A]">
-              <Play className="w-7 h-7 text-white fill-white ml-1" />
-            </div>
-          </div>
-
-          {/* Bottom Caption & Stats */}
-          <div className="relative z-20 p-4 space-y-2.5">
-            <p className="text-white/90 text-xs font-sans font-medium line-clamp-2 leading-relaxed drop-shadow-md">
-              {reel.caption || 'Discover royal Mysuru crepe silks, handwoven zari pallus, and heirloom draping.'}
-            </p>
-
-            <div className="flex items-center justify-between pt-1 text-white/80 text-[11px] font-mono border-t border-white/10">
-              <button
-                type="button"
-                onClick={handleLikeClick}
-                className={`flex items-center gap-1.5 transition-colors ${
-                  hasLiked ? 'text-red-400' : 'hover:text-red-300'
-                }`}
-              >
-                <Heart className={`w-4 h-4 ${hasLiked ? 'fill-red-400' : ''}`} />
-                <span>{likes}</span>
-              </button>
-
-              <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-amber-200 font-bold uppercase tracking-wider">
-                Play Reel
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="relative w-[300px] sm:w-[330px] h-[540px] sm:h-[580px] flex-shrink-0 rounded-3xl overflow-hidden bg-black border border-[#C87F4A]/30 shadow-2xl snap-start select-none transition-transform duration-300 hover:scale-[1.01]">
+      <iframe
+        src={embedUrl}
+        title={reel.caption || `Instagram Reel ${shortcode}`}
+        className="w-full h-full border-0 bg-black rounded-3xl"
+        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+        allowFullScreen
+        scrolling="no"
+      />
     </div>
   );
 }

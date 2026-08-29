@@ -32,7 +32,28 @@ function formatDbProduct(p: any): Product {
   const fabricName = fabricData?.name || '';
   const occasionName = occasionData?.name || '';
   const zariGrade = zariData?.name || '';
-  const isBridal = occasionName.toLowerCase().includes('bridal');
+
+  let parsedMeta: any = {};
+  if (p.care_instructions) {
+    try {
+      parsedMeta = JSON.parse(p.care_instructions);
+    } catch (e) {}
+  }
+
+  const badgesList: string[] = Array.isArray(parsedMeta.badges) ? parsedMeta.badges : [];
+  const occasionsList: string[] = Array.isArray(parsedMeta.occasions)
+    ? parsedMeta.occasions
+    : (occasionName ? [occasionName] : []);
+
+  const createdAtMs = p.created_at ? new Date(p.created_at).getTime() : 0;
+  const isWithin30Days = createdAtMs > 0 && (Date.now() - createdAtMs) < (30 * 24 * 60 * 60 * 1000);
+
+  const isNew = badgesList.includes('New Arrival') || isWithin30Days;
+  const isBestseller = badgesList.includes('Best Seller');
+  const isBridal =
+    badgesList.includes('Bridal Edit') ||
+    occasionName.toLowerCase().includes('bridal') ||
+    occasionsList.some((o: string) => o.toLowerCase().includes('bridal'));
 
   return {
     id: p.id,
@@ -40,7 +61,9 @@ function formatDbProduct(p: any): Product {
     title: p.title,
     weave: weaveName,
     fabric: fabricName,
-    occasion: occasionName,
+    occasion: occasionName || occasionsList[0] || '',
+    occasions: occasionsList,
+    specialBadges: badgesList,
     priceINR,
     originalPriceINR,
     rating: 4.9,
@@ -52,8 +75,8 @@ function formatDbProduct(p: any): Product {
     dimensions: '5.5m Pure Silk Saree',
     inStock: true,
     isBridal,
-    isNew: true,
-    isBestseller: true,
+    isNew,
+    isBestseller,
     silkMarkCertified: true,
     description: p.description || '',
     artisanCluster: 'Mysuru Master Loom Guild',
@@ -65,7 +88,14 @@ export async function GET(request: Request) {
   const cacheKey = `storefront_products_${url.search}`;
   const cached = getCache<any>(cacheKey);
   if (cached) {
-    return NextResponse.json({ ...cached, cached: true });
+    return NextResponse.json(
+      { ...cached, cached: true },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      }
+    );
   }
 
   const { searchParams } = url;
@@ -304,7 +334,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json(responsePayload, {
     headers: {
-      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
     },
   });
 }
