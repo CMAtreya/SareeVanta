@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { invalidateCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,14 +11,6 @@ function extractInstagramShortcode(url: string): string | null {
   const match = trimmed.match(/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i);
   return match ? match[1] : null;
 }
-
-const fallbackThumbnails = [
-  'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=600&q=80',
-];
 
 export async function GET() {
   try {
@@ -36,7 +29,7 @@ export async function GET() {
       url: r.instagram_url,
       shortcode: extractInstagramShortcode(r.instagram_url) || r.id,
       caption: r.caption || '',
-      thumbnail_url: r.thumbnail_storage_path || fallbackThumbnails[0],
+      thumbnail_url: r.thumbnail_storage_path || '',
       sort_order: r.display_order || 0,
       is_active: r.is_active !== false,
       created_at: r.created_at,
@@ -94,6 +87,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
+    invalidateCache('storefront_instagram_reels');
+
     return NextResponse.json({
       success: true,
       message: 'Instagram reel added and published in real time.',
@@ -131,6 +126,7 @@ export async function PATCH(request: Request) {
             .eq('id', item.id);
         }
       }
+      invalidateCache('storefront_instagram_reels');
       return NextResponse.json({ success: true, message: 'Reels reordered successfully.' });
     }
 
@@ -159,6 +155,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
+    invalidateCache('storefront_instagram_reels');
+
     return NextResponse.json({
       success: true,
       message: 'Reel updated successfully.',
@@ -184,6 +182,8 @@ export async function DELETE(request: Request) {
     if (error) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
+
+    invalidateCache('storefront_instagram_reels');
 
     return NextResponse.json({ success: true, message: 'Reel deleted successfully.' });
   } catch (error: any) {

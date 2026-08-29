@@ -83,6 +83,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  invalidateCache(BANNERS_CACHE_KEY);
+  invalidateCache('storefront_hero_banners');
   return NextResponse.json({ success: true, slide });
 }
 
@@ -100,6 +102,7 @@ export async function PATCH(request: Request) {
       }
     }
     invalidateCache(BANNERS_CACHE_KEY);
+    invalidateCache('storefront_hero_banners');
     return NextResponse.json({ success: true });
   }
 
@@ -125,6 +128,7 @@ export async function PATCH(request: Request) {
   }
 
   invalidateCache(BANNERS_CACHE_KEY);
+  invalidateCache('storefront_hero_banners');
   return NextResponse.json({ success: true, slide });
 }
 
@@ -144,5 +148,6 @@ export async function DELETE(request: Request) {
   }
 
   invalidateCache(BANNERS_CACHE_KEY);
+  invalidateCache('storefront_hero_banners');
   return NextResponse.json({ success: true });
 }

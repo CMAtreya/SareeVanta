@@ -1,10 +1,20 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET() {
+  const cacheKey = 'storefront_marquee_messages';
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
+  }
+
   const supabase = createAdminClient();
 
   const { data: messages, error } = await supabase
@@ -57,11 +67,11 @@ export async function GET() {
     },
   };
 
+  setCache(cacheKey, result, 60);
+
   return NextResponse.json(result, {
     headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
-      Pragma: 'no-cache',
-      Expires: '0',
+      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
     },
   });
 }

@@ -1,9 +1,16 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache, invalidateCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const cacheKey = 'admin_inventory_matrix';
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached);
+  }
+
   const supabase = createAdminClient();
 
   // 1. Fetch existing inventory records with all variant and product metadata
@@ -36,7 +43,9 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ inventory: inventory || [] });
+  const payload = { inventory: inventory || [] };
+  setCache(cacheKey, payload, 30);
+  return NextResponse.json(payload);
 }
 
 export async function POST(request: Request) {
@@ -76,8 +85,13 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString(),
       });
 
+    invalidateCache('admin_inventory_matrix');
+    invalidateCache('storefront_products_');
+    invalidateCache('pdp_product_');
+
     return NextResponse.json({ success: true, new_quantity: finalQty });
   }
 
+  invalidateCache('admin_inventory_matrix');
   return NextResponse.json({ success: true, message: 'Stock update processed' });
 }

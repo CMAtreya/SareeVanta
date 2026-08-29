@@ -1,7 +1,16 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache, invalidateCache } from '@/lib/cache';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const cacheKey = 'admin_orders_list';
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached);
+  }
+
   const supabase = createAdminClient();
 
   const { data: orders, error } = await supabase
@@ -19,7 +28,9 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ orders: orders || [] });
+  const payload = { orders: orders || [] };
+  setCache(cacheKey, payload, 30);
+  return NextResponse.json(payload);
 }
 
 export async function PATCH(request: Request) {
@@ -47,5 +58,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  invalidateCache('admin_orders_list');
   return NextResponse.json({ success: true, message: 'Order status updated successfully' });
 }

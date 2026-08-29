@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
-import { invalidateCache } from '@/lib/cache';
+import { getCache, setCache, invalidateCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +8,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
+
+  const cacheKey = `admin_products_${id || slug || 'all'}`;
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached);
+  }
 
   const supabase = createAdminClient();
 
@@ -38,11 +44,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  let responsePayload: any;
   if ((id || slug) && products && products.length > 0) {
-    return NextResponse.json({ success: true, product: products[0], products: products });
+    responsePayload = { success: true, product: products[0], products: products };
+  } else {
+    responsePayload = { success: true, products: products || [] };
   }
 
-  return NextResponse.json({ success: true, products: products || [] });
+  setCache(cacheKey, responsePayload, 30);
+  return NextResponse.json(responsePayload);
 }
 
 export async function POST(request: Request) {
@@ -296,8 +306,10 @@ export async function POST(request: Request) {
     }
   }
 
+  invalidateCache('admin_products_');
   invalidateCache('storefront_products_');
   invalidateCache('product_');
+  invalidateCache('pdp_product_');
 
   return NextResponse.json({ success: true, product_id: productId });
 }
@@ -366,8 +378,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: prodDeleteError.message }, { status: 500 });
     }
 
+    invalidateCache('admin_products_');
     invalidateCache('storefront_products_');
     invalidateCache('product_');
+    invalidateCache('pdp_product_');
 
     return NextResponse.json({ success: true, deletedCount: idList.length });
   } catch (err: any) {

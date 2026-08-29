@@ -20,15 +20,18 @@ import ProductCard from '@/components/ecommerce/ProductCard';
 import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarousel';
 import { useProducts } from '@/hooks/useProducts';
 
+// Global in-memory cache for instant hero banner rendering
+let cachedHeroSlides: any[] | null = null;
+
 export default function HomePage() {
   // ----------------------------------------------------
   // 1. Hero Promo Carousel State (Live Database Banners)
   // ----------------------------------------------------
-  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>([]);
-  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
+  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>(cachedHeroSlides || []);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(!cachedHeroSlides);
 
   useEffect(() => {
-    fetch(`/api/banners?_t=${Date.now()}`, { cache: 'no-store' })
+    fetch('/api/banners')
       .then((res) => res.json())
       .then((data) => {
         if (data.slides && Array.isArray(data.slides)) {
@@ -42,6 +45,7 @@ export default function HomePage() {
             ctaText: s.cta_text || 'Explore Collection',
             image: s.desktop_image_path,
           }));
+          cachedHeroSlides = formatted;
           setLiveHeroSlides(formatted);
         }
       })

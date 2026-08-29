@@ -113,6 +113,7 @@ export async function POST(request: Request) {
   }
 
   invalidateCache(MARQUEE_CACHE_KEY);
+  invalidateCache('storefront_marquee_messages');
   return NextResponse.json({
     success: true,
     messages: inserted,

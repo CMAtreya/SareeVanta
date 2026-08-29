@@ -1,10 +1,20 @@
 import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
+import { getCache, setCache } from '@/lib/cache';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET() {
+  const cacheKey = 'storefront_instagram_reels';
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
+  }
+
   try {
     const supabase = createAdminClient();
     const { data: dbReels, error } = await supabase
@@ -24,10 +34,14 @@ export async function GET() {
         created_at: r.created_at,
       }));
 
-      return NextResponse.json(
-        { success: true, data: formatted, timestamp: Date.now() },
-        { headers: { 'Cache-Control': 'no-store, max-age=0' } }
-      );
+      const payload = { success: true, data: formatted, timestamp: Date.now() };
+      setCache(cacheKey, payload, 60);
+
+      return NextResponse.json(payload, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      });
     }
 
     return NextResponse.json({ success: true, data: [] });
