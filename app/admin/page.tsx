@@ -852,9 +852,6 @@ export default function AdminExecutiveDashboard() {
                 <p className="text-[11px] text-emerald-800 font-sans leading-relaxed">
                   Loom inventory is fully stocked above threshold across all royal collections.
                 </p>
-                <div className="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-100/60 py-1 px-2.5 rounded-md inline-block">
-                  10 / 10 Masterpieces Ready for Dispatch
-                </div>
               </div>
             )}
           </div>

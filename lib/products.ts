@@ -549,7 +549,8 @@ export const fabricFilters = [
   'Tissue Silk',
   'Tussar Silk',
   'Organza',
-  'Katan Silk',
+  'Pure Katan Silk',
+  'Chanderi Silk',
 ];
 
 export const occasionFilters = [

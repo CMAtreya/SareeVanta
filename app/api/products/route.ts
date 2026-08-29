@@ -134,6 +134,7 @@ export async function GET(request: Request) {
           title,
           slug,
           description,
+          care_instructions,
           base_mrp_paise,
           base_selling_price_paise,
           is_published,

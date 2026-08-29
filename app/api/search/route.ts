@@ -41,6 +41,7 @@ export async function GET(request: Request) {
         title,
         slug,
         description,
+        care_instructions,
         base_selling_price_paise,
         base_mrp_paise,
         weavings ( name ),

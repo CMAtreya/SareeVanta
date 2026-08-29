@@ -374,7 +374,7 @@ export default function ProductFilters({
         </button>
 
         {openSections.fabrics && (
-          <div className="mt-2.5 space-y-1.5 pl-0.5 max-h-48 overflow-y-auto pr-1">
+          <div className="mt-2.5 space-y-1.5 pl-0.5 max-h-56 overflow-y-auto overscroll-contain pr-1.5 scrollbar-thin">
             {fabricFilters.map((fabric, idx) => {
               const count = getFacetCount(counts?.fabrics, fabric);
               const isChecked = selectedFabrics.includes(fabric);

@@ -191,40 +191,6 @@ export default function StaffSettingsPage() {
       </div>
 
       {/* ================================================== */}
-      {/* SUB-NAV TABS                                       */}
-      {/* ================================================== */}
-      <div className="flex items-center gap-2 border-b border-[#E8DCC9] pb-2 overflow-x-auto font-sans text-xs">
-        <Link
-          href="/admin/settings/staff"
-          className="px-3.5 py-2 rounded-xl bg-[#7A1C30] text-white font-bold flex items-center gap-2 shadow-2xs whitespace-nowrap cursor-pointer"
-        >
-          <Users className="w-4 h-4 text-amber-200" />
-          <span>Staff & RBAC Access</span>
-        </Link>
-        <Link
-          href="/admin/settings/taxes"
-          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
-        >
-          <Receipt className="w-4 h-4 text-stone-400" />
-          <span>Tax, Legal & GST</span>
-        </Link>
-        <Link
-          href="/admin/settings/shipping"
-          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
-        >
-          <Truck className="w-4 h-4 text-stone-400" />
-          <span>Logistics & Warehouses</span>
-        </Link>
-        <Link
-          href="/admin/settings/payments"
-          className="px-3.5 py-2 rounded-xl text-stone-600 hover:text-stone-900 hover:bg-[#FAF3E4] font-semibold flex items-center gap-2 transition-all whitespace-nowrap"
-        >
-          <CreditCard className="w-4 h-4 text-stone-400" />
-          <span>Payment Gateways & Webhooks</span>
-        </Link>
-      </div>
-
-      {/* ================================================== */}
       {/* ACTIVE BRAND IDENTITY CARD (IMAGE 2 SPECIFICATION)  */}
       {/* ================================================== */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">

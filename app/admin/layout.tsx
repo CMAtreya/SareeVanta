@@ -70,33 +70,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Notifications State
-  const [notifications, setNotifications] = useState([
-    {
-      id: 'notif-1',
-      type: 'HIGH_VALUE',
-      title: 'High-Value Bridal Order Received',
-      desc: 'Smt. Radhika Reddy purchased 3-Shuttle Kanchipuram Brocade (₹68,000).',
-      time: '4 mins ago',
-      unread: true,
-    },
-    {
-      id: 'notif-2',
-      type: 'LOW_STOCK',
-      title: 'Low Stock Alert on Looms',
-      desc: 'Royal Wodeyar Crimson Crepe Silk has only 2 pieces remaining.',
-      time: '18 mins ago',
-      unread: true,
-    },
-    {
-      id: 'notif-3',
-      type: 'WEBHOOK',
-      title: 'BlueDart Manifest Synced',
-      desc: '14 parcels ready for pickup at Mysuru Flagship Store.',
-      time: '1 hour ago',
-      unread: false,
-    },
-  ]);
+  // Notifications State (Loaded from Backend Orders & Inventory - No Mock Data)
+  const [notifications, setNotifications] = useState<
+    { id: string; type: string; title: string; desc: string; time: string; unread: boolean }[]
+  >([]);
+
+  // Fetch real alerts from backend
+  useEffect(() => {
+    async function loadAlerts() {
+      try {
+        const alerts: { id: string; type: string; title: string; desc: string; time: string; unread: boolean }[] = [];
+        
+        // 1. Fetch pending orders
+        const ordersRes = await fetch('/api/admin/orders', { cache: 'no-store' });
+        if (ordersRes.ok) {
+          const { orders } = await ordersRes.json();
+          if (Array.isArray(orders)) {
+            const pendingOrders = orders.filter((o: any) => o.order_status === 'PENDING' || o.order_status === 'PLACED');
+            pendingOrders.slice(0, 3).forEach((o: any) => {
+              alerts.push({
+                id: `ord-${o.id}`,
+                type: 'ORDER',
+                title: 'New Order Received',
+                desc: `Order #${o.order_number || o.id?.slice(0, 8)} from ${o.customers?.name || 'Patron'} (₹${(o.total_amount || 0).toLocaleString('en-IN')})`,
+                time: 'Pending Fulfillment',
+                unread: true,
+              });
+            });
+          }
+        }
+
+        // 2. Fetch low stock items
+        const invRes = await fetch('/api/admin/inventory', { cache: 'no-store' });
+        if (invRes.ok) {
+          const invData = await invRes.json();
+          const items = invData.inventory || invData.items || [];
+          if (Array.isArray(items)) {
+            const lowStock = items.filter((i: any) => (i.available_quantity !== undefined && i.available_quantity <= 2) || (i.stock_quantity !== undefined && i.stock_quantity <= 2));
+            lowStock.slice(0, 3).forEach((i: any) => {
+              alerts.push({
+                id: `inv-${i.id}`,
+                type: 'LOW_STOCK',
+                title: 'Low Stock Alert on Looms',
+                desc: `${i.products?.title || i.title || 'Saree'} has only ${i.available_quantity ?? i.stock_quantity ?? 0} pieces remaining.`,
+                time: 'Live Inventory',
+                unread: true,
+              });
+            });
+          }
+        }
+
+        setNotifications(alerts);
+      } catch (err) {
+        console.error('[AdminLayout] Failed to load alerts:', err);
+      }
+    }
+
+    if (isAuthorized) {
+      loadAlerts();
+    }
+  }, [isAuthorized]);
 
   // Check auth on every navigation / mount
   useEffect(() => {
@@ -669,41 +702,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   </div>
 
                   <div className="divide-y divide-stone-100 max-h-72 overflow-y-auto font-sans">
-                    {notifications.map((notif) => (
-                      <div key={notif.id} className="py-2.5 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-xs text-stone-900">{notif.title}</span>
-                          <span className="text-[10px] font-mono text-stone-400">{notif.time}</span>
+                    {notifications.length > 0 ? (
+                      notifications.map((notif) => (
+                        <div key={notif.id} className="py-2.5 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-xs text-stone-900">{notif.title}</span>
+                            <span className="text-[10px] font-mono text-stone-400">{notif.time}</span>
+                          </div>
+                          <p className="text-[11px] text-stone-600 font-sans">{notif.desc}</p>
                         </div>
-                        <p className="text-[11px] text-stone-600 font-sans">{notif.desc}</p>
+                      ))
+                    ) : (
+                      <div className="py-6 text-center text-xs text-stone-500 font-sans space-y-1">
+                        <div className="font-semibold text-stone-800">No active system alerts</div>
+                        <p className="text-[11px] text-stone-400">All looms and orders operating normally.</p>
                       </div>
-                    ))}
+                    )}
                   </div>
 
-                  <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-[11px] font-mono">
-                    <button
-                      type="button"
-                      onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))}
-                      className="text-[#7A1C30] font-bold hover:underline"
-                    >
-                      Mark all as read
-                    </button>
-                    <span className="text-stone-400">Mysuru Node</span>
-                  </div>
+                  {notifications.length > 0 && (
+                    <div className="pt-2 border-t border-stone-100 flex justify-between items-center text-[11px] font-mono">
+                      <button
+                        type="button"
+                        onClick={() => setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })))}
+                        className="text-[#7A1C30] font-bold hover:underline"
+                      >
+                        Mark all as read
+                      </button>
+                      <span className="text-stone-400">Mysuru Node</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* Quick New Handloom SKU CTA */}
-            <button
-              type="button"
-              onClick={() => setIsNewProductModalOpen(true)}
-              className="px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] active:scale-[0.99] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-amber-200" />
-              <span className="hidden sm:inline">New Saree SKU</span>
-              <span className="sm:hidden">New SKU</span>
-            </button>
           </div>
         </header>
 

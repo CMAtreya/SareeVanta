@@ -642,7 +642,7 @@ export default function AdminCatalogPage() {
       {/* 2. DENSE DATA TABLE (Magento-Class Grid)           */}
       {/* ================================================== */}
       <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto max-w-full">
+        <div className="overflow-x-auto max-w-full min-h-[380px] pb-24">
           <table className="min-w-[900px] w-full text-left text-xs font-sans">
             <thead className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono text-[11px] uppercase">
               <tr>
@@ -888,7 +888,9 @@ export default function AdminCatalogPage() {
 
                             <div
                               className={`absolute right-3 ${
-                                idx >= Math.max(1, filteredCatalog.length - 2) ? 'bottom-full mb-1' : 'top-full mt-1'
+                                idx === filteredCatalog.length - 1 && filteredCatalog.length >= 4
+                                  ? 'bottom-full mb-1'
+                                  : 'top-full mt-1'
                               } w-44 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left text-xs font-sans space-y-0.5`}
                             >
                               <Link

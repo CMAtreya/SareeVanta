@@ -37,20 +37,33 @@ const Code128ModalBarcode = ({ value }: { value: string }) => {
 };
 
 export default function NewProductModal({ isOpen, onClose, onAddProduct }: NewProductModalProps) {
-  // Generate random 4-digit SKU number NSH-XXXX
-  const autoSku = `NSH-${Math.floor(1000 + Math.random() * 9000)}`;
-  const autoBarcode = `890${Math.floor(100000000 + Math.random() * 900000000)}`;
+  // Deterministic Sequential SKU and Barcode
+  const [sku, setSku] = useState('NSH-SKU-025');
+  const [barcode, setBarcode] = useState('890000000025');
 
-  const [sku] = useState(autoSku);
-  const [barcode] = useState(autoBarcode);
+  React.useEffect(() => {
+    if (isOpen) {
+      fetch('/api/products')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.products && Array.isArray(data.products)) {
+            const nextSeq = String(data.products.length + 1).padStart(3, '0');
+            setSku(`NSH-SKU-${nextSeq}`);
+            setBarcode(`890${String(100000000 + data.products.length + 1).padStart(9, '0')}`);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isOpen]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [weave, setWeave] = useState('Mysore Silk');
-  const [fabric, setFabric] = useState('100% Pure Mulberry Silk');
+  const [fabric, setFabric] = useState('Pure Mulberry Silk');
   const [color, setColor] = useState('Royal Crimson');
   const [zariSpec, setZariSpec] = useState('Pure 24K Tested Zari');
-  const [occasion, setOccasion] = useState('Bridal / Wedding');
+  const [pattern, setPattern] = useState('Kasuti Diamonds');
+  const [occasion, setOccasion] = useState('Bridal & Muhurtham');
 
   // Pricing (Order: Cost Price (Internal) -> MRP -> Selling Price -> Stock)
   const [costPrice, setCostPrice] = useState('');
@@ -92,6 +105,7 @@ export default function NewProductModal({ isOpen, onClose, onAddProduct }: NewPr
       fabric,
       color,
       zariSpec,
+      pattern,
       occasion,
       costPrice: cp, // Admin only
       mrp: originalMrp,
@@ -197,65 +211,106 @@ export default function NewProductModal({ isOpen, onClose, onAddProduct }: NewPr
             />
           </div>
 
-          {/* Weaving Specifications */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Weave Tradition</label>
+          {/* Weaving & Fabric Specifications (1. Weave -> 2. Fabric -> 3. Zari -> 4. Pattern) */}
+          <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-slate-800 text-xs flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#7A1C30]" />
+                <span>Weaving & Fabric Specifications</span>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">1. Weave Tradition *</label>
+                <select
+                  value={weave}
+                  onChange={(e) => setWeave(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900 bg-white"
+                >
+                  <option value="Mysore Silk">Mysore Silk</option>
+                  <option value="Kanchipuram">Kanchipuram</option>
+                  <option value="Banarasi">Banarasi</option>
+                  <option value="Paithani">Paithani</option>
+                  <option value="Patola">Patola</option>
+                  <option value="Ikkat">Ikkat</option>
+                  <option value="Organza">Organza</option>
+                  <option value="Chanderi">Chanderi</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">2. Fabric Texture *</label>
+                <select
+                  value={fabric}
+                  onChange={(e) => setFabric(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900 bg-white"
+                >
+                  <option value="Pure Mulberry Silk">Pure Mulberry Silk</option>
+                  <option value="Tissue Georgette">Tissue Georgette</option>
+                  <option value="Soft Silk">Soft Silk</option>
+                  <option value="Raw Silk">Raw Silk</option>
+                  <option value="Crepe Silk">Crepe Silk</option>
+                  <option value="Georgette">Georgette</option>
+                  <option value="Tissue Silk">Tissue Silk</option>
+                  <option value="Tussar Silk">Tussar Silk</option>
+                  <option value="Organza">Organza</option>
+                  <option value="Pure Katan Silk">Pure Katan Silk</option>
+                  <option value="Chanderi Silk">Chanderi Silk</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">3. Zari Purity *</label>
+                <select
+                  value={zariSpec}
+                  onChange={(e) => setZariSpec(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900 bg-white"
+                >
+                  <option value="Pure 24K Tested Zari">Pure 24K Tested Zari</option>
+                  <option value="Tested Gold Zari">Tested Gold Zari</option>
+                  <option value="Silver Tested Zari">Silver Tested Zari</option>
+                  <option value="Pure Zari Thread Interlock">Pure Zari Thread Interlock</option>
+                  <option value="Antique Gold Zari">Antique Gold Zari</option>
+                  <option value="Copper Zari Weave">Copper Zari Weave</option>
+                  <option value="No Zari / Resham Threadwork">No Zari / Resham Threadwork</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-700 font-semibold mb-1">4. Heritage Motif & Pattern *</label>
+                <select
+                  value={pattern}
+                  onChange={(e) => setPattern(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900 bg-white"
+                >
+                  <option value="Kasuti Diamonds">Kasuti Diamonds</option>
+                  <option value="Peacock Mayil & Yanai">Peacock Mayil & Yanai</option>
+                  <option value="Temple Korvai Border">Temple Korvai Border</option>
+                  <option value="Floral Kadwa Meenakari">Floral Kadwa Meenakari</option>
+                  <option value="Asawali Floral Vines">Asawali Floral Vines</option>
+                  <option value="Ashrafi Bootas">Ashrafi Bootas</option>
+                  <option value="Jacquard Zari Butta">Jacquard Zari Butta</option>
+                  <option value="Temple Border">Temple Border</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <label className="block text-slate-700 font-semibold mb-1">5. Occasion & Wearability *</label>
               <select
-                value={weave}
-                onChange={(e) => setWeave(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900 bg-white"
-              >
-                <option value="Mysore Silk">Mysore Silk</option>
-                <option value="Kanchipuram">Kanchipuram</option>
-                <option value="Banarasi">Banarasi</option>
-                <option value="Paithani">Paithani</option>
-                <option value="Chanderi">Chanderi</option>
-                <option value="Tissue Georgette">Tissue Georgette</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Fabric</label>
-              <input
-                type="text"
-                value={fabric}
-                onChange={(e) => setFabric(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Color / Shade</label>
-              <input
-                type="text"
-                placeholder="Royal Crimson"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Zari Specification</label>
-              <input
-                type="text"
-                value={zariSpec}
-                onChange={(e) => setZariSpec(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900"
-              />
-            </div>
-
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Occasion</label>
-              <input
-                type="text"
                 value={occasion}
                 onChange={(e) => setOccasion(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900"
-              />
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1C30] text-slate-900 bg-white"
+              >
+                <option value="Bridal & Muhurtham">Bridal & Muhurtham</option>
+                <option value="Festive & Puja">Festive & Puja</option>
+                <option value="Reception & Cocktail">Reception & Cocktail</option>
+                <option value="Daily Classic">Daily Classic</option>
+                <option value="Temple Visits">Temple Visits</option>
+              </select>
             </div>
           </div>
 

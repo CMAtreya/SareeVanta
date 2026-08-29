@@ -744,22 +744,11 @@ export default function ProductDetailPage() {
 
                         <div className="grid grid-cols-12 py-3 items-center">
                           <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
-                            Pallu Colour:
+                            Motif & Pattern:
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              {product.color}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-12 py-3 items-center">
-                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
-                            Artisan Cluster:
-                          </span>
-                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
-                            <span className="text-xs font-semibold text-stone-900 font-sans">
-                              {product.artisanCluster}
+                              {product.pattern || 'Kasuti Diamonds'}
                             </span>
                           </div>
                         </div>
@@ -780,11 +769,11 @@ export default function ProductDetailPage() {
 
                         <div className="grid grid-cols-12 py-3 items-center">
                           <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
-                            Zari:
+                            Zari Specification:
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-4 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              Pure Silk
+                              {product.zariGrade || 'Pure 24K Tested Zari'}
                             </span>
                           </div>
                         </div>
@@ -795,7 +784,7 @@ export default function ProductDetailPage() {
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              5.5 M X 1.14 M
+                              {product.dimensions || '5.5 M X 1.14 M'}
                             </span>
                           </div>
                         </div>
@@ -806,7 +795,7 @@ export default function ProductDetailPage() {
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              Dry-clean
+                              Dry-clean Only
                             </span>
                           </div>
                         </div>
@@ -822,10 +811,10 @@ export default function ProductDetailPage() {
                       <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#D9A876]/30 space-y-2">
                         <h4 className="font-editorial text-sm font-bold text-stone-900 flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-[#A33B45]" />
-                          <span>Loom Provenance & Certification</span>
+                          <span>Authentic Certification & Guarantee</span>
                         </h4>
                         <p className="text-xs text-stone-700 leading-relaxed">
-                          Woven in the legendary handlooms of {product.artisanCluster}. Each piece is certified by Central Silk Board with Silk Mark hologram authentication guaranteeing 100% natural silk fibers.
+                          Each piece is certified by Central Silk Board with Silk Mark hologram authentication guaranteeing 100% natural silk fibers and genuine purity standards.
                         </p>
                       </div>
 

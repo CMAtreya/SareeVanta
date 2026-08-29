@@ -21,14 +21,34 @@ import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarouse
 import { useProducts } from '@/hooks/useProducts';
 
 // Global in-memory cache for instant hero banner rendering
-let cachedHeroSlides: any[] | null = null;
+const DEFAULT_HERO_SLIDES = [
+  {
+    id: 1,
+    tag: 'Royal Heritage Collection 2026',
+    title: 'The Mysore Regal Drape',
+    subtitle: 'Woven with 100% Pure Mulberry Silk & Certified 24K Tested Zari from Mysuru Guilds.',
+    link: '/products?weave=Mysore+Silk',
+    ctaText: 'Explore Collection',
+    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=2000&q=85',
+  },
+  {
+    id: 2,
+    tag: 'Grand Muhurtham Edit',
+    title: 'Kanchipuram Heavy Korvai',
+    subtitle: 'Sculptural interlocking temple borders and heirloom pure gold brocades.',
+    link: '/products?weave=Kanchipuram',
+    ctaText: 'Discover Bridal Silks',
+    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=2000&q=85',
+  },
+];
+let cachedHeroSlides: any[] | null = DEFAULT_HERO_SLIDES;
 
 export default function HomePage() {
   // ----------------------------------------------------
   // 1. Hero Promo Carousel State (Live Database Banners)
   // ----------------------------------------------------
-  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>(cachedHeroSlides || []);
-  const [isLoadingBanners, setIsLoadingBanners] = useState(!cachedHeroSlides);
+  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>(cachedHeroSlides || DEFAULT_HERO_SLIDES);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(false);
 
   useEffect(() => {
     fetch('/api/banners')
@@ -100,13 +120,13 @@ export default function HomePage() {
   });
 
   // ----------------------------------------------------
-  // 4. Shop By Occasion Tab State (4 Live Database Occasions)
+  // 4. Shop By Occasion Tab State (Top 3 Shop by Category Occasions)
   // ----------------------------------------------------
-  const [activeOccasionTab, setActiveOccasionTab] = useState<'wedding' | 'festive' | 'reception' | 'casual'>('wedding');
+  const [activeOccasionTab, setActiveOccasionTab] = useState<'bridal' | 'festive' | 'reception'>('bridal');
 
   const occasionContent = {
-    wedding: {
-      title: 'Muhurtham & Bridal Trousseau',
+    bridal: {
+      title: 'Bridal & Muhurtham Trousseau',
       desc: 'Commanding weight, sculptural Korvai borders, and 24-karat tested real gold zari crafted for royal South Indian bridal mandaps.',
       link: '/products?occasion=Bridal+%26+Muhurtham',
       buttonText: 'Explore Bridal Wear',
@@ -124,22 +144,13 @@ export default function HomePage() {
       products: activeProducts.filter((p) => p.occasion?.toLowerCase().includes('festive') || p.occasion?.toLowerCase().includes('puja')).slice(0, 3),
     },
     reception: {
-      title: 'Cocktail & Royal Reception',
-      desc: 'Luminous metallic weaves, intricate zari borders, and contemporary colors crafted for evening galas and receptions.',
-      link: '/products?occasion=Cocktail+%26+Reception',
+      title: 'Reception & Cocktail Celebrations',
+      desc: 'Luminous metallic weaves, intricate zari borders, and contemporary jewel tones crafted for evening galas and receptions.',
+      link: '/products?occasion=Reception+%26+Cocktail',
       buttonText: 'Explore Reception Wear',
       image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1000&q=80',
       sampleWeaves: 'Banarasi Kadwa • Paithani • Tissue Georgette',
       products: activeProducts.filter((p) => p.occasion?.toLowerCase().includes('reception') || p.occasion?.toLowerCase().includes('cocktail')).slice(0, 3),
-    },
-    casual: {
-      title: 'Daily Classic & Subtle Drapes',
-      desc: 'Lightweight breathable pure tussar, soft silks, and hand-spun chanderis that provide effortless all-day comfort without sacrificing elegance.',
-      link: '/products?occasion=Daily+Classic',
-      buttonText: 'Explore Casual Wear',
-      image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=1000&q=80',
-      sampleWeaves: 'Chanderi Tussar • Soft Silk • Kasuti Crepe',
-      products: activeProducts.filter((p) => p.occasion?.toLowerCase().includes('daily') || p.priceINR < 35000).slice(0, 3),
     },
   };
 
@@ -370,9 +381,9 @@ export default function HomePage() {
             {/* Occasion Switcher Tabs */}
             <div className="mt-8 flex justify-center gap-3">
               {[
-                { key: 'festive', label: 'Festive' },
-                { key: 'wedding', label: 'Wedding' },
-                { key: 'casual', label: 'Casual' },
+                { key: 'bridal', label: 'Bridal & Muhurtham' },
+                { key: 'festive', label: 'Festive & Puja' },
+                { key: 'reception', label: 'Reception & Cocktail' },
               ].map((tab) => (
                 <button
                   key={tab.key}

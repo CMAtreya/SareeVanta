@@ -58,20 +58,30 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   // Loading state for edit mode to prevent showing dummy data
   const [isLoading, setIsLoading] = useState(mode === 'edit');
 
-  // Auto-generated SKU and Barcode for new items (NSH-SKU-[WEAVE_CODE]-[SEQ])
-  const autoSku = `NSH-SKU-MYS-${Math.floor(10 + Math.random() * 90)}`;
-  const autoBarcode = `890${Math.floor(100000000 + Math.random() * 900000000)}`;
-
-  // Form State: System Identifiers (Read-Only)
-  const [sku, setSku] = useState(autoSku);
-  const [barcode, setBarcode] = useState(autoBarcode);
+  // Form State: System Identifiers (Deterministic Sequential SKUs)
+  const [sku, setSku] = useState('NSH-SKU-025');
+  const [barcode, setBarcode] = useState('890000000025');
 
   // Form State: Basic Info
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  // Form State: Weaving & Fabric Specs
+  // Form State: Weaving & Fabric Specs (Order: Weave -> Fabric -> Zari -> Pattern)
+  const [weaveOptions, setWeaveOptions] = useState<string[]>([
+    'Mysore Silk',
+    'Kanchipuram',
+    'Banarasi',
+    'Paithani',
+    'Patola',
+    'Ikkat',
+    'Organza',
+    'Chanderi',
+  ]);
   const [weave, setWeave] = useState('Mysore Silk');
+  const [isAddingNewWeave, setIsAddingNewWeave] = useState(false);
+  const [newWeaveInput, setNewWeaveInput] = useState('');
+  const [isWeaveDropdownOpen, setIsWeaveDropdownOpen] = useState(false);
+
   const [fabricOptions, setFabricOptions] = useState<string[]>([
     'Pure Mulberry Silk',
     'Tissue Georgette',
@@ -140,7 +150,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       id: 'var-1',
       name: 'Royal Crimson',
       hex: '#8B1E28',
-      sku: `${autoSku}-CRM`,
+      sku: 'NSH-SKU-025-CRM',
       stockCount: 1,
       images: ['', '', ''],
     },
@@ -198,8 +208,35 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [isSaving, setIsSaving] = useState(false);
   const [saveToast, setSaveToast] = useState(false);
 
-  // Populate data in edit mode from Supabase or static product store
+  // Populate data in edit mode or compute sequential SKU in create mode
   useEffect(() => {
+    if (mode === 'create') {
+      fetch('/api/products')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.products && Array.isArray(data.products)) {
+            const count = data.products.length;
+            const nextSeq = String(count + 1).padStart(3, '0');
+            const newSku = `NSH-SKU-${nextSeq}`;
+            const newBarcode = `890${String(100000000 + count + 1).padStart(9, '0')}`;
+            setSku(newSku);
+            setBarcode(newBarcode);
+            setColorVariants([
+              {
+                id: 'var-1',
+                name: 'Royal Crimson',
+                hex: '#8B1E28',
+                sku: `${newSku}-CRM`,
+                stockCount: 1,
+                images: ['', '', ''],
+              },
+            ]);
+          }
+        })
+        .catch(() => {});
+      return;
+    }
+
     async function fetchProductDetails() {
       if (mode !== 'edit' || !productId) return;
 
@@ -714,29 +751,6 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Weave Tradition *
-              </label>
-              <select
-                value={weave}
-                onChange={(e) => {
-                  setWeave(e.target.value);
-                  setIsDirty(true);
-                }}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 bg-white"
-              >
-                <option value="Mysore Silk">Mysore Silk</option>
-                <option value="Kanchipuram">Kanchipuram</option>
-                <option value="Banarasi">Banarasi</option>
-                <option value="Paithani">Paithani</option>
-                <option value="Patola">Patola</option>
-                <option value="Ikkat">Ikkat</option>
-                <option value="Organza">Organza</option>
-                <option value="Chanderi">Chanderi</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Description
               </label>
               <textarea
@@ -752,7 +766,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             </div>
           </div>
 
-          {/* Pricing & Financials (Exact Order: Cost Price (Internal) -> MRP -> Selling Price -> Stock) */}
+          {/* Pricing & Financials */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
               <Info className="w-4 h-4 text-[#7A1C30]" />
@@ -761,8 +775,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                  <span>Cost Price (Internal) *</span>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Cost Price (Internal) *
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">₹</span>
@@ -782,7 +796,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">MRP (₹) *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  MRP (Maximum Retail Price) *
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">₹</span>
                   <input
@@ -802,7 +818,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-700">Selling Price (₹) *</label>
+                  <label className="block text-xs font-semibold text-slate-700">Selling Price (Online Storefront) *</label>
                   {discountPercent > 0 && (
                     <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
                       {discountPercent}% OFF
@@ -859,7 +875,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             </div>
           </div>
 
-          {/* Weaving & Fabric Specs */}
+          {/* Weaving & Fabric Specifications (Exact Order: 1. Weave -> 2. Fabric -> 3. Zari -> 4. Pattern) */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 pb-2 border-b border-slate-100">
               <ShieldCheck className="w-4 h-4 text-[#7A1C30]" />
@@ -867,16 +883,123 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Left Column: Custom Fabric Selection Dropdown */}
+              {/* 1. Weave Tradition Dropdown */}
               <div className="space-y-1.5 relative">
-                <label className="block text-xs font-semibold text-slate-700">Fabric Specification *</label>
+                <label className="block text-xs font-semibold text-slate-700">1. Weave Tradition *</label>
+                {!isAddingNewWeave ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsWeaveDropdownOpen(!isWeaveDropdownOpen);
+                        setIsFabricDropdownOpen(false);
+                        setIsZariDropdownOpen(false);
+                        setIsPatternDropdownOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
+                    >
+                      <span className="truncate">{weave}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#7A1C30] transition-transform ${isWeaveDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isWeaveDropdownOpen && (
+                      <div
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        style={{ overscrollBehavior: 'contain' }}
+                        className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingNewWeave(true);
+                            setIsWeaveDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 rounded-xl text-[11px] font-bold text-[#7A1C30] hover:bg-[#F3E7CE] flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Add New Weave Tradition...</span>
+                        </button>
+
+                        <div className="my-1 border-b border-[#E8DCC9]" />
+
+                        <div
+                          onWheel={(e) => e.stopPropagation()}
+                          style={{ overscrollBehavior: 'contain' }}
+                          className="max-h-48 overflow-y-auto overscroll-contain touch-pan-y space-y-0.5 custom-scrollbar"
+                        >
+                          {weaveOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setWeave(opt);
+                                setIsWeaveDropdownOpen(false);
+                                setIsDirty(true);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-between ${
+                                weave === opt
+                                  ? 'bg-[#7A1C30] text-white font-bold'
+                                  : 'text-[#1F1B16] hover:bg-[#F5ECE0]'
+                              }`}
+                            >
+                              <span>{opt}</span>
+                              {weave === opt && <CheckCircle2 className="w-3.5 h-3.5 text-[#E2CE9F]" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newWeaveInput}
+                      onChange={(e) => setNewWeaveInput(e.target.value)}
+                      placeholder="Type custom weave tradition..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newWeaveInput.trim()) {
+                          const val = newWeaveInput.trim();
+                          setWeaveOptions([val, ...weaveOptions]);
+                          setWeave(val);
+                          setNewWeaveInput('');
+                          setIsDirty(true);
+                        }
+                        setIsAddingNewWeave(false);
+                      }}
+                      className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingNewWeave(false)}
+                      className="px-2.5 py-2 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Fabric Specification Dropdown */}
+              <div className="space-y-1.5 relative">
+                <label className="block text-xs font-semibold text-slate-700">2. Fabric Texture *</label>
                 {!isAddingNewFabric ? (
                   <>
                     <button
                       type="button"
                       onClick={() => {
                         setIsFabricDropdownOpen(!isFabricDropdownOpen);
+                        setIsWeaveDropdownOpen(false);
                         setIsZariDropdownOpen(false);
+                        setIsPatternDropdownOpen(false);
                       }}
                       className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
                     >
@@ -903,7 +1026,6 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                           <span>+ Add New Fabric Category...</span>
                         </button>
 
-                        {/* Subtle Horizontal Divider Line (Per Reference Image) */}
                         <div className="my-1 border-b border-[#E8DCC9]" />
 
                         <div
@@ -971,16 +1093,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 )}
               </div>
 
-              {/* Right Column: Custom Zari Specification Dropdown */}
+              {/* 3. Zari Specification Dropdown */}
               <div className="space-y-1.5 relative">
-                <label className="block text-xs font-semibold text-slate-700">Zari Specification *</label>
+                <label className="block text-xs font-semibold text-slate-700">3. Zari Purity *</label>
                 {!isAddingNewZari ? (
                   <>
                     <button
                       type="button"
                       onClick={() => {
                         setIsZariDropdownOpen(!isZariDropdownOpen);
+                        setIsWeaveDropdownOpen(false);
                         setIsFabricDropdownOpen(false);
+                        setIsPatternDropdownOpen(false);
                       }}
                       className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
                     >
@@ -1007,7 +1131,6 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                           <span>+ Add New Zari Specification...</span>
                         </button>
 
-                        {/* Subtle Horizontal Divider Line (Per Reference Image) */}
                         <div className="my-1 border-b border-[#E8DCC9]" />
 
                         <div
@@ -1074,100 +1197,111 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Motif & Heritage Pattern Selection */}
-            <div className="space-y-1.5 relative pt-2 border-t border-slate-100">
-              <label className="block text-xs font-semibold text-slate-700">Heritage Motif & Pattern *</label>
-              {!isAddingNewPattern ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsPatternDropdownOpen(!isPatternDropdownOpen);
-                      setIsFabricDropdownOpen(false);
-                      setIsZariDropdownOpen(false);
-                    }}
-                    className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
-                  >
-                    <span className="truncate">{pattern}</span>
-                    <ChevronDown className={`w-4 h-4 text-[#7A1C30] transition-transform ${isPatternDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {isPatternDropdownOpen && (
-                    <div
-                      onWheel={(e) => e.stopPropagation()}
-                      onTouchMove={(e) => e.stopPropagation()}
-                      style={{ overscrollBehavior: 'contain' }}
-                      className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs max-h-56 overflow-y-auto overscroll-contain touch-pan-y"
+              {/* 4. Motif & Heritage Pattern Dropdown */}
+              <div className="space-y-1.5 relative">
+                <label className="block text-xs font-semibold text-slate-700">4. Heritage Motif & Pattern *</label>
+                {!isAddingNewPattern ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPatternDropdownOpen(!isPatternDropdownOpen);
+                        setIsWeaveDropdownOpen(false);
+                        setIsFabricDropdownOpen(false);
+                        setIsZariDropdownOpen(false);
+                      }}
+                      className="w-full px-3.5 py-2.5 bg-[#FAF6F0] hover:bg-[#F5ECE0] border border-[#E8DCC9] rounded-xl text-xs font-bold text-[#1F1B16] flex items-center justify-between transition-all shadow-2xs cursor-pointer group"
                     >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsAddingNewPattern(true);
-                          setIsPatternDropdownOpen(false);
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl text-[11px] font-bold text-[#7A1C30] hover:bg-[#F3E7CE] flex items-center gap-2 transition-colors cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>+ Add New Motif Pattern...</span>
-                      </button>
+                      <span className="truncate">{pattern}</span>
+                      <ChevronDown className={`w-4 h-4 text-[#7A1C30] transition-transform ${isPatternDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
 
-                      {patternOptions.map((opt) => (
+                    {isPatternDropdownOpen && (
+                      <div
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                        style={{ overscrollBehavior: 'contain' }}
+                        className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-[#FAF6F0] border border-[#E8DCC9] rounded-2xl shadow-xl p-1.5 space-y-0.5 text-xs"
+                      >
                         <button
-                          key={opt}
                           type="button"
                           onClick={() => {
-                            setPattern(opt);
+                            setIsAddingNewPattern(true);
                             setIsPatternDropdownOpen(false);
-                            setIsDirty(true);
                           }}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                            pattern === opt ? 'bg-[#7A1C30] text-white font-bold' : 'text-stone-800 hover:bg-[#F5ECE0]'
-                          }`}
+                          className="w-full text-left px-3 py-2 rounded-xl text-[11px] font-bold text-[#7A1C30] hover:bg-[#F3E7CE] flex items-center gap-2 transition-colors cursor-pointer"
                         >
-                          <span className="truncate">{opt}</span>
-                          {pattern === opt && <Check className="w-3.5 h-3.5" />}
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Add New Motif Pattern...</span>
                         </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    autoFocus
-                    value={newPatternInput}
-                    onChange={(e) => setNewPatternInput(e.target.value)}
-                    placeholder="Type custom motif pattern..."
-                    className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newPatternInput.trim()) {
-                        const val = newPatternInput.trim();
-                        setPatternOptions([val, ...patternOptions]);
-                        setPattern(val);
-                        setNewPatternInput('');
-                        setIsDirty(true);
-                      }
-                      setIsAddingNewPattern(false);
-                    }}
-                    className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddingNewPattern(false)}
-                    className="px-2.5 py-2 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+
+                        <div className="my-1 border-b border-[#E8DCC9]" />
+
+                        <div
+                          onWheel={(e) => e.stopPropagation()}
+                          style={{ overscrollBehavior: 'contain' }}
+                          className="max-h-48 overflow-y-auto overscroll-contain touch-pan-y space-y-0.5 custom-scrollbar"
+                        >
+                          {patternOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setPattern(opt);
+                                setIsPatternDropdownOpen(false);
+                                setIsDirty(true);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-between ${
+                                pattern === opt
+                                  ? 'bg-[#7A1C30] text-white font-bold'
+                                  : 'text-[#1F1B16] hover:bg-[#F5ECE0]'
+                              }`}
+                            >
+                              <span>{opt}</span>
+                              {pattern === opt && <CheckCircle2 className="w-3.5 h-3.5 text-[#E2CE9F]" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={newPatternInput}
+                      onChange={(e) => setNewPatternInput(e.target.value)}
+                      placeholder="Type custom motif name..."
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newPatternInput.trim()) {
+                          const val = newPatternInput.trim();
+                          setPatternOptions([val, ...patternOptions]);
+                          setPattern(val);
+                          setNewPatternInput('');
+                          setIsDirty(true);
+                        }
+                        setIsAddingNewPattern(false);
+                      }}
+                      className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingNewPattern(false)}
+                      className="px-2.5 py-2 text-slate-500 hover:text-slate-700 text-xs font-semibold cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1208,7 +1342,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                                 const updated = [...colorVariants];
                                 updated[idx].hex = pal.hex;
                                 updated[idx].name = pal.name;
-                                updated[idx].sku = `${autoSku}-${pal.code}`;
+                                updated[idx].sku = `${sku}-${pal.code}`;
                                 setColorVariants(updated);
                                 setIsDirty(true);
                               }}
@@ -1369,7 +1503,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     id: `var-${Date.now()}`,
                     name: 'Kanchipuram Gold',
                     hex: '#D97706',
-                    sku: `${autoSku}-GLD`,
+                    sku: `${sku}-GLD`,
                     stockCount: 2,
                     images: ['', '', ''],
                   },

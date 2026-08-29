@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
+import { cookies } from 'next/headers';
 import { Cormorant_Garamond, Playfair_Display, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import SmoothScrollProvider from '@/components/providers/SmoothScroll';
 import { CartProvider } from '@/components/providers/CartContext';
-import { BrandProvider } from '@/context/BrandContext';
+import { BrandProvider, BrandType } from '@/context/BrandContext';
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 
 const cormorant = Cormorant_Garamond({
@@ -35,13 +36,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'NEELSAREEHOUSE | Heritage Silk Sarees of Mysuru',
+  title: 'SAREEVANTA | Heritage Silk Sarees of Mysuru',
   description:
     'Purveyors of heirloom pure silk sarees since 2021. Handwoven Kanchipuram, Royal Mysore Silk, Banarasi, and Paithani masterpieces from the royal looms of Mysuru.',
   keywords: [
-    'NEELSAREEHOUSE',
-    'Neel Saree House',
     'SareeVanta',
+    'SAREEVANTA',
+    'Neel Saree House',
     'Mysore Silk Saree',
     'Kanchipuram Silk Saree',
     'Banarasi Saree',
@@ -50,14 +51,14 @@ export const metadata: Metadata = {
     'Mysuru Heritage',
   ],
   openGraph: {
-    title: 'NEELSAREEHOUSE | Heritage Silk Sarees of Mysuru',
+    title: 'SAREEVANTA | Heritage Silk Sarees of Mysuru',
     description:
       'Where every drape tells a story. Discover royal Mysore silk, heirloom Kanchipuram, and pure zari weaves.',
-    url: 'https://neelsareehouse.com',
-    siteName: 'NEELSAREEHOUSE Mysuru',
+    url: 'https://sareevanta.com',
+    siteName: 'SAREEVANTA Mysuru',
     locale: 'en_IN',
     type: 'website',
-    images: [{ url: '/logo.png', width: 800, height: 800, alt: 'NEELSAREEHOUSE Logo' }],
+    images: [{ url: '/logo.png', width: 800, height: 800, alt: 'SAREEVANTA Logo' }],
   },
   icons: {
     icon: [
@@ -76,6 +77,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = cookies();
+  const rawBrand = cookieStore.get('admin_active_brand')?.value;
+  const initialBrand: BrandType = rawBrand === 'neelsareehouse' ? 'neelsareehouse' : 'sareevanta';
+
   return (
     <html
       lang="en"
@@ -83,7 +88,7 @@ export default function RootLayout({
       className={`${cormorant.variable} ${playfair.variable} ${plusJakarta.variable}`}
     >
       <body className="bg-[#FAF3E4] text-[#1F1B16] selection:bg-[#C87F4A] selection:text-white min-h-screen flex flex-col antialiased">
-        <BrandProvider>
+        <BrandProvider initialBrand={initialBrand}>
           <CartProvider>
             <SmoothScrollProvider>
               <StorefrontLayout>{children}</StorefrontLayout>

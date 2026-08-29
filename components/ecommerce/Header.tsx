@@ -74,6 +74,8 @@ const patternOptions = [
   { name: 'Floral Kadwa Meenakari', desc: 'Banarasi Gold Art' },
   { name: 'Asawali Floral Vines', desc: 'Paithani Tapestry' },
   { name: 'Ashrafi Bootas', desc: 'Chanderi Gold Dots' },
+  { name: 'Jacquard Zari Butta', desc: 'Royal Loom Motifs' },
+  { name: 'Temple Border', desc: 'Sacred Geometric Weave' },
 ];
 
 export default function Header() {
