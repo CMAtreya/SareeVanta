@@ -308,6 +308,7 @@ export async function POST(request: Request) {
 
   invalidateCache('admin_products_');
   invalidateCache('storefront_products_');
+  invalidateCache('full_catalog_snapshot');
   invalidateCache('product_');
   invalidateCache('pdp_product_');
 
@@ -380,6 +381,7 @@ export async function DELETE(request: Request) {
 
     invalidateCache('admin_products_');
     invalidateCache('storefront_products_');
+    invalidateCache('full_catalog_snapshot');
     invalidateCache('product_');
     invalidateCache('pdp_product_');
 

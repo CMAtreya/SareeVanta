@@ -116,47 +116,56 @@ export async function GET(request: Request) {
   let catalog: Product[] = [];
   let source = 'database';
 
-  const supabase = createAdminClient();
+  const snapshotCacheKey = 'full_catalog_snapshot';
+  const cachedCatalog = getCache<Product[]>(snapshotCacheKey);
 
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        id,
-        title,
-        slug,
-        description,
-        base_mrp_paise,
-        base_selling_price_paise,
-        is_published,
-        created_at,
-        weavings ( name ),
-        fabrics ( name ),
-        occasions ( name ),
-        patterns ( name ),
-        border_stylings ( name ),
-        zari_specifications ( name ),
-        product_variants (
+  if (cachedCatalog && Array.isArray(cachedCatalog) && cachedCatalog.length > 0) {
+    catalog = cachedCatalog;
+    source = 'memory_cache';
+  } else {
+    const supabase = createAdminClient();
+
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
           id,
-          sku,
-          price_paise,
-          mrp_paise,
-          is_active,
-          colors ( name, hex_code ),
-          product_variant_media ( url, is_primary )
-        )
-      `)
-      .eq('is_published', true)
-      .order('created_at', { ascending: false });
+          title,
+          slug,
+          description,
+          base_mrp_paise,
+          base_selling_price_paise,
+          is_published,
+          created_at,
+          weavings ( name ),
+          fabrics ( name ),
+          occasions ( name ),
+          patterns ( name ),
+          border_stylings ( name ),
+          zari_specifications ( name ),
+          product_variants (
+            id,
+            sku,
+            price_paise,
+            mrp_paise,
+            is_active,
+            colors ( name, hex_code ),
+            product_variant_media ( url, is_primary )
+          )
+        `)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      catalog = data.map(formatDbProduct);
-    } else {
+      if (!error && data && data.length > 0) {
+        catalog = data.map(formatDbProduct);
+        setCache(snapshotCacheKey, catalog, 60);
+      } else {
+        catalog = [];
+      }
+    } catch (e) {
+      console.error('[Products API] Error fetching from database:', e);
       catalog = [];
     }
-  } catch (e) {
-    console.error('[Products API] Error fetching from database:', e);
-    catalog = [];
   }
 
   // Calculate dynamic facet counts across the full catalog

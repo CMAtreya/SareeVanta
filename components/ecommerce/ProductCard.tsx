@@ -39,9 +39,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     toggleWishlist(product.id);
   };
 
-  const currentImage =
+  const rawImage =
     (isHovered && product.images?.length > 1 ? product.images[1] : product.images?.[0]) ||
-    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop';
+    'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=75&w=450&auto=format&fit=crop';
+
+  const currentImage = rawImage.includes('images.unsplash.com')
+    ? rawImage.replace(/w=\d+/, 'w=450').replace(/q=\d+/, 'q=75')
+    : rawImage;
 
   const originalPrice = product.originalPriceINR && product.originalPriceINR > product.priceINR
     ? product.originalPriceINR
@@ -60,6 +64,8 @@ export default function ProductCard({ product }: ProductCardProps) {
         <img
           src={currentImage}
           alt={product.title}
+          width={450}
+          height={600}
           className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
           loading="lazy"
           decoding="async"

@@ -1,25 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
-const validCoupons: Record<string, { discountPercent?: number; discountFixedINR?: number; description: string }> = {
-  ROYAL10: {
-    discountPercent: 10,
-    description: '10% Royal Heritage Patron Discount',
-  },
-  MYSORE2021: {
-    discountFixedINR: 2500,
-    description: '₹2,500 Mysore Loom Jubilee Discount',
-  },
-  FESTIVE15: {
-    discountPercent: 15,
-    description: '15% Festive Celebration Discount',
-  },
-  BRIDAL20: {
-    discountPercent: 20,
-    description: '20% Grand Trousseau Bridal Discount',
-  },
-};
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -34,20 +15,28 @@ export async function POST(request: Request) {
 
     const cleanCode = code.trim().toUpperCase();
 
-    // 1. Query Supabase coupons table
+    // 1. Query Supabase coupons table exclusively
     const supabase = createClient();
-    const { data: dbCoupon } = await supabase
+    const { data: dbCoupon, error } = await supabase
       .from('coupons')
       .select('*')
       .eq('code', cleanCode)
       .eq('is_active', true)
       .maybeSingle();
 
+    if (error) {
+      console.error('[Coupon API] Error querying database:', error);
+      return NextResponse.json(
+        { valid: false, message: 'Failed to validate coupon with database.' },
+        { status: 500 }
+      );
+    }
+
     if (dbCoupon) {
       const isFixed = dbCoupon.discount_type === 'FIXED';
       const discountPercent = !isFixed ? Number(dbCoupon.discount_value) : undefined;
       const discountFixedINR = isFixed ? Number(dbCoupon.discount_value) : undefined;
-      const description = `Privilege Coupon "${cleanCode}" applied`;
+      const description = dbCoupon.description || `Privilege Coupon "${cleanCode}" applied`;
 
       return NextResponse.json({
         valid: true,
@@ -56,19 +45,6 @@ export async function POST(request: Request) {
         discountFixedINR,
         description,
         message: `Coupon "${cleanCode}" applied successfully!`,
-      });
-    }
-
-    // 2. Fallback to validCoupons static dictionary
-    const matched = validCoupons[cleanCode];
-    if (matched) {
-      return NextResponse.json({
-        valid: true,
-        code: cleanCode,
-        discountPercent: matched.discountPercent,
-        discountFixedINR: matched.discountFixedINR,
-        description: matched.description,
-        message: `Coupon "${cleanCode}" applied: ${matched.description}!`,
       });
     }
 

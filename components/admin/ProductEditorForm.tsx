@@ -226,13 +226,19 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
           if (dbVariants.length > 0) {
             const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
-              const vImgs = v.product_variant_media?.map((m: any) => m.url) || [];
+              const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
+              const actualStock = inv && typeof inv.quantity === 'number' ? inv.quantity : 1;
+
+              const mediaList = Array.isArray(v.product_variant_media) ? v.product_variant_media : [];
+              const sortedMedia = [...mediaList].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+              const vImgs = sortedMedia.map((m: any) => m.url || '').filter(Boolean);
+
               return {
                 id: v.id || `var-${vIdx + 1}`,
                 name: v.colors?.name || 'Royal Crimson',
                 hex: v.colors?.hex_code || '#8B1E28',
                 sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
-                stockCount: v.inventory?.[0]?.quantity || 10,
+                stockCount: actualStock,
                 images: [
                   vImgs[0] || '',
                   vImgs[1] || '',
@@ -394,8 +400,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       alert('Validation Error: Selling Price (₹) is mandatory and must be greater than ₹0.');
       return;
     }
-    if (stock === '' || Number(stock) < 0) {
-      alert('Validation Error: Physical Stock is mandatory.');
+    const primaryVariantStock = Number(colorVariants[0]?.stockCount ?? 1);
+    if (isNaN(primaryVariantStock) || primaryVariantStock < 0) {
+      alert('Validation Error: Physical Stock in Color Variant Management is mandatory and cannot be negative.');
       return;
     }
     if (!hsnCode || !hsnCode.trim()) {
@@ -421,14 +428,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       return;
     }
 
-    // 4. Images (At least 1 image and max 3 images)
-    const variantUploadedImages = colorVariants
-      .flatMap((v) => v.images || [])
+    // 4. Images (Strictly from Color Variant Management: At least 1 image and max 3 images)
+    const allImagesList = (colorVariants[0]?.images || colorVariants.flatMap((v) => v.images || []))
       .filter((url) => typeof url === 'string' && url.trim().length > 5);
-
-    const allImagesList = Array.from(new Set([...images, ...variantUploadedImages])).filter(
-      (url) => typeof url === 'string' && url.trim().length > 5
-    );
 
     if (allImagesList.length === 0) {
       alert('Validation Error: Please upload at least 1 drape image (Primary Drape) in Color Variant Management.');
@@ -469,18 +471,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       return;
     }
     if (!packageWeight || !packageWeight.trim()) {
-      alert('Validation Error: Package Weight is mandatory.');
+      alert('Validation Error: Package Dead Weight is mandatory.');
       return;
     }
     if (!packageDimensions || !packageDimensions.trim()) {
-      alert('Validation Error: Package Dimensions are mandatory.');
+      alert('Validation Error: Package Dimensions (L x W x H) are mandatory.');
       return;
     }
 
     setIsSaving(true);
 
     const updatedProductPayload = {
-      ...(mode === 'edit' && productId ? { id: productId } : {}),
+      id: productId,
       title: title.trim() || 'Untitled Saree Creation',
       slug: (title.trim() || 'saree').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
       description: description.trim(),
@@ -496,7 +498,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       badges: selectedBadges,
       color_name: colorVariants[0]?.name || 'Royal Crimson',
       color_hex: colorVariants[0]?.hex || '#8B1E28',
-      initial_stock: Number(stock) || 10,
+      initial_stock: primaryVariantStock,
       images: allImagesList,
     };
 
@@ -755,7 +757,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               <span>Pricing & Financials</span>
             </h3>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                   <span>Cost Price (Internal) *</span>
@@ -820,21 +822,6 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                     className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Physical Stock *</label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={stock}
-                  onChange={(e) => {
-                    setStock(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
-                />
               </div>
             </div>
 
