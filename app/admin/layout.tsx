@@ -45,8 +45,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CommandPalette from '@/components/admin/CommandPalette';
 import ShortcutsModal from '@/components/admin/ShortcutsModal';
 import NewProductModal from '@/components/admin/NewProductModal';
+import { useBrand } from '@/context/BrandContext';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { brandUpper, brandName } = useBrand();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -251,7 +253,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
               <div className="min-w-0">
                 <div className="font-bold text-xs text-[#FAF3E4] uppercase tracking-wider truncate">
-                  NEEL SAREE HOUSE
+                  {brandUpper}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span

@@ -93,54 +93,22 @@ const ROLES_INFO: Record<
   },
 };
 
+import { useBrand, BrandType } from '@/context/BrandContext';
+
 export default function StaffSettingsPage() {
+  const { brand, brandName, setBrand } = useBrand();
   const [staffList, setStaffList] = useState<StaffMember[]>(INITIAL_STAFF);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Active Brand Store Context (Neel Saree House vs SareeVanta) - Server Persisted
-  const [activeBrand, setActiveBrand] = useState<'neelsareehouse' | 'sareevanta'>('neelsareehouse');
-  const [isSavingBrand, setIsSavingBrand] = useState(false);
-
-  // Fetch initial persisted brand from server API (No localStorage dependency)
-  React.useEffect(() => {
-    async function loadBrandConfig() {
-      try {
-        const res = await fetch('/api/admin/settings/brand');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.brand) {
-            setActiveBrand(data.brand);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load brand setting:', err);
-      }
-    }
-    loadBrandConfig();
-  }, []);
-
-  const handleBrandToggle = async (targetBrand: 'neelsareehouse' | 'sareevanta') => {
-    if (activeBrand === targetBrand) return;
-    setActiveBrand(targetBrand);
-    setIsSavingBrand(true);
-
-    try {
-      const res = await fetch('/api/admin/settings/brand', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brand: targetBrand }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        triggerToast(`Active brand context updated to ${data.brandName}. Changes persisted across server.`);
-      }
-    } catch (err) {
-      console.error('Failed to save brand setting:', err);
-      triggerToast('Brand updated in session.');
-    } finally {
-      setIsSavingBrand(false);
-    }
+  const handleToggleBrand = async (targetBrand: BrandType) => {
+    if (brand === targetBrand) return;
+    await setBrand(targetBrand);
+    triggerToast(
+      `Active brand identity switched to ${
+        targetBrand === 'sareevanta' ? 'SareeVanta' : 'Neel Saree House'
+      } across the entire website.`
+    );
   };
 
   // Invite Form State
@@ -257,49 +225,73 @@ export default function StaffSettingsPage() {
       </div>
 
       {/* ================================================== */}
+      {/* ACTIVE BRAND IDENTITY CARD (IMAGE 2 SPECIFICATION)  */}
+      {/* ================================================== */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E8DCC9] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h2 className="font-editorial text-lg sm:text-xl font-bold text-[#7A1C30]">
+            Active Brand Identity
+          </h2>
+          <p className="text-xs text-stone-500 font-sans">
+            Toggle the active public-facing brand across the entire customer portal and admin suite.
+          </p>
+        </div>
+
+        {/* Smooth iOS-Style Switch Pill */}
+        <div className="flex items-center gap-3 bg-[#FAF6F0] px-4 py-2 rounded-2xl border border-[#E8DCC9] shadow-2xs self-start sm:self-auto select-none">
+          <span
+            className={`text-xs font-bold transition-colors cursor-pointer ${
+              brand === 'neelsareehouse' ? 'text-[#7A1C30]' : 'text-stone-400'
+            }`}
+            onClick={() => handleToggleBrand('neelsareehouse')}
+          >
+            Neel Saree House
+          </span>
+
+          {/* Sliding Track & Thumb */}
+          <button
+            type="button"
+            role="switch"
+            aria-label="Toggle active brand identity"
+            aria-checked={brand === 'sareevanta'}
+            onClick={() => handleToggleBrand(brand === 'neelsareehouse' ? 'sareevanta' : 'neelsareehouse')}
+            className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${
+              brand === 'sareevanta' ? 'bg-[#7A1C30]' : 'bg-stone-300'
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transform transition-transform duration-200 ${
+                brand === 'sareevanta' ? 'translate-x-6' : 'translate-x-0'
+              }`}
+            />
+          </button>
+
+          <span
+            className={`text-xs font-bold transition-colors cursor-pointer ${
+              brand === 'sareevanta' ? 'text-[#7A1C30]' : 'text-stone-400'
+            }`}
+            onClick={() => handleToggleBrand('sareevanta')}
+          >
+            SareeVanta
+          </span>
+        </div>
+      </div>
+
+      {/* ================================================== */}
       {/* 1. STAFF DIRECTORY TABLE                           */}
       {/* ================================================== */}
       <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 border-b border-stone-100 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-sm text-[#1F1B16]">Active Staff & Team Members</h3>
               <span className="bg-amber-100 text-amber-900 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md">
-                {activeBrand === 'sareevanta' ? 'SareeVanta' : 'Neel Saree House'}
+                {brandName}
               </span>
             </div>
-            <p className="text-xs text-stone-500 font-mono">
-              {staffList.length} authenticated personnel with access to {activeBrand === 'sareevanta' ? 'SareeVanta' : 'Neel Saree House'} administrative consoles
+            <p className="text-xs text-stone-500 font-mono mt-0.5">
+              {staffList.length} authenticated personnel with access to {brandName} administrative consoles
             </p>
-          </div>
-
-          {/* Store / Brand Toggle (Left: Neel Saree House, Right: SareeVanta) */}
-          <div className="flex items-center gap-1.5 p-1 bg-[#FAF6F0] rounded-xl border border-[#E8DCC9] shadow-2xs self-start sm:self-auto">
-            <span className="text-[10px] font-mono uppercase text-stone-400 font-bold px-2">Store Entity:</span>
-            <button
-              type="button"
-              onClick={() => handleBrandToggle('neelsareehouse')}
-              disabled={isSavingBrand}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeBrand === 'neelsareehouse'
-                  ? 'bg-[#7A1C30] text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              Neel Saree House
-            </button>
-            <button
-              type="button"
-              onClick={() => handleBrandToggle('sareevanta')}
-              disabled={isSavingBrand}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeBrand === 'sareevanta'
-                  ? 'bg-[#7A1C30] text-white shadow-xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              SareeVanta
-            </button>
           </div>
         </div>
 

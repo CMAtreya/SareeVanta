@@ -18,7 +18,10 @@ import {
   Youtube,
 } from 'lucide-react';
 
+import { useBrand } from '@/context/BrandContext';
+
 export default function Footer() {
+  const { brandName, brandUpper, brand } = useBrand();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -101,7 +104,7 @@ export default function Footer() {
                   <source srcSet="/assets/logo.webp" type="image/webp" />
                   <img
                     src="/assets/logo.jpg"
-                    alt="Neelsareehouse Logo"
+                    alt={`${brandName} Logo`}
                     className="w-full h-full object-cover bg-[#FAF3E4] rounded-full p-0.5"
                     onError={(e) => {
                       const target = e.currentTarget;
@@ -114,7 +117,7 @@ export default function Footer() {
               </div>
               <div>
                 <h3 className="font-editorial text-2xl font-bold tracking-tight text-white uppercase">
-                  NEEL SAREE HOUSE
+                  {brandUpper}
                 </h3>
                 <span className="text-[9px] tracking-[0.28em] uppercase text-[#C87F4A] font-mono block">
                   A MYSURU ROYAL PRODUCT
@@ -137,7 +140,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#C87F4A] flex-shrink-0" />
-                <span>concierge@neelsareehouse.com</span>
+                <span>concierge@{brand === 'sareevanta' ? 'sareevanta.com' : 'neelsareehouse.com'}</span>
               </div>
             </div>
           </div>
@@ -150,79 +153,84 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs text-stone-400 font-sans">
               <li>
                 <Link href="/products?weave=Mysore+Silk" className="hover:text-white transition-colors">
-                  Mysore Crepe Silks
+                  Mysore Silk
                 </Link>
               </li>
               <li>
                 <Link href="/products?weave=Kanchipuram" className="hover:text-white transition-colors">
-                  Bridal Kanchipuram
+                  Kanchipuram Brocades
                 </Link>
               </li>
               <li>
                 <Link href="/products?weave=Banarasi" className="hover:text-white transition-colors">
-                  Banarasi Katan & Kadwa
+                  Banarasi Katan Silk
                 </Link>
               </li>
               <li>
                 <Link href="/products?weave=Paithani" className="hover:text-white transition-colors">
-                  Yeola Paithani Silks
+                  Paithani Treasures
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?filter=bridal" className="hover:text-white transition-colors">
+                  Bridal Muhurtham Trousseau
                 </Link>
               </li>
               <li>
                 <Link href="/products?filter=new" className="hover:text-white transition-colors">
-                  New Season Arrivals
+                  New Loom Arrivals
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Support & Care */}
+          {/* Heritage & Direct Craft */}
           <div>
             <h4 className="font-editorial text-sm font-bold uppercase tracking-widest text-[#C87F4A] mb-4">
-              Client Support
+              Heritage & Craft
             </h4>
             <ul className="space-y-2.5 text-xs text-stone-400 font-sans">
               <li>
-                <Link href="/returns/new" className="hover:text-white transition-colors">
-                  Returns & Exchanges (7-Day)
+                <Link href="/our-story" className="hover:text-white transition-colors">
+                  Our Royal Legacy
                 </Link>
               </li>
               <li>
-                <Link href="/orders/track" className="hover:text-white transition-colors">
-                  Track Your Order
+                <Link href="/silk-mark" className="hover:text-white transition-colors">
+                  Central Silk Board Mark
                 </Link>
               </li>
               <li>
                 <Link href="/visit-us" className="hover:text-white transition-colors">
-                  Book Store Appointment
+                  Visit Mysuru Flagship
                 </Link>
               </li>
               <li>
-                <Link href="/our-story" className="text-white hover:text-[#C87F4A] font-semibold transition-colors">
-                  Our Story & Craft (Scrollytelling)
+                <Link href="/our-story#craftsmanship" className="hover:text-white transition-colors">
+                  24K Tested Zari Purity
                 </Link>
               </li>
               <li>
-                <a href="https://wa.me/918212423344" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
-                  WhatsApp Store Desk
-                </a>
+                <Link href="/our-story#artisans" className="hover:text-white transition-colors">
+                  Master Weavers Guild
+                </Link>
               </li>
             </ul>
           </div>
 
-          {/* Newsletter Signup */}
-          <div>
+          {/* Patron Services & Newsletter */}
+          <div className="space-y-4">
             <h4 className="font-editorial text-sm font-bold uppercase tracking-widest text-[#C87F4A] mb-4">
-              Private Guild Gazette
+              VIP Patron Concierge
             </h4>
-            <p className="text-xs text-stone-400 mb-4 font-sans leading-relaxed">
-              Receive exclusive invitations to rare loom batch releases and 10% off your inaugural heirloom.
+            <p className="text-xs text-stone-400 font-sans leading-relaxed">
+              Subscribe to receive private preview access to newly released loom masterworks.
             </p>
 
             {subscribed ? (
-              <div className="p-3 bg-emerald-950/60 border border-emerald-800/60 rounded-xl text-xs text-emerald-300 flex items-center gap-2 font-sans">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Welcome! Check your inbox for your 10% privilege code.</span>
+              <div className="p-3 bg-[#C87F4A]/10 border border-[#C87F4A]/30 rounded-xl text-xs text-amber-200 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>Thank you for joining our royal inner circle.</span>
               </div>
             ) : (
               <form onSubmit={handleSubscribe} className="space-y-2">
@@ -230,10 +238,10 @@ export default function Footer() {
                   <input
                     type="email"
                     required
-                    placeholder="Enter your email..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-white/10 border border-stone-700 rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-stone-500 focus:outline-none focus:border-[#C87F4A] font-sans"
+                    placeholder="Enter your email address..."
+                    className="w-full px-3.5 py-2.5 bg-white/5 border border-stone-700 rounded-xl text-xs text-white placeholder-stone-500 focus:outline-none focus:border-[#C87F4A] pr-10 font-sans"
                   />
                   <button
                     type="submit"
@@ -263,7 +271,7 @@ export default function Footer() {
 
         {/* 3. Bottom Legal & Copyright Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 font-sans gap-4">
-          <p>© {new Date().getFullYear()} Neelsareehouse Mysuru Pvt. Ltd. All Rights Reserved.</p>
+          <p>© {new Date().getFullYear()} {brandName} Mysuru Pvt. Ltd. All Rights Reserved.</p>
           <div className="flex space-x-6 text-[11px]">
             <Link href="/privacy" className="hover:text-stone-300 transition-colors">
               Privacy Policy

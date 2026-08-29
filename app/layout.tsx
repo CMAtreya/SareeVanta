@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Playfair_Display, Plus_Jakarta_Sans } from 'next/fo
 import './globals.css';
 import SmoothScrollProvider from '@/components/providers/SmoothScroll';
 import { CartProvider } from '@/components/providers/CartContext';
+import { BrandProvider } from '@/context/BrandContext';
 import StorefrontLayout from '@/components/layout/StorefrontLayout';
 
 const cormorant = Cormorant_Garamond({
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
   keywords: [
     'NEELSAREEHOUSE',
     'Neel Saree House',
+    'SareeVanta',
     'Mysore Silk Saree',
     'Kanchipuram Silk Saree',
     'Banarasi Saree',
@@ -81,11 +83,13 @@ export default function RootLayout({
       className={`${cormorant.variable} ${playfair.variable} ${plusJakarta.variable}`}
     >
       <body className="bg-[#FAF3E4] text-[#1F1B16] selection:bg-[#C87F4A] selection:text-white min-h-screen flex flex-col antialiased">
-        <CartProvider>
-          <SmoothScrollProvider>
-            <StorefrontLayout>{children}</StorefrontLayout>
-          </SmoothScrollProvider>
-        </CartProvider>
+        <BrandProvider>
+          <CartProvider>
+            <SmoothScrollProvider>
+              <StorefrontLayout>{children}</StorefrontLayout>
+            </SmoothScrollProvider>
+          </CartProvider>
+        </BrandProvider>
       </body>
     </html>
   );

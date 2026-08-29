@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
+import { useBrand } from '@/context/BrandContext';
 import { weaveCategories, fabricFilters, occasionFilters } from '@/lib/products';
 
 const announcements = [
@@ -79,6 +80,7 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { cartCount, wishlistCount, setIsCartDrawerOpen, cartBounced } = useCart();
+  const { brandUpper, brandTagline } = useBrand();
 
   const [announcementIndex, setAnnouncementIndex] = useState(0);
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -335,10 +337,10 @@ export default function Header() {
 
             <div className="flex flex-col items-start min-w-0">
               <span className="font-editorial text-sm xs:text-base sm:text-2xl lg:text-[26px] font-bold tracking-[0.02em] sm:tracking-[0.06em] text-[#1F1B16] uppercase group-hover:text-[#7A1C30] transition-colors leading-none truncate">
-                NEELSAREEHOUSE
+                {brandUpper}
               </span>
               <span className="text-[7px] sm:text-[9.5px] tracking-[0.16em] sm:tracking-[0.28em] font-sans font-bold text-[#C87F4A] uppercase mt-0.5 sm:mt-1 leading-none">
-                MYSURU • ESTD. 2021
+                {brandTagline}
               </span>
             </div>
           </Link>
