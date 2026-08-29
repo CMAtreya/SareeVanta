@@ -123,6 +123,15 @@ export default function AdminCatalogPage() {
 
   // Modals
   const [editingSaree, setEditingSaree] = useState<CatalogSaree | null>(null);
+  const [deletingSaree, setDeletingSaree] = useState<CatalogSaree | null>(null);
+  const [isConfirmingBulkDelete, setIsConfirmingBulkDelete] = useState(false);
+  const [stockAdjustModalSaree, setStockAdjustModalSaree] = useState<CatalogSaree | null>(null);
+  const [stockAdjustDeltaType, setStockAdjustDeltaType] = useState<'INCREASE' | 'DECREASE'>('INCREASE');
+  const [stockAdjustUnits, setStockAdjustUnits] = useState<string>('1');
+  const [stockAdjustReason, setStockAdjustReason] = useState<string>('Restocked from Loom Cluster');
+  const [stockAdjustNotes, setStockAdjustNotes] = useState<string>('');
+  const [isSavingStock, setIsSavingStock] = useState(false);
+
   const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
   const [isBulkCategoryModalOpen, setIsBulkCategoryModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -208,37 +217,58 @@ export default function AdminCatalogPage() {
     );
   };
 
-  // Inline Stock Update
-  const handleStockChange = async (id: string, newStock: number) => {
-    const validStock = Math.max(0, newStock);
-    setCatalog((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
+  // Stock Adjustment Modal Handler (BFS & DSS Compliant)
+  const handleConfirmStockAdjustment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stockAdjustModalSaree) return;
+
+    const deltaNum = Math.max(1, parseInt(stockAdjustUnits, 10) || 1);
+    const newQty =
+      stockAdjustDeltaType === 'INCREASE'
+        ? stockAdjustModalSaree.stock + deltaNum
+        : Math.max(0, stockAdjustModalSaree.stock - deltaNum);
+
+    const targetId = stockAdjustModalSaree.id;
+    const targetSku = stockAdjustModalSaree.sku;
+
+    // Optimistically update catalog state and cache immediately (0ms real-time UI)
+    setCatalog((prev) => {
+      const updated = prev.map((item) => {
+        if (item.id === targetId) {
           const newStatus =
-            validStock === 0
+            newQty === 0
               ? 'DRAFT'
-              : validStock <= 3
+              : newQty <= 3
               ? 'LOW_STOCK'
               : 'ACTIVE';
-          return { ...item, stock: validStock, status: newStatus };
+          return { ...item, stock: newQty, status: newStatus as any };
         }
         return item;
-      })
-    );
+      });
+      adminCatalogCache = updated;
+      return updated;
+    });
 
+    setIsSavingStock(true);
     try {
-      const targetItem = catalog.find((i) => i.id === id);
       await fetch('/api/admin/inventory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          product_id: id,
-          sku: targetItem?.sku,
-          new_quantity: validStock,
+          product_id: targetId,
+          sku: targetSku,
+          new_quantity: newQty,
+          reason: stockAdjustReason,
+          notes: stockAdjustNotes,
         }),
       });
     } catch (err) {
-      console.error('[Catalog] Error updating stock in database:', err);
+      console.error('[Catalog] Error saving stock adjustment:', err);
+    } finally {
+      setIsSavingStock(false);
+      setStockAdjustModalSaree(null);
+      setStockAdjustUnits('1');
+      setStockAdjustNotes('');
     }
   };
 
@@ -251,20 +281,52 @@ export default function AdminCatalogPage() {
     );
   };
 
-  // Duplicate Saree
-  const handleDuplicateSaree = (saree: CatalogSaree) => {
-    const newId = `saree-dup-${Date.now()}`;
-    const duplicated: CatalogSaree = {
-      ...saree,
-      id: newId,
-      title: `${saree.title} (Copy)`,
-      sku: `${saree.sku}-COPY`,
-      slug: `${saree.slug}-copy-${Math.floor(Math.random() * 1000)}`,
-      status: 'DRAFT',
-      isActive: false,
-    };
-    setCatalog((prev) => [duplicated, ...prev]);
+  // Duplicate Saree (Persistent to Supabase Database)
+  const handleDuplicateSaree = async (saree: CatalogSaree) => {
+    const newTitle = `${saree.title} (Copy)`;
+    const newSlug = `${saree.slug}-copy-${Math.floor(100 + Math.random() * 900)}`;
+    const newSku = `${saree.sku}-COPY-${Math.floor(10 + Math.random() * 90)}`;
     setActiveActionMenuId(null);
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTitle,
+          slug: newSlug,
+          sku: newSku,
+          weave: saree.weave,
+          fabric: saree.fabric,
+          zari: saree.zariType,
+          base_mrp_inr: saree.originalPriceINR,
+          base_selling_price_inr: saree.priceINR,
+          initial_stock: saree.stock,
+          images: saree.images,
+        }),
+      });
+
+      const data = await res.json();
+      const createdId = data.product_id || `saree-custom-${Date.now()}`;
+
+      const duplicated: CatalogSaree = {
+        ...saree,
+        id: createdId,
+        title: newTitle,
+        sku: newSku,
+        slug: newSlug,
+        status: saree.stock === 0 ? 'DRAFT' : 'ACTIVE',
+        isActive: true,
+      };
+
+      setCatalog((prev) => {
+        const updated = [duplicated, ...prev];
+        adminCatalogCache = updated;
+        return updated;
+      });
+    } catch (e) {
+      console.error('[Catalog] Duplicate error:', e);
+    }
   };
 
   // Archive Saree
@@ -277,8 +339,8 @@ export default function AdminCatalogPage() {
     setActiveActionMenuId(null);
   };
 
-  // Delete Saree Permanently
-  const handleDeleteSaree = async (id: string) => {
+  // Delete Saree Permanently (Executes after confirmation card)
+  const handleExecuteDeleteSaree = async (id: string) => {
     // Optimistic UI removal
     setCatalog((prev) => {
       const updated = prev.filter((item) => item.id !== id);
@@ -286,7 +348,7 @@ export default function AdminCatalogPage() {
       return updated;
     });
     setSelectedIds((prev) => prev.filter((i) => i !== id));
-    setActiveActionMenuId(null);
+    setDeletingSaree(null);
 
     try {
       const res = await fetch(`/api/admin/products?id=${encodeURIComponent(id)}`, {
@@ -735,36 +797,34 @@ export default function AdminCatalogPage() {
                         </div>
                       </td>
 
-                      {/* Available Stock (Inline Editable Counter) */}
+                      {/* Available Stock (BFS Stock Badge & Ledger Adjust Button) */}
                       <td className="p-3">
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleStockChange(saree.id, saree.stock - 1)}
-                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs"
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            value={saree.stock}
-                            onChange={(e) =>
-                              handleStockChange(saree.id, parseInt(e.target.value, 10) || 0)
-                            }
-                            className={`w-12 py-1 text-center font-mono font-bold text-xs rounded border focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2.5 py-1 text-center font-mono font-bold text-xs rounded-lg border ${
                               saree.stock === 0
-                                ? 'bg-rose-50 border-rose-300 text-rose-700'
-                                : saree.stock === 1
-                                ? 'bg-amber-50 border-amber-300 text-amber-800'
-                                : 'bg-white border-slate-200 text-slate-900'
+                                ? 'bg-rose-50 border-rose-200 text-rose-700'
+                                : saree.stock <= 3
+                                ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                             }`}
-                          />
+                          >
+                            {saree.stock} {saree.stock === 1 ? 'Unit' : 'Units'}
+                          </span>
                           <button
                             type="button"
-                            onClick={() => handleStockChange(saree.id, saree.stock + 1)}
-                            className="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs"
+                            onClick={() => {
+                              setStockAdjustModalSaree(saree);
+                              setStockAdjustDeltaType('INCREASE');
+                              setStockAdjustUnits('1');
+                              setStockAdjustReason('Restocked from Loom Cluster');
+                              setStockAdjustNotes('');
+                            }}
+                            className="px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] border border-slate-200 transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Adjust Stock & Record Ledger Reason"
                           >
-                            +
+                            <SlidersHorizontal className="w-3 h-3 text-slate-500" />
+                            <span>Adjust</span>
                           </button>
                         </div>
                         {saree.stock <= 3 && (
@@ -828,8 +888,8 @@ export default function AdminCatalogPage() {
 
                             <div
                               className={`absolute right-3 ${
-                                idx >= Math.max(0, filteredCatalog.length - 3) ? 'bottom-8' : 'top-10'
-                              } w-44 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-40 text-left text-xs font-sans space-y-0.5`}
+                                idx >= Math.max(1, filteredCatalog.length - 2) ? 'bottom-full mb-1' : 'top-full mt-1'
+                              } w-44 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left text-xs font-sans space-y-0.5`}
                             >
                               <Link
                                 href={`/admin/catalog/${saree.id}/edit`}
@@ -842,10 +902,7 @@ export default function AdminCatalogPage() {
 
                               <button
                                 type="button"
-                                onClick={() => {
-                                  handleDuplicateSaree(saree);
-                                  setActiveActionMenuId(null);
-                                }}
+                                onClick={() => handleDuplicateSaree(saree)}
                                 className="w-full px-2.5 py-1.5 rounded-lg text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer"
                               >
                                 <Copy className="w-3.5 h-3.5 text-purple-600" />
@@ -868,7 +925,10 @@ export default function AdminCatalogPage() {
 
                               <button
                                 type="button"
-                                onClick={() => handleDeleteSaree(saree.id)}
+                                onClick={() => {
+                                  setDeletingSaree(saree);
+                                  setActiveActionMenuId(null);
+                                }}
                                 className="w-full px-2.5 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-semibold cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -948,7 +1008,7 @@ export default function AdminCatalogPage() {
 
             <button
               type="button"
-              onClick={handleBulkDelete}
+              onClick={() => setIsConfirmingBulkDelete(true)}
               className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition-colors flex items-center gap-1.5 font-bold"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -1605,6 +1665,317 @@ export default function AdminCatalogPage() {
               >
                 Save Changes
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 9. STOCK LEDGER ADJUSTMENT MODAL (BFS / DSS)       */}
+      {/* ================================================== */}
+      {stockAdjustModalSaree && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center">
+                  <SlidersHorizontal className="w-4 h-4 text-blue-300" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm font-sans">Stock Ledger Adjustment</h3>
+                  <p className="text-[10px] text-slate-300 font-mono">BFS/DSS Audit-Compliant Delta Record</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setStockAdjustModalSaree(null)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmStockAdjustment} className="p-6 space-y-4 text-xs font-sans">
+              {/* Product Info Card */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+                <img
+                  src={stockAdjustModalSaree.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop'}
+                  alt={stockAdjustModalSaree.title}
+                  className="w-12 h-14 rounded-lg object-cover border border-slate-300 flex-shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-slate-900 text-xs truncate">{stockAdjustModalSaree.title}</div>
+                  <div className="text-[10px] font-mono text-slate-500 truncate">
+                    SKU: {stockAdjustModalSaree.sku}
+                  </div>
+                  <div className="text-[11px] font-mono text-emerald-800 font-semibold mt-0.5">
+                    Current Physical Stock: <strong>{stockAdjustModalSaree.stock} Units</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Adjustment Direction & Units */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Delta Action</label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setStockAdjustDeltaType('INCREASE')}
+                      className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        stockAdjustDeltaType === 'INCREASE'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      + Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStockAdjustDeltaType('DECREASE')}
+                      className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        stockAdjustDeltaType === 'DECREASE'
+                          ? 'bg-rose-600 text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      - Subtract
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Units (Delta)</label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    required
+                    value={stockAdjustUnits}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setStockAdjustUnits(val);
+                    }}
+                    placeholder="e.g. 5"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Resulting Stock Preview */}
+              <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-200 flex items-center justify-between">
+                <span className="text-slate-600 font-medium">Resulting Stock:</span>
+                <span className="font-mono font-bold text-sm text-blue-900">
+                  {stockAdjustDeltaType === 'INCREASE'
+                    ? stockAdjustModalSaree.stock + (parseInt(stockAdjustUnits, 10) || 0)
+                    : Math.max(0, stockAdjustModalSaree.stock - (parseInt(stockAdjustUnits, 10) || 0))}{' '}
+                  Units
+                </span>
+              </div>
+
+              {/* Mandatory Reason Dropdown */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Mandatory Audit Reason *
+                </label>
+                <select
+                  value={stockAdjustReason}
+                  onChange={(e) => setStockAdjustReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-semibold bg-white text-slate-900 focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Restocked from Loom Cluster">
+                    Restocked from Loom Cluster (New Weave Receipt)
+                  </option>
+                  <option value="Stock Count Reconcile">
+                    Stock Count Reconcile (Cycle Count Discrepancy)
+                  </option>
+                  <option value="Damaged on Loom / Zari Defect">
+                    Damaged on Loom / Zari Defect (Sent to Scrap)
+                  </option>
+                  <option value="Offline Showroom Transfer">
+                    Offline Showroom Transfer (Sayyaji Rao Flagship)
+                  </option>
+                  <option value="Returned to Master Weaver for Re-Weft">
+                    Returned to Master Weaver for Re-Weft
+                  </option>
+                  <option value="Customer Order Return Restock">
+                    Customer Order Return Restock
+                  </option>
+                </select>
+              </div>
+
+              {/* Internal Notes */}
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Ledger Remarks / Weaver Reference
+                </label>
+                <textarea
+                  rows={2}
+                  value={stockAdjustNotes}
+                  onChange={(e) => setStockAdjustNotes(e.target.value)}
+                  placeholder="Optional reference batch codes or audit inspection notes..."
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setStockAdjustModalSaree(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingStock}
+                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingStock ? (
+                    <span>Saving...</span>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Save Stock</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 10. SINGLE SKU DELETE CONFIRMATION MODAL CARD       */}
+      {/* ================================================== */}
+      {deletingSaree && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-rose-900 to-rose-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center">
+                  <Trash2 className="w-4 h-4 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm font-sans">Confirm Permanent Deletion</h3>
+                  <p className="text-[10px] text-rose-200 font-mono">Irreversible Database Action</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDeletingSaree(null)}
+                className="text-rose-200 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs font-sans">
+              {/* Product Info */}
+              <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 flex items-center gap-3">
+                <img
+                  src={deletingSaree.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop'}
+                  alt={deletingSaree.title}
+                  className="w-12 h-14 rounded-lg object-cover border border-rose-300 flex-shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-slate-900 text-xs truncate">{deletingSaree.title}</div>
+                  <div className="text-[10px] font-mono text-slate-500">
+                    SKU: {deletingSaree.sku} • {deletingSaree.weave}
+                  </div>
+                  <div className="text-[10px] font-mono text-rose-700 font-semibold mt-0.5">
+                    Price: ₹{deletingSaree.priceINR.toLocaleString('en-IN')} • Stock: {deletingSaree.stock} Units
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-slate-600 leading-relaxed">
+                Are you sure you want to permanently delete this saree? This will remove the master product record, all color variants, media drape photos, inventory records, and patron reviews from the database.
+              </p>
+
+              {/* Actions */}
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setDeletingSaree(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExecuteDeleteSaree(deletingSaree.id)}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Confirm Permanent Delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 11. BULK DELETE CONFIRMATION MODAL CARD            */}
+      {/* ================================================== */}
+      {isConfirmingBulkDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-200">
+            {/* Header */}
+            <div className="px-6 py-4 bg-gradient-to-r from-rose-900 to-rose-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center">
+                  <Trash2 className="w-4 h-4 text-rose-200" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm font-sans">Bulk Delete Confirmation</h3>
+                  <p className="text-[10px] text-rose-200 font-mono">{selectedIds.length} Products Selected</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConfirmingBulkDelete(false)}
+                className="text-rose-200 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs font-sans">
+              <div className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 text-rose-900 font-semibold">
+                ⚠️ You are about to permanently delete <strong className="font-mono text-rose-700">{selectedIds.length}</strong> selected handloom sarees from the master database.
+              </div>
+
+              <p className="text-slate-600 leading-relaxed">
+                This action will delete all selected products, their variant matrices, associated high-resolution photos, and inventory tracking records. This operation cannot be undone.
+              </p>
+
+              {/* Actions */}
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingBulkDelete(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleBulkDelete();
+                    setIsConfirmingBulkDelete(false);
+                  }}
+                  className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete {selectedIds.length} Sarees Permanently</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
