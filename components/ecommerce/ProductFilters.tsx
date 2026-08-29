@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ChevronDown,
   ChevronUp,
@@ -82,6 +82,23 @@ export default function ProductFilters({
   });
 
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const [localPrice, setLocalPrice] = useState<[number, number]>(priceRange);
+
+  // Sync local price if parent price changes externally
+  useEffect(() => {
+    setLocalPrice(priceRange);
+  }, [priceRange[0], priceRange[1]]);
+
+  // Debounce pushing price changes to parent to prevent rapid skeleton/reload triggers
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const updateParentPrice = (newRange: [number, number]) => {
+    setLocalPrice(newRange);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      setPriceRange(newRange);
+    }, 180);
+  };
 
   const toggleSection = (section: string) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
@@ -230,19 +247,19 @@ export default function ProductFilters({
 
         {openSections.price && (() => {
           const roundPrice = (val: number) => Math.round(val / 1000) * 1000;
-          const minPercent = Math.min(100, Math.max(0, ((priceRange[0] - 10000) / (100000 - 10000)) * 100));
-          const maxPercent = Math.min(100, Math.max(0, ((priceRange[1] - 10000) / (100000 - 10000)) * 100));
+          const minPercent = Math.min(100, Math.max(0, ((localPrice[0] - 10000) / (100000 - 10000)) * 100));
+          const maxPercent = Math.min(100, Math.max(0, ((localPrice[1] - 10000) / (100000 - 10000)) * 100));
 
           const handleMinChange = (val: number) => {
             const rounded = roundPrice(val);
-            const safeMin = Math.min(Math.max(10000, rounded), priceRange[1] - 2000);
-            setPriceRange([safeMin, priceRange[1]]);
+            const safeMin = Math.min(Math.max(10000, rounded), localPrice[1] - 2000);
+            updateParentPrice([safeMin, localPrice[1]]);
           };
 
           const handleMaxChange = (val: number) => {
             const rounded = roundPrice(val);
-            const safeMax = Math.max(Math.min(100000, rounded), priceRange[0] + 2000);
-            setPriceRange([priceRange[0], safeMax]);
+            const safeMax = Math.max(Math.min(100000, rounded), localPrice[0] + 2000);
+            updateParentPrice([localPrice[0], safeMax]);
           };
 
           return (
@@ -252,14 +269,14 @@ export default function ProductFilters({
                 <div className="flex flex-col">
                   <span className="text-[9px] uppercase font-sans text-stone-400 font-semibold mb-0.5">Starting Price</span>
                   <span className="bg-white px-2.5 py-1 rounded-md border border-[#C87F4A]/30 font-bold text-[#7A1C30]">
-                    ₹{priceRange[0].toLocaleString('en-IN')}
+                    ₹{localPrice[0].toLocaleString('en-IN')}
                   </span>
                 </div>
                 <span className="text-stone-400 text-xs font-serif mt-3">—</span>
                 <div className="flex flex-col items-end">
                   <span className="text-[9px] uppercase font-sans text-stone-400 font-semibold mb-0.5">Ending Price</span>
                   <span className="bg-white px-2.5 py-1 rounded-md border border-[#C87F4A]/30 font-bold text-[#7A1C30]">
-                    ₹{priceRange[1].toLocaleString('en-IN')}
+                    ₹{localPrice[1].toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
@@ -283,7 +300,7 @@ export default function ProductFilters({
                   min="10000"
                   max="100000"
                   step="1000"
-                  value={priceRange[0]}
+                  value={localPrice[0]}
                   onChange={(e) => handleMinChange(parseInt(e.target.value, 10))}
                   className="absolute w-full h-2 appearance-none bg-transparent pointer-events-none cursor-pointer z-20 
                     [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
@@ -301,7 +318,7 @@ export default function ProductFilters({
                   min="10000"
                   max="100000"
                   step="1000"
-                  value={priceRange[1]}
+                  value={localPrice[1]}
                   onChange={(e) => handleMaxChange(parseInt(e.target.value, 10))}
                   className="absolute w-full h-2 appearance-none bg-transparent pointer-events-none cursor-pointer z-30 
                     [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 
@@ -325,9 +342,9 @@ export default function ProductFilters({
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setPriceRange(preset.range as [number, number])}
+                    onClick={() => updateParentPrice(preset.range as [number, number])}
                     className={`text-[10px] font-sans py-1 px-2 rounded-md border text-center transition-all ${
-                      priceRange[0] === preset.range[0] && priceRange[1] === preset.range[1]
+                      localPrice[0] === preset.range[0] && localPrice[1] === preset.range[1]
                         ? 'bg-[#7A1C30] text-white border-[#7A1C30] font-semibold shadow-xs'
                         : 'bg-white/70 text-stone-600 border-stone-200 hover:border-[#C87F4A]'
                     }`}

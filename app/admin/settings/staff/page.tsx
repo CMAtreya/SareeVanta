@@ -98,6 +98,51 @@ export default function StaffSettingsPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Active Brand Store Context (Neel Saree House vs SareeVanta) - Server Persisted
+  const [activeBrand, setActiveBrand] = useState<'neelsareehouse' | 'sareevanta'>('neelsareehouse');
+  const [isSavingBrand, setIsSavingBrand] = useState(false);
+
+  // Fetch initial persisted brand from server API (No localStorage dependency)
+  React.useEffect(() => {
+    async function loadBrandConfig() {
+      try {
+        const res = await fetch('/api/admin/settings/brand');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.brand) {
+            setActiveBrand(data.brand);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load brand setting:', err);
+      }
+    }
+    loadBrandConfig();
+  }, []);
+
+  const handleBrandToggle = async (targetBrand: 'neelsareehouse' | 'sareevanta') => {
+    if (activeBrand === targetBrand) return;
+    setActiveBrand(targetBrand);
+    setIsSavingBrand(true);
+
+    try {
+      const res = await fetch('/api/admin/settings/brand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand: targetBrand }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        triggerToast(`Active brand context updated to ${data.brandName}. Changes persisted across server.`);
+      }
+    } catch (err) {
+      console.error('Failed to save brand setting:', err);
+      triggerToast('Brand updated in session.');
+    } finally {
+      setIsSavingBrand(false);
+    }
+  };
+
   // Invite Form State
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -215,12 +260,46 @@ export default function StaffSettingsPage() {
       {/* 1. STAFF DIRECTORY TABLE                           */}
       {/* ================================================== */}
       <div className="bg-white rounded-2xl border border-[#E8DCC9] shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-stone-100 flex items-center justify-between">
+        <div className="p-4 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-sm text-[#1F1B16]">Active Staff & Team Members</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-sm text-[#1F1B16]">Active Staff & Team Members</h3>
+              <span className="bg-amber-100 text-amber-900 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md">
+                {activeBrand === 'sareevanta' ? 'SareeVanta' : 'Neel Saree House'}
+              </span>
+            </div>
             <p className="text-xs text-stone-500 font-mono">
-              {staffList.length} authenticated personnel with access to Neel Saree House administrative consoles
+              {staffList.length} authenticated personnel with access to {activeBrand === 'sareevanta' ? 'SareeVanta' : 'Neel Saree House'} administrative consoles
             </p>
+          </div>
+
+          {/* Store / Brand Toggle (Left: Neel Saree House, Right: SareeVanta) */}
+          <div className="flex items-center gap-1.5 p-1 bg-[#FAF6F0] rounded-xl border border-[#E8DCC9] shadow-2xs self-start sm:self-auto">
+            <span className="text-[10px] font-mono uppercase text-stone-400 font-bold px-2">Store Entity:</span>
+            <button
+              type="button"
+              onClick={() => handleBrandToggle('neelsareehouse')}
+              disabled={isSavingBrand}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeBrand === 'neelsareehouse'
+                  ? 'bg-[#7A1C30] text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              Neel Saree House
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBrandToggle('sareevanta')}
+              disabled={isSavingBrand}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeBrand === 'sareevanta'
+                  ? 'bg-[#7A1C30] text-white shadow-xs'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              SareeVanta
+            </button>
           </div>
         </div>
 

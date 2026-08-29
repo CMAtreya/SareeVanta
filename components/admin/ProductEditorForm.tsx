@@ -74,6 +74,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [weave, setWeave] = useState('Mysore Silk');
   const [fabricOptions, setFabricOptions] = useState<string[]>([
     'Pure Mulberry Silk',
+    'Tissue Georgette',
     'Soft Silk',
     'Raw Silk',
     'Crepe Silk',
@@ -145,15 +146,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     },
   ]);
 
-  // Form State: Occasions (Multi-Select Tags)
-  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+  // Form State: Occasions (Multi-Select Tags matching storefront filters)
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>(['Bridal & Muhurtham']);
   const availableOccasions = [
-    'Bridal',
-    'Muhurtham',
-    'Grand Reception',
-    'Sangeet',
-    'Festive',
-    'Cocktail Soirée',
+    'Bridal & Muhurtham',
+    'Festive & Puja',
+    'Reception & Cocktail',
+    'Daily Classic',
+    'Temple Visits',
   ];
 
   // Form State: Special Marketing Badges & Tags
@@ -729,7 +729,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 <option value="Banarasi">Banarasi</option>
                 <option value="Paithani">Paithani</option>
                 <option value="Patola">Patola</option>
-                <option value="Tissue Georgette">Tissue Georgette</option>
+                <option value="Ikkat">Ikkat</option>
+                <option value="Organza">Organza</option>
+                <option value="Chanderi">Chanderi</option>
               </select>
             </div>
 

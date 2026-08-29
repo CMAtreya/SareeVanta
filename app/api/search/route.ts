@@ -77,6 +77,8 @@ export async function GET(request: Request) {
           .map((m: any) => m.url)
           .filter(Boolean);
 
+        const patternData: any = Array.isArray(p.patterns) ? p.patterns[0] : p.patterns;
+
         return {
           id: p.id,
           slug: p.slug,
@@ -84,6 +86,7 @@ export async function GET(request: Request) {
           weave: weaveData?.name || '',
           fabric: fabricData?.name || '',
           occasion: occasionData?.name || '',
+          pattern: patternData?.name || '',
           rating: 0,
           reviewCount: 0,
           priceINR: Math.round((p.base_selling_price_paise || 2800000) / 100),

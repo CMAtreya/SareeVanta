@@ -41,6 +41,7 @@ export interface Product {
   title: string;
   weave: string;
   fabric: string;
+  pattern?: string;
   occasion: string;
   occasions?: string[];
   priceINR: number;
@@ -540,6 +541,7 @@ export const weaveCategories = sixCategoriesWithThumbnails;
 
 export const fabricFilters = [
   'Pure Mulberry Silk',
+  'Tissue Georgette',
   'Soft Silk',
   'Raw Silk',
   'Crepe Silk',
@@ -547,6 +549,7 @@ export const fabricFilters = [
   'Tissue Silk',
   'Tussar Silk',
   'Organza',
+  'Katan Silk',
 ];
 
 export const occasionFilters = [

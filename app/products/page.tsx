@@ -73,6 +73,7 @@ function ProductsListingContent() {
   const [apiTotalPages, setApiTotalPages] = useState<number>(1);
   const [filterCounts, setFilterCounts] = useState<FilterCounts | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
 
   // Sync state to URL Query Params
   const syncParamsToUrl = useCallback(() => {
@@ -175,7 +176,7 @@ function ProductsListingContent() {
     router,
   ]);
 
-  // Fetch products from GET /api/products with SWR cache
+  // Fetch products from GET /api/products with instant SWR cache
   useEffect(() => {
     let isMounted = true;
 
@@ -203,10 +204,16 @@ function ProductsListingContent() {
         setApiTotalPages(cached.totalPages || 1);
         setFilterCounts(cached.counts);
         setIsLoading(false);
+        setIsFetching(false);
         return;
       }
 
-      setIsLoading(true);
+      // Smooth loading indicator without skeleton flashing if already populated
+      if (apiProducts.length === 0) {
+        setIsLoading(true);
+      } else {
+        setIsFetching(true);
+      }
 
       try {
         const res = await fetch(`/api/products?${cacheKey}`);
@@ -219,6 +226,7 @@ function ProductsListingContent() {
             setApiTotalPages(data.totalPages || 1);
             setFilterCounts(data.counts);
             setIsLoading(false);
+            setIsFetching(false);
           }
           return;
         }
@@ -231,6 +239,7 @@ function ProductsListingContent() {
         setApiTotal(0);
         setApiTotalPages(1);
         setIsLoading(false);
+        setIsFetching(false);
       }
     };
 
@@ -538,7 +547,7 @@ function ProductsListingContent() {
             )}
 
             {/* Product Grid Area / Shimmer Skeletons / Empty State */}
-            {isLoading ? (
+            {isLoading && apiProducts.length === 0 ? (
               <div
                 className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 ${
                   gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
@@ -570,11 +579,11 @@ function ProductsListingContent() {
                 </button>
               </div>
             ) : (
-              /* Products Grid: 3-4 columns desktop, 2 columns mobile */
+              /* Products Grid: 3-4 columns desktop, 2 columns mobile with 0ms transition */
               <div
                 className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 ${
                   gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
-                } gap-4 sm:gap-6`}
+                } gap-4 sm:gap-6 transition-opacity duration-150 ${isFetching ? 'opacity-70' : 'opacity-100'}`}
               >
                 {apiProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />

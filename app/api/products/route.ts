@@ -61,6 +61,7 @@ function formatDbProduct(p: any): Product {
     title: p.title,
     weave: weaveName,
     fabric: fabricName,
+    pattern: patternData?.name || '',
     occasion: occasionName || occasionsList[0] || '',
     occasions: occasionsList,
     specialBadges: badgesList,
@@ -168,7 +169,9 @@ export async function GET(request: Request) {
     }
   }
 
-  // Calculate dynamic facet counts across the full catalog
+  const normalize = (str?: string) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  // Calculate dynamic facet counts across the full catalog accurately
   const counts = {
     weaves: {} as Record<string, number>,
     fabrics: {} as Record<string, number>,
@@ -177,27 +180,32 @@ export async function GET(request: Request) {
   };
 
   weaveCategories.forEach((wc) => {
-    const lw = wc.name.toLowerCase();
+    const nWc = normalize(wc.name);
     counts.weaves[wc.name] = catalog.filter((p) => {
-      const pw = (p.weave || '').toLowerCase();
-      return pw.includes(lw) || lw.includes(pw);
+      const nPw = normalize(p.weave);
+      return nPw === nWc || nPw.includes(nWc) || nWc.includes(nPw);
     }).length;
   });
 
   fabricFilters.forEach((f) => {
-    const lf = f.toLowerCase();
+    const nF = normalize(f);
     counts.fabrics[f] = catalog.filter((p) => {
-      const pf = (p.fabric || '').toLowerCase();
-      return pf.includes(lf) || lf.includes(pf);
+      const nPf = normalize(p.fabric);
+      return nPf === nF || nPf.includes(nF) || nF.includes(nPf);
     }).length;
   });
 
   occasionFilters.forEach((o) => {
-    const lo = o.toLowerCase();
-    const keyTerms = lo.split('&').map((t) => t.trim().toLowerCase());
+    const nO = normalize(o);
+    const oTokens = nO.split(' ').filter((t) => t.length > 2);
     counts.occasions[o] = catalog.filter((p) => {
-      const po = (p.occasion || '').toLowerCase();
-      return po.includes(lo) || lo.includes(po) || keyTerms.some((t) => po.includes(t));
+      const nPo = normalize(p.occasion);
+      const allOccs = (p.occasions || []).map(normalize);
+      return (
+        nPo === nO ||
+        allOccs.includes(nO) ||
+        oTokens.some((t) => nPo.includes(t) || allOccs.some((ao) => ao.includes(t)))
+      );
     }).length;
   });
 
@@ -222,56 +230,65 @@ export async function GET(request: Request) {
         p.weave.toLowerCase().includes(q) ||
         p.fabric.toLowerCase().includes(q) ||
         p.occasion.toLowerCase().includes(q) ||
+        ((p as any).pattern && (p as any).pattern.toLowerCase().includes(q)) ||
         (p.zariGrade && p.zariGrade.toLowerCase().includes(q)) ||
         p.color.toLowerCase().includes(q)
       );
     });
   }
 
-  // 2. Weave filter (supports single or comma-separated)
+  // 2. Weave filter
   if (weaveParam) {
-    const selected = weaveParam.split(',').map((w) => w.trim().toLowerCase()).filter(Boolean);
+    const selected = weaveParam.split(',').map(normalize).filter(Boolean);
     if (selected.length > 0) {
       filtered = filtered.filter((p) => {
-        const pw = (p.weave || '').toLowerCase();
-        return selected.some((sw) => pw.includes(sw) || sw.includes(pw));
+        const nPw = normalize(p.weave);
+        return selected.some((sw) => nPw === sw || nPw.includes(sw) || sw.includes(nPw));
       });
     }
   }
 
-  // 3. Fabric filter (supports single or comma-separated)
+  // 3. Fabric filter
   if (fabricParam) {
-    const selected = fabricParam.split(',').map((f) => f.trim().toLowerCase()).filter(Boolean);
+    const selected = fabricParam.split(',').map(normalize).filter(Boolean);
     if (selected.length > 0) {
       filtered = filtered.filter((p) => {
-        const pf = (p.fabric || '').toLowerCase();
-        return selected.some((sf) => pf.includes(sf) || sf.includes(pf));
+        const nPf = normalize(p.fabric);
+        return selected.some((sf) => nPf === sf || nPf.includes(sf) || sf.includes(nPf));
       });
     }
   }
 
-  // 4. Occasion filter (supports single or comma-separated)
+  // 4. Occasion filter
   if (occasionParam) {
-    const selected = occasionParam.split(',').map((o) => o.trim().toLowerCase()).filter(Boolean);
+    const selected = occasionParam.split(',').map(normalize).filter(Boolean);
     if (selected.length > 0) {
       filtered = filtered.filter((p) => {
-        const po = (p.occasion || '').toLowerCase();
+        const nPo = normalize(p.occasion);
+        const allOccs = (p.occasions || []).map(normalize);
         return selected.some((so) => {
-          const keyTerms = so.split('&').map((t) => t.trim().toLowerCase());
-          return po.includes(so) || so.includes(po) || keyTerms.some((t) => po.includes(t));
+          const tokens = so.split(' ').filter((t) => t.length > 2);
+          return (
+            nPo === so ||
+            allOccs.includes(so) ||
+            tokens.some((t) => nPo.includes(t) || allOccs.some((ao) => ao.includes(t)))
+          );
         });
       });
     }
   }
 
-  // 5. Pattern filter (supports single or comma-separated)
+  // 5. Pattern filter
   if (patternParam) {
-    const selected = patternParam.split(',').map((pt) => pt.trim().toLowerCase()).filter(Boolean);
+    const selected = patternParam.split(',').map(normalize).filter(Boolean);
     if (selected.length > 0) {
       filtered = filtered.filter((p) => {
-        const titleLower = p.title.toLowerCase();
-        const descLower = p.description.toLowerCase();
-        return selected.some((sp) => titleLower.includes(sp) || descLower.includes(sp));
+        const nPat = normalize((p as any).pattern || '');
+        const titleLower = normalize(p.title);
+        const descLower = normalize(p.description);
+        return selected.some(
+          (sp) => nPat === sp || nPat.includes(sp) || titleLower.includes(sp) || descLower.includes(sp)
+        );
       });
     }
   }
