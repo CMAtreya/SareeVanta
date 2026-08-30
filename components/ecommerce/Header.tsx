@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ArrowRight,
+  Video,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 import { useBrand } from '@/context/BrandContext';
@@ -850,6 +851,21 @@ export default function Header() {
                 Our Story
               </Link>
             </li>
+
+            {/* 5. Book a Video Call */}
+            <li>
+              <Link
+                href="/book-video-call"
+                className={`transition-colors flex items-center gap-1.5 ${
+                  pathname === '/book-video-call'
+                    ? 'text-[#7A1C30] font-bold border-b-2 border-[#7A1C30] pb-0.5'
+                    : 'hover:text-[#7A1C30]'
+                }`}
+              >
+                <Video className="w-3.5 h-3.5 text-[#C87F4A]" />
+                <span>Book a Video Call</span>
+              </Link>
+            </li>
           </ul>
         </div>
       </nav>
@@ -865,7 +881,6 @@ export default function Header() {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setMobileMenuOpen(false)}
             />
-
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
@@ -933,6 +948,14 @@ export default function Header() {
                     className="text-stone-900 hover:text-[#7A1C30] block py-2 border-b border-stone-200"
                   >
                     Our Story
+                  </Link>
+                  <Link
+                    href="/book-video-call"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-[#7A1C30] font-bold block py-2 border-b border-stone-200 flex items-center justify-between"
+                  >
+                    <span>Book a Video Call</span>
+                    <Video className="w-3.5 h-3.5 text-[#C87F4A]" />
                   </Link>
                   <Link
                     href="/account"

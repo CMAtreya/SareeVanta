@@ -40,6 +40,7 @@ import {
   Star,
   FolderOpen,
   Menu,
+  Video,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CommandPalette from '@/components/admin/CommandPalette';
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [currentStore, setCurrentStore] = useState('Mysuru Sayyaji Rao Flagship');
   const [isStoreSwitcherOpen, setIsStoreSwitcherOpen] = useState(false);
   const [environment, setEnvironment] = useState<'LIVE' | 'STAGING'>('LIVE');
+  const [pendingAppointmentsCount, setPendingAppointmentsCount] = useState<number>(0);
 
   // Modals & Panels
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -114,6 +116,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 title: 'Low Stock Alert on Looms',
                 desc: `${i.products?.title || i.title || 'Saree'} has only ${i.available_quantity ?? i.stock_quantity ?? 0} pieces remaining.`,
                 time: 'Live Inventory',
+                unread: true,
+              });
+            });
+          }
+        }
+
+        // 3. Fetch video appointments
+        const apptRes = await fetch('/api/admin/video-appointments', { cache: 'no-store' });
+        if (apptRes.ok) {
+          const { appointments } = await apptRes.json();
+          if (Array.isArray(appointments)) {
+            const pendingAppts = appointments.filter((a: any) => a.status === 'PENDING');
+            setPendingAppointmentsCount(pendingAppts.length);
+            pendingAppts.slice(0, 3).forEach((a: any) => {
+              alerts.push({
+                id: `appt-${a.id}`,
+                type: 'APPOINTMENT',
+                title: 'New Video Shopping Request',
+                desc: `${a.customer_name} requested a loom consult on ${a.appointment_date} (${a.time_slot})`,
+                time: 'Pending Review',
                 unread: true,
               });
             });
@@ -513,6 +535,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <Film className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                 {!isSidebarCollapsed && <span>Instagram Reels</span>}
+              </Link>
+
+              <Link
+                href="/admin/marketing/video-appointments"
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
+                  pathname.startsWith('/admin/marketing/video-appointments')
+                    ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
+                    : 'text-[#D6C7B7] hover:bg-[#281A14] hover:text-[#FAF3E4]'
+                }`}
+                title="Video Call Appointments"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Video className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
+                  {!isSidebarCollapsed && <span>Video Appointments</span>}
+                </div>
+                {!isSidebarCollapsed && pendingAppointmentsCount > 0 && (
+                  <span className="bg-[#7A1C30] text-amber-200 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full border border-[#C87F4A]/40 shadow-xs">
+                    {pendingAppointmentsCount}
+                  </span>
+                )}
               </Link>
 
               <Link
