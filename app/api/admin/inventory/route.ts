@@ -5,12 +5,6 @@ import { getCache, setCache, invalidateCache } from '@/lib/cache';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const cacheKey = 'admin_inventory_matrix';
-  const cached = getCache<any>(cacheKey);
-  if (cached) {
-    return NextResponse.json(cached);
-  }
-
   const supabase = createAdminClient();
 
   // 1. Fetch existing inventory records with all variant and product metadata
@@ -43,11 +37,9 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const payload = { inventory: inventory || [] };
-  setCache(cacheKey, payload, 300);
-  return NextResponse.json(payload, {
+  return NextResponse.json({ inventory: inventory || [] }, {
     headers: {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
     },
   });
 }

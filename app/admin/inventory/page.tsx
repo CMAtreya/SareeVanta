@@ -87,7 +87,7 @@ export default function InventoryMatrixPage() {
 
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/admin/inventory')
+    fetch('/api/admin/inventory', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (isMounted && data.inventory && Array.isArray(data.inventory)) {
