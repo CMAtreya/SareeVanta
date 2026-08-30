@@ -162,13 +162,30 @@ export default function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
 
-        {/* Color & Zari Details */}
-        <div className="mt-1 flex items-center gap-2 text-xs text-stone-500 font-sans">
-          <span
-            className="w-2.5 h-2.5 rounded-full border border-stone-300"
-            style={{ backgroundColor: product.colorHex }}
-          />
-          <span className="truncate">{product.color}</span>
+        {/* Color Variants & Swatches */}
+        <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-stone-500 font-sans">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {product.colorVariants && product.colorVariants.length > 0 ? (
+              product.colorVariants.map((cv, cvIdx) => (
+                <span
+                  key={cv.id || cvIdx}
+                  className="w-3 h-3 rounded-full border border-stone-300 shadow-2xs inline-block"
+                  style={{ backgroundColor: cv.hex || '#8B1E28' }}
+                  title={cv.name}
+                />
+              ))
+            ) : (
+              <span
+                className="w-2.5 h-2.5 rounded-full border border-stone-300"
+                style={{ backgroundColor: product.colorHex || '#8B1E28' }}
+              />
+            )}
+          </div>
+          <span className="text-[11px] font-mono text-stone-400 truncate">
+            {product.colorVariants && product.colorVariants.length > 1
+              ? `${product.colorVariants.length} Colors`
+              : product.color}
+          </span>
         </div>
 
         {/* Price & Action Row */}

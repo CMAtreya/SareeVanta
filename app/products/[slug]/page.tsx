@@ -115,35 +115,15 @@ export default function ProductDetailPage() {
   // Carousel Ref for "You May Also Like"
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Fetch product from GET /api/products/:slug with memory cache
+  // Fetch product from GET /api/products/:slug with live no-store fetching
   useEffect(() => {
     let isMounted = true;
 
-    if (pdpCache.has(slug)) {
-      const data = pdpCache.get(slug);
-      if (data.product) {
-        setProduct(data.product);
-        setRelatedItems(data.relatedProducts || []);
-        const primaryImgs = (data.product.images && data.product.images.length > 0
-          ? data.product.images
-          : data.product.colorVariants?.[0]?.images || []
-        ).filter((url: any) => typeof url === 'string' && url.trim().length > 5);
-        setGalleryImages(primaryImgs);
-        setSelectedImageIdx(0);
-        if (data.product.reviewsList) {
-          setReviews(data.product.reviewsList);
-        }
-        setLoading(false);
-        return;
-      }
-    }
-
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${slug}`);
+        const res = await fetch(`/api/products/${slug}?_t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          pdpCache.set(slug, data);
           if (isMounted && data.product) {
             setProduct(data.product);
             setRelatedItems(data.relatedProducts || []);

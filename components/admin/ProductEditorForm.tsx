@@ -386,14 +386,47 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           if (parsedMeta.hsn_code) setHsnCode(parsedMeta.hsn_code);
           if (parsedMeta.gst_rate) setGstRate(parsedMeta.gst_rate);
 
-          // Permanent & Immutable SKU and Barcode for lifetime
-          const permanentSku = mainVariant?.sku || found.sku || `NSH-SKU-001`;
-          const skuMatch = permanentSku.match(/\d+/);
+          // Permanent & Immutable Master SKU and Master Barcode for product
+          const rawSku = mainVariant?.sku || found.sku || `NSH-SKU-001`;
+          const baseMasterSku = rawSku.replace(/-[A-Z0-9]{3,}$/, '').trim() || rawSku;
+          const skuMatch = baseMasterSku.match(/\d+/);
           const skuNum = skuMatch ? parseInt(skuMatch[0], 10) : 1;
-          const permanentBarcode = mainVariant?.barcode || `890${String(100000000 + skuNum)}`;
+          const permanentMasterBarcode = found.master_barcode || `890${String(100000000 + skuNum)}`;
 
-          setSku(permanentSku);
-          setBarcode(permanentBarcode);
+          setSku(baseMasterSku);
+          setBarcode(permanentMasterBarcode);
+
+          if (dbVariants.length > 0) {
+            const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
+              const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
+              const actualStock = inv && typeof inv.quantity === 'number' ? inv.quantity : 1;
+              const colorObj = Array.isArray(v.colors) ? v.colors[0] : v.colors;
+              const vName = colorObj?.name || '';
+              const cleanCode = vName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || `${vIdx + 1}`;
+              const formattedVarSku = v.sku && v.sku.includes('-') && v.sku !== baseMasterSku
+                ? v.sku
+                : `${baseMasterSku}-${cleanCode}`;
+
+              const mediaList = Array.isArray(v.product_variant_media) ? v.product_variant_media : [];
+              const sortedMedia = [...mediaList].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+              const vImgs = sortedMedia.map((m: any) => m.url || '').filter(Boolean);
+
+              return {
+                id: v.id || `var-${vIdx + 1}`,
+                name: vName,
+                hex: colorObj?.hex_code || '',
+                sku: formattedVarSku,
+                barcode: `${permanentMasterBarcode}${String(vIdx + 1).padStart(2, '0')}`,
+                stockCount: actualStock,
+                images: [
+                  vImgs[0] || '',
+                  vImgs[1] || '',
+                  vImgs[2] || '',
+                ] as [string, string, string],
+              };
+            });
+            setColorVariants(mappedColorVars);
+          }
 
           if (allMediaUrls.length > 0) {
             setImages(allMediaUrls);
@@ -1583,6 +1616,18 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         <input
                           type="text"
                           value={varItem.sku}
+                          readOnly
+                          className="px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-slate-100 font-mono font-bold text-slate-700 w-36 cursor-not-allowed"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+                          Variant Barcode
+                        </label>
+                        <input
+                          type="text"
+                          value={`${barcode}${String(idx + 1).padStart(2, '0')}`}
                           readOnly
                           className="px-2.5 py-1 text-xs border border-slate-300 rounded-lg bg-slate-100 font-mono font-bold text-slate-700 w-36 cursor-not-allowed"
                         />

@@ -209,10 +209,31 @@ export default function StorefrontDisplayManagerPage() {
     setSlides((prev) => prev.filter((s) => s.id !== id));
     triggerToast(`Slide "${title}" deleted.`);
     try {
-      await fetch(`/api/admin/banners?id=${encodeURIComponent(id)}&_t=${Date.now()}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/banners?id=${encodeURIComponent(id)}&heading=${encodeURIComponent(title)}&_t=${Date.now()}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Delete failed on database: ${err.error || 'Server error'}`);
+      }
       await refreshSlidesFromDb();
     } catch (err) {
       console.error('[Banners API] Delete error:', err);
+    }
+  };
+
+  // Clear All Hero Slides Permanently
+  const handleClearAllSlides = async () => {
+    if (!confirm('Are you sure you want to delete ALL hero slides permanently from the database?')) return;
+    setSlides([]);
+    triggerToast('All hero slides deleted.');
+    try {
+      const res = await fetch(`/api/admin/banners?id=all&_t=${Date.now()}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Clear all failed: ${err.error || 'Server error'}`);
+      }
+      await refreshSlidesFromDb();
+    } catch (err) {
+      console.error('[Banners API] Clear all error:', err);
     }
   };
 
@@ -406,28 +427,41 @@ export default function StorefrontDisplayManagerPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setEditingSlide({
-                  id: `slide-${Date.now()}`,
-                  title: '',
-                  subtitle: '',
-                  ctaText: 'Explore Collection',
-                  destinationUrl: '/products',
-                  desktopImage: '',
-                  mobileImage: '',
-                  badgeText: '',
-                  startDate: new Date().toISOString().split('T')[0],
-                  endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                  isActive: true,
-                });
-              }}
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 text-amber-200" />
-              <span>+ Add Hero Slide</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {slides.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllSlides}
+                  className="px-3.5 py-1.5 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <span>Purge All Slides</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingSlide({
+                    id: `slide-${Date.now()}`,
+                    title: '',
+                    subtitle: '',
+                    ctaText: 'Explore Collection',
+                    destinationUrl: '/products',
+                    desktopImage: '',
+                    mobileImage: '',
+                    badgeText: '',
+                    startDate: new Date().toISOString().split('T')[0],
+                    endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    isActive: true,
+                  });
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#7A1C30] to-[#A33B45] hover:from-[#5F1424] hover:to-[#7A1C30] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-amber-200" />
+                <span>+ Add Hero Slide</span>
+              </button>
+            </div>
           </div>
           {/* Slides List */}
 

@@ -348,10 +348,11 @@ export async function POST(request: Request) {
   }
 
   // 2. Manage Product Variants & Media Photos (BFS §6.3 & DSS §4 Compliant)
-  const targetSku = sku || `NSH-SKU-${effectiveSlug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
-  const rawNumMatch = (targetSku || '').match(/\d+/);
+  const rawSku = sku || `NSH-SKU-${effectiveSlug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+  const baseMasterSku = rawSku.replace(/-[A-Z0-9]{3,}$/, '').trim() || rawSku;
+  const rawNumMatch = (baseMasterSku || '').match(/\d+/);
   const skuNum = rawNumMatch ? parseInt(rawNumMatch[0], 10) : 1;
-  const masterBarcode = barcode || `890${String(100000000 + skuNum)}`;
+  const masterBarcode = barcode && barcode.length <= 12 ? barcode : `890${String(100000000 + skuNum)}`;
 
   // Save master_barcode onto the product record
   try {
@@ -368,7 +369,7 @@ export async function POST(request: Request) {
           id: undefined,
           name: color_name || title,
           hex: color_hex || '#000000',
-          sku: targetSku,
+          sku: `${baseMasterSku}-01`,
           barcode: `${masterBarcode}01`,
           stock: Number(initial_stock) || 1,
           images: Array.isArray(images) ? images : [],
@@ -383,8 +384,10 @@ export async function POST(request: Request) {
       const vName = (v.name || title).trim();
       const vHex = (v.hex || '#000000').trim();
       const cleanColorSuffix = vName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || `${idx + 1}`;
-      const vSku = v.sku || `${targetSku}-${cleanColorSuffix}`;
-      const vBarcode = v.barcode || `${masterBarcode}${String(idx + 1).padStart(2, '0')}`;
+      const vSku = v.sku && v.sku.includes('-') && v.sku !== baseMasterSku
+        ? v.sku
+        : `${baseMasterSku}-${cleanColorSuffix}`;
+      const vBarcode = `${masterBarcode}${String(idx + 1).padStart(2, '0')}`;
       const vStock = typeof v.stock === 'number' ? Math.max(0, v.stock) : Number(initial_stock) || 1;
 
       // 2a. Resolve color_id (Insert custom color dynamically if needed)

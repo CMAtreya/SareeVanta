@@ -9,12 +9,6 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   const { slug } = params;
-  const cacheKey = `pdp_product_${slug}`;
-  const cached = getCache<any>(cacheKey);
-  if (cached) {
-    return NextResponse.json({ ...cached, cached: true });
-  }
-
   const supabase = createAdminClient();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -188,13 +182,12 @@ export async function GET(
         };
 
         const responsePayload = { product: formatted, relatedProducts, source: 'database' };
-        setCache(cacheKey, responsePayload, 60);
 
         return NextResponse.json(
           responsePayload,
           {
             headers: {
-              'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=60',
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
             },
           }
         );
