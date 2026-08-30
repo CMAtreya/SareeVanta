@@ -102,52 +102,94 @@ export async function GET(request: Request) {
   const limit = Math.max(1, parseInt(searchParams.get('limit') || '12', 10));
 
   let catalog: Product[] = [];
+  let weavingsData: any[] = [];
+  let fabricsData: any[] = [];
+  let occasionsData: any[] = [];
+
   const supabase = createAdminClient();
 
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        id,
-        title,
-        slug,
-        description,
-        care_instructions,
-        base_mrp_paise,
-        base_selling_price_paise,
-        is_published,
-        created_at,
-        weavings ( name ),
-        fabrics ( name ),
-        occasions ( name ),
-        patterns ( name ),
-        border_stylings ( name ),
-        zari_specifications ( name ),
-        product_variants (
+    const [
+      { data: prodData, error },
+      { data: wData },
+      { data: fData },
+      { data: oData },
+    ] = await Promise.all([
+      supabase
+        .from('products')
+        .select(`
           id,
-          sku,
-          barcode,
-          price_paise,
-          mrp_paise,
-          is_active,
-          colors ( name, hex_code ),
-          product_variant_media ( url, is_primary )
-        )
-      `)
-      .eq('is_published', true)
-      .order('created_at', { ascending: false });
+          title,
+          slug,
+          description,
+          care_instructions,
+          base_mrp_paise,
+          base_selling_price_paise,
+          is_published,
+          created_at,
+          weavings ( name ),
+          fabrics ( name ),
+          occasions ( name ),
+          patterns ( name ),
+          border_stylings ( name ),
+          zari_specifications ( name ),
+          product_variants (
+            id,
+            sku,
+            barcode,
+            price_paise,
+            mrp_paise,
+            is_active,
+            colors ( name, hex_code ),
+            product_variant_media ( url, is_primary )
+          )
+        `)
+        .eq('is_published', true)
+        .order('created_at', { ascending: false }),
+      supabase.from('weavings').select('name').eq('is_active', true),
+      supabase.from('fabrics').select('name').eq('is_active', true),
+      supabase.from('occasions').select('name').eq('is_active', true),
+    ]);
 
-    if (!error && data && data.length > 0) {
-      catalog = data.map(formatDbProduct);
+    if (!error && prodData && prodData.length > 0) {
+      catalog = prodData.map(formatDbProduct);
     } else {
       catalog = [];
     }
+    weavingsData = wData || [];
+    fabricsData = fData || [];
+    occasionsData = oData || [];
   } catch (e) {
     console.error('[Products API] Error fetching from database:', e);
     catalog = [];
   }
 
   const normalize = (str?: string) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+  // Dynamic union of static presets + live database additions + catalog-derived taxonomies
+  const allWeaves = Array.from(
+    new Set([
+      ...weaveCategories.map((w) => w.name),
+      ...weavingsData.map((w: any) => w.name).filter(Boolean),
+      ...catalog.map((p) => p.weave).filter(Boolean),
+    ])
+  ).filter((w) => w !== 'Tissue Georgette');
+
+  const allFabrics = Array.from(
+    new Set([
+      ...fabricFilters,
+      ...fabricsData.map((f: any) => f.name).filter(Boolean),
+      ...catalog.map((p) => p.fabric).filter(Boolean),
+    ])
+  );
+
+  const allOccasions = Array.from(
+    new Set([
+      ...occasionFilters,
+      ...occasionsData.map((o: any) => o.name).filter(Boolean),
+      ...catalog.flatMap((p) => p.occasions || [p.occasion]).filter(Boolean),
+    ])
+  );
 
   // Calculate dynamic facet counts across the full catalog accurately
   const counts = {
@@ -157,26 +199,26 @@ export async function GET(request: Request) {
     colors: {} as Record<string, number>,
   };
 
-  weaveCategories.forEach((wc) => {
-    const nWc = normalize(wc.name);
-    counts.weaves[wc.name] = catalog.filter((p) => {
+  allWeaves.forEach((wName) => {
+    const nWc = normalize(wName);
+    counts.weaves[wName] = catalog.filter((p) => {
       const nPw = normalize(p.weave);
       return nPw === nWc || nPw.includes(nWc) || nWc.includes(nPw);
     }).length;
   });
 
-  fabricFilters.forEach((f) => {
-    const nF = normalize(f);
-    counts.fabrics[f] = catalog.filter((p) => {
+  allFabrics.forEach((fName) => {
+    const nF = normalize(fName);
+    counts.fabrics[fName] = catalog.filter((p) => {
       const nPf = normalize(p.fabric);
       return nPf === nF || nPf.includes(nF) || nF.includes(nPf);
     }).length;
   });
 
-  occasionFilters.forEach((o) => {
-    const nO = normalize(o);
+  allOccasions.forEach((oName) => {
+    const nO = normalize(oName);
     const oTokens = nO.split(' ').filter((t) => t.length > 2);
-    counts.occasions[o] = catalog.filter((p) => {
+    counts.occasions[oName] = catalog.filter((p) => {
       const nPo = normalize(p.occasion);
       const allOccs = (p.occasions || []).map(normalize);
       return (
@@ -332,6 +374,9 @@ export async function GET(request: Request) {
     page,
     limit,
     counts,
+    availableWeaves: allWeaves,
+    availableFabrics: allFabrics,
+    availableOccasions: allOccasions,
     source: 'database',
   };
 

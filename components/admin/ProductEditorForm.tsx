@@ -76,7 +76,6 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     'Ikkat',
     'Organza',
     'Chanderi',
-    'Tissue Georgette',
   ]);
   const [weave, setWeave] = useState('Mysore Silk');
   const [isAddingNewWeave, setIsAddingNewWeave] = useState(false);
@@ -131,6 +130,45 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [newPatternInput, setNewPatternInput] = useState('');
   const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
 
+  // Helper to persist newly added taxonomy in database and state immediately
+  const handleAddNewTaxonomy = async (type: 'weave' | 'fabric' | 'zari' | 'pattern', name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
+
+    if (type === 'weave') {
+      setWeaveOptions((prev) => (prev.includes(clean) ? prev : [clean, ...prev]));
+      setWeave(clean);
+      setNewWeaveInput('');
+      setIsAddingNewWeave(false);
+    } else if (type === 'fabric') {
+      setFabricOptions((prev) => (prev.includes(clean) ? prev : [clean, ...prev]));
+      setFabric(clean);
+      setNewFabricInput('');
+      setIsAddingNewFabric(false);
+    } else if (type === 'zari') {
+      setZariOptions((prev) => (prev.includes(clean) ? prev : [clean, ...prev]));
+      setZariSpec(clean);
+      setNewZariInput('');
+      setIsAddingNewZari(false);
+    } else if (type === 'pattern') {
+      setPatternOptions((prev) => (prev.includes(clean) ? prev : [clean, ...prev]));
+      setPattern(clean);
+      setNewPatternInput('');
+      setIsAddingNewPattern(false);
+    }
+    setIsDirty(true);
+
+    try {
+      await fetch('/api/admin/taxonomies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, name: clean }),
+      });
+    } catch (e) {
+      console.error('Error persisting taxonomy:', e);
+    }
+  };
+
   // Form State: Color Variant Management (BFS-1 §6.3 & DSS §4)
   const SAREE_COLOR_PALETTE = [
     { name: 'Royal Crimson', hex: '#8B1E28', code: 'CRM' },
@@ -139,9 +177,11 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     { name: 'Rani Pink', hex: '#BE185D', code: 'PNK' },
     { name: 'Bottle Green', hex: '#065F46', code: 'GRN' },
     { name: 'Midnight Blue', hex: '#1E3A8A', code: 'BLU' },
-    { name: 'Mustard Yellow', hex: '#B45309', code: 'YEL' },
-    { name: 'Deep Violet', hex: '#5B21B6', code: 'VIO' },
-    { name: 'Ivory White', hex: '#F5F5F4', code: 'IVR' },
+    { name: 'Imperial Violet', hex: '#4C1D95', code: 'VIO' },
+    { name: 'Ruby Red', hex: '#991B1B', code: 'RBY' },
+    { name: 'Emerald Forest', hex: '#064E3B', code: 'EMR' },
+    { name: 'Raw Silk Off-White', hex: '#F5F5F4', code: 'WHT' },
+    { name: 'Charcoal Black', hex: '#18181B', code: 'BLK' },
   ];
 
   const [colorVariants, setColorVariants] = useState<
@@ -159,14 +199,16 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   ];
 
   // Form State: Special Marketing Badges & Tags
-  const [selectedBadges, setSelectedBadges] = useState<string[]>(mode === 'create' ? ['New Arrival'] : []);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>(['New Arrival']);
   const [availableBadges, setAvailableBadges] = useState<string[]>([
-    'Best Seller',
     'New Arrival',
+    'Best Seller',
+    'Bridal Edit',
     'Limited Edition',
-    'Silk Mark Certified',
-    'Heirloom Heritage',
-    'Vault Masterpiece',
+    'Pure 24K Zari',
+    'Handwoven Heritage',
+    'Celebrity Favorite',
+    'Royal Heirloom',
   ]);
   const [customTagInput, setCustomTagInput] = useState('');
 
@@ -202,7 +244,54 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
   // Populate data in edit mode or compute sequential SKU in create mode
   useEffect(() => {
+    // 1. Fetch dynamic master taxonomies on mount
+    fetch('/api/admin/taxonomies')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.weaves && Array.isArray(data.weaves)) setWeaveOptions(data.weaves);
+        if (data.fabrics && Array.isArray(data.fabrics)) setFabricOptions(data.fabrics);
+        if (data.zari && Array.isArray(data.zari)) setZariOptions(data.zari);
+        if (data.patterns && Array.isArray(data.patterns)) setPatternOptions(data.patterns);
+      })
+      .catch(() => {});
+
     if (mode === 'create') {
+      // 0ms instant optimistic calculation from local catalog cache
+      let initialMax = 0;
+      try {
+        const cachedRaw = typeof window !== 'undefined' ? sessionStorage.getItem('sareevanta_admin_catalog') : null;
+        if (cachedRaw) {
+          const list = JSON.parse(cachedRaw);
+          if (Array.isArray(list)) {
+            list.forEach((p: any) => {
+              const match = (p.sku || '').match(/NSH-SKU-(\d+)/i);
+              if (match && match[1]) {
+                const n = parseInt(match[1], 10);
+                if (!isNaN(n) && n > initialMax) initialMax = n;
+              }
+            });
+          }
+        }
+      } catch (e) {}
+
+      const initSeqNum = initialMax + 1;
+      const initSeqStr = String(initSeqNum).padStart(3, '0');
+      const initSku = `NSH-SKU-${initSeqStr}`;
+      const initBarcode = `890${String(100000000 + initSeqNum)}`;
+      setSku(initSku);
+      setBarcode(initBarcode);
+      setColorVariants([
+        {
+          id: 'var-1',
+          name: 'Royal Crimson',
+          hex: '#8B1E28',
+          sku: `${initSku}-CRM`,
+          stockCount: 1,
+          images: ['', '', ''],
+        },
+      ]);
+
+      // Background verify against database
       fetch('/api/admin/products', { cache: 'no-store' })
         .then((res) => res.json())
         .then((data) => {
@@ -1045,13 +1134,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           if (newWeaveInput.trim()) {
-                            const val = newWeaveInput.trim();
-                            setWeaveOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                            setWeave(val);
-                            setNewWeaveInput('');
-                            setIsDirty(true);
+                            handleAddNewTaxonomy('weave', newWeaveInput);
+                          } else {
+                            setIsAddingNewWeave(false);
                           }
-                          setIsAddingNewWeave(false);
                         }
                       }}
                       placeholder="Type custom weave tradition..."
@@ -1061,13 +1147,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       type="button"
                       onClick={() => {
                         if (newWeaveInput.trim()) {
-                          const val = newWeaveInput.trim();
-                          setWeaveOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                          setWeave(val);
-                          setNewWeaveInput('');
-                          setIsDirty(true);
+                          handleAddNewTaxonomy('weave', newWeaveInput);
+                        } else {
+                          setIsAddingNewWeave(false);
                         }
-                        setIsAddingNewWeave(false);
                       }}
                       className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
@@ -1163,13 +1246,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           if (newFabricInput.trim()) {
-                            const val = newFabricInput.trim();
-                            setFabricOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                            setFabric(val);
-                            setNewFabricInput('');
-                            setIsDirty(true);
+                            handleAddNewTaxonomy('fabric', newFabricInput);
+                          } else {
+                            setIsAddingNewFabric(false);
                           }
-                          setIsAddingNewFabric(false);
                         }
                       }}
                       placeholder="Type custom fabric name..."
@@ -1179,13 +1259,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       type="button"
                       onClick={() => {
                         if (newFabricInput.trim()) {
-                          const val = newFabricInput.trim();
-                          setFabricOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                          setFabric(val);
-                          setNewFabricInput('');
-                          setIsDirty(true);
+                          handleAddNewTaxonomy('fabric', newFabricInput);
+                        } else {
+                          setIsAddingNewFabric(false);
                         }
-                        setIsAddingNewFabric(false);
                       }}
                       className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
@@ -1281,13 +1358,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           if (newZariInput.trim()) {
-                            const val = newZariInput.trim();
-                            setZariOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                            setZariSpec(val);
-                            setNewZariInput('');
-                            setIsDirty(true);
+                            handleAddNewTaxonomy('zari', newZariInput);
+                          } else {
+                            setIsAddingNewZari(false);
                           }
-                          setIsAddingNewZari(false);
                         }
                       }}
                       placeholder="Type custom zari spec..."
@@ -1297,13 +1371,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       type="button"
                       onClick={() => {
                         if (newZariInput.trim()) {
-                          const val = newZariInput.trim();
-                          setZariOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                          setZariSpec(val);
-                          setNewZariInput('');
-                          setIsDirty(true);
+                          handleAddNewTaxonomy('zari', newZariInput);
+                        } else {
+                          setIsAddingNewZari(false);
                         }
-                        setIsAddingNewZari(false);
                       }}
                       className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
                     >
@@ -1399,13 +1470,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           if (newPatternInput.trim()) {
-                            const val = newPatternInput.trim();
-                            setPatternOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                            setPattern(val);
-                            setNewPatternInput('');
-                            setIsDirty(true);
+                            handleAddNewTaxonomy('pattern', newPatternInput);
+                          } else {
+                            setIsAddingNewPattern(false);
                           }
-                          setIsAddingNewPattern(false);
                         }
                       }}
                       placeholder="Type custom motif name..."
@@ -1415,13 +1483,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       type="button"
                       onClick={() => {
                         if (newPatternInput.trim()) {
-                          const val = newPatternInput.trim();
-                          setPatternOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
-                          setPattern(val);
-                          setNewPatternInput('');
-                          setIsDirty(true);
+                          handleAddNewTaxonomy('pattern', newPatternInput);
+                        } else {
+                          setIsAddingNewPattern(false);
                         }
-                        setIsAddingNewPattern(false);
                       }}
                       className="px-3.5 py-2 bg-[#7A1C30] hover:bg-[#5F1424] text-white rounded-xl text-xs font-bold cursor-pointer"
                     >

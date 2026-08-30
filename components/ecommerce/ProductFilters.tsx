@@ -201,31 +201,38 @@ export default function ProductFilters({
 
         {openSections.weaves && (
           <div className="mt-2.5 space-y-1.5 pl-0.5">
-            {weaveCategories.map((cat) => {
-              const count = getFacetCount(counts?.weaves, cat.name);
-              const isChecked = selectedWeaves.includes(cat.name);
-              return (
-                <label
-                  key={cat.id}
-                  className="flex items-center justify-between text-xs font-sans text-stone-700 hover:text-[#1F1B16] cursor-pointer py-1 select-none group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleWeaveToggle(cat.name)}
-                      className="w-3.5 h-3.5 rounded text-[#C87F4A] border-stone-300 focus:ring-[#C87F4A] cursor-pointer"
-                    />
-                    <span className={`group-hover:text-[#C87F4A] transition-colors ${isChecked ? 'font-bold text-[#1F1B16]' : ''}`}>
-                      {cat.name}
+            {Array.from(
+              new Set([
+                ...weaveCategories.map((cat) => cat.name),
+                ...(counts?.weaves ? Object.keys(counts.weaves) : []),
+              ])
+            )
+              .filter((wName) => wName && wName !== 'Tissue Georgette')
+              .map((wName) => {
+                const count = getFacetCount(counts?.weaves, wName);
+                const isChecked = selectedWeaves.includes(wName);
+                return (
+                  <label
+                    key={wName}
+                    className="flex items-center justify-between text-xs font-sans text-stone-700 hover:text-[#1F1B16] cursor-pointer py-1 select-none group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleWeaveToggle(wName)}
+                        className="w-3.5 h-3.5 rounded text-[#C87F4A] border-stone-300 focus:ring-[#C87F4A] cursor-pointer"
+                      />
+                      <span className={`group-hover:text-[#C87F4A] transition-colors ${isChecked ? 'font-bold text-[#1F1B16]' : ''}`}>
+                        {wName}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-stone-400">
+                      ({count || 0})
                     </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-stone-400">
-                    ({count || 0})
-                  </span>
-                </label>
-              );
-            })}
+                  </label>
+                );
+              })}
           </div>
         )}
       </div>
@@ -375,31 +382,38 @@ export default function ProductFilters({
 
         {openSections.fabrics && (
           <div className="mt-2.5 space-y-1.5 pl-0.5 max-h-56 overflow-y-auto overscroll-contain pr-1.5 scrollbar-thin">
-            {fabricFilters.map((fabric, idx) => {
-              const count = getFacetCount(counts?.fabrics, fabric);
-              const isChecked = selectedFabrics.includes(fabric);
-              return (
-                <label
-                  key={idx}
-                  className="flex items-center justify-between text-xs font-sans text-stone-700 hover:text-[#1F1B16] cursor-pointer py-1 select-none group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleFabricToggle(fabric)}
-                      className="w-3.5 h-3.5 rounded text-[#C87F4A] border-stone-300 focus:ring-[#C87F4A] cursor-pointer"
-                    />
-                    <span className={`group-hover:text-[#C87F4A] transition-colors ${isChecked ? 'font-bold text-[#1F1B16]' : ''}`}>
-                      {fabric}
+            {Array.from(
+              new Set([
+                ...fabricFilters,
+                ...(counts?.fabrics ? Object.keys(counts.fabrics) : []),
+              ])
+            )
+              .filter(Boolean)
+              .map((fabric) => {
+                const count = getFacetCount(counts?.fabrics, fabric);
+                const isChecked = selectedFabrics.includes(fabric);
+                return (
+                  <label
+                    key={fabric}
+                    className="flex items-center justify-between text-xs font-sans text-stone-700 hover:text-[#1F1B16] cursor-pointer py-1 select-none group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleFabricToggle(fabric)}
+                        className="w-3.5 h-3.5 rounded text-[#C87F4A] border-stone-300 focus:ring-[#C87F4A] cursor-pointer"
+                      />
+                      <span className={`group-hover:text-[#C87F4A] transition-colors ${isChecked ? 'font-bold text-[#1F1B16]' : ''}`}>
+                        {fabric}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-stone-400">
+                      ({count || 0})
                     </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-stone-400">
-                    ({count || 0})
-                  </span>
-                </label>
-              );
-            })}
+                  </label>
+                );
+              })}
           </div>
         )}
       </div>
@@ -421,31 +435,38 @@ export default function ProductFilters({
 
         {openSections.occasions && (
           <div className="mt-2.5 space-y-1.5 pl-0.5">
-            {occasionFilters.map((occ, idx) => {
-              const count = getFacetCount(counts?.occasions, occ);
-              const isChecked = selectedOccasions.includes(occ);
-              return (
-                <label
-                  key={idx}
-                  className="flex items-center justify-between text-xs font-sans text-stone-700 hover:text-[#1F1B16] cursor-pointer py-1 select-none group"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleOccasionToggle(occ)}
-                      className="w-3.5 h-3.5 rounded text-[#C87F4A] border-stone-300 focus:ring-[#C87F4A] cursor-pointer"
-                    />
-                    <span className={`group-hover:text-[#C87F4A] transition-colors ${isChecked ? 'font-bold text-[#1F1B16]' : ''}`}>
-                      {occ}
+            {Array.from(
+              new Set([
+                ...occasionFilters,
+                ...(counts?.occasions ? Object.keys(counts.occasions) : []),
+              ])
+            )
+              .filter(Boolean)
+              .map((occ) => {
+                const count = getFacetCount(counts?.occasions, occ);
+                const isChecked = selectedOccasions.includes(occ);
+                return (
+                  <label
+                    key={occ}
+                    className="flex items-center justify-between text-xs font-sans text-stone-700 hover:text-[#1F1B16] cursor-pointer py-1 select-none group"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleOccasionToggle(occ)}
+                        className="w-3.5 h-3.5 rounded text-[#C87F4A] border-stone-300 focus:ring-[#C87F4A] cursor-pointer"
+                      />
+                      <span className={`group-hover:text-[#C87F4A] transition-colors ${isChecked ? 'font-bold text-[#1F1B16]' : ''}`}>
+                        {occ}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-stone-400">
+                      ({count || 0})
                     </span>
-                  </div>
-                  <span className="text-[10px] font-mono text-stone-400">
-                    ({count || 0})
-                  </span>
-                </label>
-              );
-            })}
+                  </label>
+                );
+              })}
           </div>
         )}
       </div>

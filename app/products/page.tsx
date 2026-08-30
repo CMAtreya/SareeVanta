@@ -180,9 +180,12 @@ function ProductsListingContent() {
     return list;
   }, [apiProducts, sortBy]);
 
-  // Fetch products from GET /api/products with instant SWR cache
+  const catalogSnapshotRef = useRef<Product[]>([]);
+
+  // Fetch products from GET /api/products with instant 0ms local filtering & SWR
   useEffect(() => {
     let isMounted = true;
+    const limit = gridCols === 4 ? 12 : 9;
 
     const fetchProducts = async () => {
       const params = new URLSearchParams();
@@ -197,28 +200,56 @@ function ProductsListingContent() {
       if (silkMarkOnly) params.set('silk_mark', 'true');
       if (sortBy) params.set('sort', sortBy);
       params.set('page', currentPage.toString());
-      params.set('limit', gridCols === 4 ? '12' : '9');
+      params.set('limit', limit.toString());
       if (filterParam) params.set('filter', filterParam);
 
       const cacheKey = params.toString();
       const cached = filterQueryCache.get(cacheKey);
-      const isFresh = cached && (Date.now() - cached.timestamp < 3000) && Array.isArray(cached.data?.products) && cached.data.products.length > 0;
+      const isFresh = cached && (Date.now() - cached.timestamp < 5000) && Array.isArray(cached.data?.products) && cached.data.products.length > 0;
 
-      if (cached && isFresh) {
+      // 0ms Instant client-side snapshot filtering for immediate filter feedback
+      if (catalogSnapshotRef.current.length > 0) {
+        const norm = (s?: string) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const nWeaves = selectedWeaves.map(norm);
+        const nFabrics = selectedFabrics.map(norm);
+        const nOccasions = selectedOccasions.map(norm);
+
+        const instant = catalogSnapshotRef.current.filter((p) => {
+          if (nWeaves.length > 0) {
+            const pw = norm(p.weave);
+            if (!nWeaves.some((nw) => pw === nw || pw.includes(nw) || nw.includes(pw))) return false;
+          }
+          if (nFabrics.length > 0) {
+            const pf = norm(p.fabric);
+            if (!nFabrics.some((nf) => pf === nf || pf.includes(nf) || nf.includes(pf))) return false;
+          }
+          if (nOccasions.length > 0) {
+            const po = norm(p.occasion);
+            const poccs = (p.occasions || []).map(norm);
+            if (!nOccasions.some((no) => po === no || poccs.includes(no) || po.includes(no))) return false;
+          }
+          if (priceRange[0] > 10000 && (p.priceINR || 0) < priceRange[0]) return false;
+          if (priceRange[1] < 100000 && (p.priceINR || 0) > priceRange[1]) return false;
+          if (silkMarkOnly && !p.silkMarkCertified) return false;
+          return true;
+        });
+
+        if (isMounted) {
+          setApiProducts(instant.slice((currentPage - 1) * limit, currentPage * limit));
+          setApiTotal(instant.length);
+          setApiTotalPages(Math.ceil(instant.length / limit) || 1);
+          setIsLoading(false);
+        }
+      } else if (cached && isFresh) {
         if (isMounted) {
           setApiProducts(cached.data.products || []);
           setApiTotal(cached.data.total || 0);
           setApiTotalPages(cached.data.totalPages || 1);
           setFilterCounts(cached.data.counts);
           setIsLoading(false);
-          setIsFetching(true);
         }
-      } else {
-        if (apiProducts.length === 0) {
-          setIsLoading(true);
-        } else {
-          setIsFetching(true);
-        }
+      } else if (apiProducts.length === 0) {
+        setIsLoading(true);
       }
 
       try {
@@ -226,6 +257,16 @@ function ProductsListingContent() {
         if (res.ok) {
           const data = await res.json();
           filterQueryCache.set(cacheKey, { data, timestamp: Date.now() });
+
+          // Accumulate unique products into catalogSnapshotRef
+          if (Array.isArray(data.products)) {
+            const currentIds = new Set(catalogSnapshotRef.current.map((p) => p.id));
+            const newItems = data.products.filter((p: Product) => !currentIds.has(p.id));
+            if (newItems.length > 0) {
+              catalogSnapshotRef.current = [...catalogSnapshotRef.current, ...newItems];
+            }
+          }
+
           if (isMounted) {
             setApiProducts(data.products || []);
             setApiTotal(data.total || 0);
@@ -241,9 +282,6 @@ function ProductsListingContent() {
       }
 
       if (isMounted) {
-        setApiProducts([]);
-        setApiTotal(0);
-        setApiTotalPages(1);
         setIsLoading(false);
         setIsFetching(false);
       }
