@@ -113,9 +113,14 @@ export default function AdminCatalogPage() {
         if (!isMounted) return;
         if (data.products && Array.isArray(data.products)) {
           const formatted: CatalogSaree[] = data.products.map((p: any, idx: number) => {
-            const firstVariant = p.product_variants?.[0] || {};
-            const invData = Array.isArray(firstVariant.inventory) ? firstVariant.inventory[0] : firstVariant.inventory;
-            const actualStock = invData ? Math.max(0, (invData.quantity || 0) - (invData.reserved_quantity || 0)) : 0;
+            const allVars = Array.isArray(p.product_variants) ? p.product_variants : [];
+            const firstVariant = allVars[0] || {};
+            const totalStock = allVars.reduce((sum: number, v: any) => {
+              const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
+              return sum + (inv ? Math.max(0, (inv.quantity || 0) - (inv.reserved_quantity || 0)) : 0);
+            }, 0);
+            const rawSku = firstVariant.sku || p.sku || `NSH-SKU-00${idx + 1}`;
+            const masterSku = rawSku.replace(/-[A-Z0-9]{3,}$/, '').trim() || rawSku;
             const weave = p.weavings?.name || 'Mysore Silk Crepe';
             const fabric = p.fabrics?.name || '100% Pure Mulberry Silk';
             const zari = p.zari_specifications?.name || 'Pure 24K Tested Zari';
@@ -129,7 +134,7 @@ export default function AdminCatalogPage() {
               id: p.id,
               title: p.title,
               slug: p.slug || p.id,
-              sku: firstVariant.sku || `NSH-SKU-MYS-${10 + idx}`,
+              sku: masterSku,
               loomId: `LOOM-KA-${10 + idx}`,
               hsnCode: '5007.20.10',
               weave,
@@ -137,10 +142,10 @@ export default function AdminCatalogPage() {
               zariType: zari,
               priceINR,
               originalPriceINR: mrpINR,
-              stock: actualStock,
+              stock: totalStock,
               hasAiAvatar: true,
               isActive: p.is_published !== false,
-              status: p.is_published ? (actualStock <= 3 && actualStock > 0 ? 'LOW_STOCK' : actualStock === 0 ? 'DRAFT' : 'ACTIVE') : 'DRAFT',
+              status: p.is_published ? (totalStock <= 3 && totalStock > 0 ? 'LOW_STOCK' : totalStock === 0 ? 'DRAFT' : 'ACTIVE') : 'DRAFT',
               images: displayImages,
               silkMarkNumber: `CSB-2026-MYS-${1000 + idx}`,
             };

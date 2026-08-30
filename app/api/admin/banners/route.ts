@@ -42,8 +42,9 @@ export async function POST(request: Request) {
   }
 
   const targetId = id || slide_id;
+  const isUuid = targetId && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(targetId);
 
-  if (targetId && !targetId.startsWith('slide-')) {
+  if (isUuid) {
     const { data: updated, error: updateErr } = await supabase
       .from('hero_slides')
       .update({
@@ -100,7 +101,8 @@ export async function PATCH(request: Request) {
 
   if (body.reorder && Array.isArray(body.reorder)) {
     for (const item of body.reorder) {
-      if (item.id && item.display_order !== undefined) {
+      const isItemUuid = item.id && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(item.id);
+      if (isItemUuid && item.display_order !== undefined) {
         await supabase
           .from('hero_slides')
           .update({ display_order: item.display_order })
@@ -116,6 +118,11 @@ export async function PATCH(request: Request) {
 
   if (!slide_id) {
     return NextResponse.json({ error: 'slide_id or reorder array is required' }, { status: 400 });
+  }
+
+  const isSlideUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slide_id);
+  if (!isSlideUuid) {
+    return NextResponse.json({ success: true });
   }
 
   const updates: any = {};
