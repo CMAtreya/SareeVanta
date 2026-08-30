@@ -12,7 +12,11 @@ export async function GET(request: Request) {
   const cacheKey = `admin_products_${id || slug || 'all'}`;
   const cached = getCache<any>(cacheKey);
   if (cached) {
-    return NextResponse.json(cached);
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
   }
 
   const supabase = createAdminClient();
@@ -51,10 +55,10 @@ export async function GET(request: Request) {
     responsePayload = { success: true, products: products || [] };
   }
 
-  setCache(cacheKey, responsePayload, 300);
+  setCache(cacheKey, responsePayload, 10);
   return NextResponse.json(responsePayload, {
     headers: {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
     },
   });
 }

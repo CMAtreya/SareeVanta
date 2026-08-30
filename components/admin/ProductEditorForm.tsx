@@ -554,6 +554,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       console.error('Error dispatching product save to API:', err);
     }
 
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('sareevanta_admin_catalog');
+      }
+    } catch (e) {}
+
     setStatus(targetStatus);
     setIsSaving(false);
     setIsDirty(false);
@@ -561,7 +567,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     setTimeout(() => {
       setSaveToast(false);
       router.push('/admin/catalog');
-    }, 1000);
+      router.refresh();
+    }, 600);
   };
 
   if (isLoading) {
@@ -817,14 +824,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-700">Selling Price (Online Storefront) *</label>
-                  {discountPercent > 0 && (
-                    <span className="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">
-                      {discountPercent}% OFF
-                    </span>
-                  )}
-                </div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Selling Price (Online Storefront) *
+                </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">₹</span>
                   <input
@@ -837,8 +839,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       setIsDirty(true);
                     }}
                     placeholder="28,000"
-                    className="w-full pl-7 pr-3 py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]"
+                    className={`w-full pl-7 ${discountPercent > 0 ? 'pr-20' : 'pr-3'} py-2 border border-slate-300 rounded-xl font-mono font-bold text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#7A1C30]`}
                   />
+                  {discountPercent > 0 && (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-1.5 py-0.5 rounded-md text-[10px] font-bold font-mono pointer-events-none">
+                      {discountPercent}% OFF
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

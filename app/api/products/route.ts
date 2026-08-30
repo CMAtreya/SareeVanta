@@ -93,7 +93,7 @@ export async function GET(request: Request) {
       { ...cached, cached: true },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-cache, must-revalidate',
         },
       }
     );
@@ -358,11 +358,11 @@ export async function GET(request: Request) {
     source,
   };
 
-  setCache(cacheKey, responsePayload, 60);
+  setCache(cacheKey, responsePayload, 10);
 
   return NextResponse.json(responsePayload, {
     headers: {
-      'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      'Cache-Control': 'no-cache, must-revalidate',
     },
   });
 }

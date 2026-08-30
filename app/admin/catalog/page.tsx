@@ -87,7 +87,7 @@ export default function AdminCatalogPage() {
   );
 
   useEffect(() => {
-    fetch('/api/admin/products')
+    fetch('/api/admin/products', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.products && Array.isArray(data.products)) {

@@ -220,20 +220,18 @@ function ProductsListingContent() {
           setApiTotalPages(cached.totalPages || 1);
           setFilterCounts(cached.counts);
           setIsLoading(false);
-          setIsFetching(false);
+          setIsFetching(true);
         }
-        return;
-      }
-
-      // Smooth loading indicator without skeleton flashing if already populated
-      if (apiProducts.length === 0) {
-        setIsLoading(true);
       } else {
-        setIsFetching(true);
+        if (apiProducts.length === 0) {
+          setIsLoading(true);
+        } else {
+          setIsFetching(true);
+        }
       }
 
       try {
-        const res = await fetch(`/api/products?${cacheKey}`);
+        const res = await fetch(`/api/products?${cacheKey}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           filterQueryCache.set(cacheKey, data);

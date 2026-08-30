@@ -39,7 +39,7 @@ export function useProducts(options: UseProductsOptions = {}) {
         setLoading(true);
       }
       try {
-        const res = await fetch(`/api/products?${cacheKey}`);
+        const res = await fetch(`/api/products?${cacheKey}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (isMounted && data.products && Array.isArray(data.products)) {
