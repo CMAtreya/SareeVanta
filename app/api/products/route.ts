@@ -88,7 +88,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const cacheKey = `storefront_products_${url.search}`;
   const cached = getCache<any>(cacheKey);
-  if (cached) {
+  if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
     return NextResponse.json(
       { ...cached, cached: true },
       {

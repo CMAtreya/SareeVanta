@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     border_styling_id,
     zari_specification_id,
     sku,
+    barcode,
     color_id,
     color_name,
     color_hex,
@@ -238,6 +239,9 @@ export async function POST(request: Request) {
 
   // 2. Manage Product Variants & Media Photos
   const targetSku = sku || `NSH-SKU-${effectiveSlug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+  const rawNumMatch = (targetSku || '').match(/\d+/);
+  const skuNum = rawNumMatch ? parseInt(rawNumMatch[0], 10) : 1;
+  const targetBarcode = barcode || `890${String(100000000 + skuNum)}`;
 
   let targetColorId = color_id;
   if (!targetColorId) {
@@ -259,7 +263,7 @@ export async function POST(request: Request) {
     // Check existing variant by product_id
     const { data: existingVariants } = await supabase
       .from('product_variants')
-      .select('id, sku')
+      .select('id, sku, barcode')
       .eq('product_id', productId);
 
     let variantId = existingVariants?.[0]?.id;
@@ -269,6 +273,7 @@ export async function POST(request: Request) {
         .from('product_variants')
         .update({
           sku: targetSku,
+          barcode: targetBarcode,
           price_paise: baseSellingPricePaise,
           mrp_paise: baseMrpPaise,
           ...(targetColorId ? { color_id: targetColorId } : {}),
@@ -281,6 +286,7 @@ export async function POST(request: Request) {
           product_id: productId,
           color_id: targetColorId,
           sku: targetSku,
+          barcode: targetBarcode,
           price_paise: baseSellingPricePaise,
           mrp_paise: baseMrpPaise,
         })

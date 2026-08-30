@@ -299,6 +299,9 @@ export default function AdminCatalogPage() {
 
   // Duplicate Saree (Persistent to Supabase Database)
   const handleDuplicateSaree = async (saree: CatalogSaree) => {
+    if (!window.confirm(`Are you sure you want to duplicate "${saree.title}" (SKU: ${saree.sku})?`)) {
+      return;
+    }
     const newTitle = `${saree.title} (Copy)`;
     const newSlug = `${saree.slug}-copy-${Math.floor(100 + Math.random() * 900)}`;
     const newSku = `${saree.sku}-COPY-${Math.floor(10 + Math.random() * 90)}`;

@@ -20,8 +20,8 @@ import ProductCard from '@/components/ecommerce/ProductCard';
 import ProductCardSkeleton from '@/components/ecommerce/ProductCardSkeleton';
 import ProductFilters, { FilterCounts } from '@/components/ecommerce/ProductFilters';
 
-// Client-side in-memory query cache for instant (0ms) filter switching
-const filterQueryCache = new Map<string, any>();
+// Client-side in-memory query cache with TTL for instant (0ms) filter switching without stale retention
+const filterQueryCache = new Map<string, { data: any; timestamp: number }>();
 
 function ProductsListingContent() {
   const router = useRouter();
@@ -118,63 +118,52 @@ function ProductsListingContent() {
     const o = searchParams.get('occasion');
     const pt = searchParams.get('pattern');
     const c = searchParams.get('color');
-    const q = searchParams.get('q') || searchParams.get('search');
+    const s = searchParams.get('q') || searchParams.get('search');
     const pMin = searchParams.get('price_min');
     const pMax = searchParams.get('price_max');
-    const sMark = searchParams.get('silk_mark');
-    const s = searchParams.get('sort') || 'featured';
-    const p = parseInt(searchParams.get('page') || '1', 10);
+    const sm = searchParams.get('silk_mark');
+    const sort = searchParams.get('sort') || 'featured';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
 
     setSelectedWeaves(w ? w.split(',').map((item) => item.trim()).filter(Boolean) : []);
     setSelectedFabrics(f ? f.split(',').map((item) => item.trim()).filter(Boolean) : []);
     setSelectedOccasions(o ? o.split(',').map((item) => item.trim()).filter(Boolean) : []);
     setSelectedPatterns(pt ? pt.split(',').map((item) => item.trim()).filter(Boolean) : []);
     setSelectedColors(c ? c.split(',').map((item) => item.trim()).filter(Boolean) : []);
-    setSearchQuery(q ? q.trim() : '');
-    setPriceRange([pMin ? parseInt(pMin, 10) : 10000, pMax ? parseInt(pMax, 10) : 100000]);
-    setSilkMarkOnly(sMark === 'true');
-    setSortBy(s);
-    setCurrentPage(p);
+    setSearchQuery(s || '');
+    setPriceRange([
+      pMin ? parseInt(pMin, 10) : 10000,
+      pMax ? parseInt(pMax, 10) : 100000,
+    ]);
+    setSilkMarkOnly(sm === 'true');
+    setSortBy(sort);
+    setCurrentPage(page);
   }, [searchParams]);
 
-  // Sync state changes back to browser URL
+  // Update URL when filter states change
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+    syncParamsToUrl();
+  }, [syncParamsToUrl]);
 
-    const params = new URLSearchParams();
-    if (selectedWeaves.length > 0) params.set('weave', selectedWeaves.join(','));
-    if (selectedFabrics.length > 0) params.set('fabric', selectedFabrics.join(','));
-    if (selectedOccasions.length > 0) params.set('occasion', selectedOccasions.join(','));
-    if (selectedPatterns.length > 0) params.set('pattern', selectedPatterns.join(','));
-    if (selectedColors.length > 0) params.set('color', selectedColors.join(','));
-    if (searchQuery.trim()) params.set('q', searchQuery.trim());
-    if (priceRange[0] > 10000) params.set('price_min', priceRange[0].toString());
-    if (priceRange[1] < 100000) params.set('price_max', priceRange[1].toString());
-    if (silkMarkOnly) params.set('silk_mark', 'true');
-    if (sortBy !== 'featured') params.set('sort', sortBy);
-    if (currentPage > 1) params.set('page', currentPage.toString());
-    if (filterParam) params.set('filter', filterParam);
-
-    const queryString = params.toString();
-    const newUrl = queryString ? `/products?${queryString}` : '/products';
-    router.replace(newUrl, { scroll: false });
-  }, [
-    selectedWeaves,
-    selectedFabrics,
-    selectedOccasions,
-    selectedPatterns,
-    selectedColors,
-    searchQuery,
-    priceRange,
-    silkMarkOnly,
-    sortBy,
-    currentPage,
-    filterParam,
-    router,
-  ]);
+  // Reset all filters
+  const handleResetFilters = () => {
+    setSelectedWeaves([]);
+    setSelectedFabrics([]);
+    setSelectedOccasions([]);
+    setSelectedPatterns([]);
+    setSelectedColors([]);
+    setSearchQuery('');
+    setPriceRange([10000, 100000]);
+    setSilkMarkOnly(false);
+    setSortBy('featured');
+    setCurrentPage(1);
+    router.replace('/products', { scroll: false });
+  };
 
   // Compute displayProducts instantly for 0ms sorting response on screen
   const displayProducts = useMemo(() => {
@@ -212,13 +201,15 @@ function ProductsListingContent() {
       if (filterParam) params.set('filter', filterParam);
 
       const cacheKey = params.toString();
-      if (filterQueryCache.has(cacheKey)) {
-        const cached = filterQueryCache.get(cacheKey);
+      const cached = filterQueryCache.get(cacheKey);
+      const isFresh = cached && (Date.now() - cached.timestamp < 10000);
+
+      if (cached && isFresh) {
         if (isMounted) {
-          setApiProducts(cached.products || []);
-          setApiTotal(cached.total || 0);
-          setApiTotalPages(cached.totalPages || 1);
-          setFilterCounts(cached.counts);
+          setApiProducts(cached.data.products || []);
+          setApiTotal(cached.data.total || 0);
+          setApiTotalPages(cached.data.totalPages || 1);
+          setFilterCounts(cached.data.counts);
           setIsLoading(false);
           setIsFetching(true);
         }
@@ -234,7 +225,7 @@ function ProductsListingContent() {
         const res = await fetch(`/api/products?${cacheKey}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
-          filterQueryCache.set(cacheKey, data);
+          filterQueryCache.set(cacheKey, { data, timestamp: Date.now() });
           if (isMounted) {
             setApiProducts(data.products || []);
             setApiTotal(data.total || 0);

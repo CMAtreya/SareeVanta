@@ -24,7 +24,8 @@ export function useProducts(options: UseProductsOptions = {}) {
   if (search) queryParams.set('q', search);
   if (limit) queryParams.set('limit', limit.toString());
 
-  const cacheKey = queryParams.toString() || 'all_storefront_products';
+  const queryString = queryParams.toString();
+  const cacheKey = queryString || 'all';
   const initialCached = globalProductCache.get(cacheKey) || [];
 
   const [products, setProducts] = useState<Product[]>(initialCached);
@@ -39,7 +40,8 @@ export function useProducts(options: UseProductsOptions = {}) {
         setLoading(true);
       }
       try {
-        const res = await fetch(`/api/products?${cacheKey}`, { cache: 'no-store' });
+        const fetchUrl = queryString ? `/api/products?${queryString}` : '/api/products';
+        const res = await fetch(fetchUrl, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           if (isMounted && data.products && Array.isArray(data.products)) {

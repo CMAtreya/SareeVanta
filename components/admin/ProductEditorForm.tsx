@@ -211,27 +211,43 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   // Populate data in edit mode or compute sequential SKU in create mode
   useEffect(() => {
     if (mode === 'create') {
-      fetch('/api/products')
+      fetch('/api/admin/products', { cache: 'no-store' })
         .then((res) => res.json())
         .then((data) => {
+          let maxSeq = 0;
           if (data.products && Array.isArray(data.products)) {
-            const count = data.products.length;
-            const nextSeq = String(count + 1).padStart(3, '0');
-            const newSku = `NSH-SKU-${nextSeq}`;
-            const newBarcode = `890${String(100000000 + count + 1).padStart(9, '0')}`;
-            setSku(newSku);
-            setBarcode(newBarcode);
-            setColorVariants([
-              {
-                id: 'var-1',
-                name: 'Royal Crimson',
-                hex: '#8B1E28',
-                sku: `${newSku}-CRM`,
-                stockCount: 1,
-                images: ['', '', ''],
-              },
-            ]);
+            data.products.forEach((p: any) => {
+              const allVariants = p.product_variants || [];
+              allVariants.forEach((v: any) => {
+                const match = (v.sku || '').match(/NSH-SKU-(\d+)/i);
+                if (match && match[1]) {
+                  const num = parseInt(match[1], 10);
+                  if (!isNaN(num) && num > maxSeq) maxSeq = num;
+                }
+              });
+              const rootSkuMatch = (p.sku || '').match(/NSH-SKU-(\d+)/i);
+              if (rootSkuMatch && rootSkuMatch[1]) {
+                const num = parseInt(rootSkuMatch[1], 10);
+                if (!isNaN(num) && num > maxSeq) maxSeq = num;
+              }
+            });
           }
+          const nextNum = maxSeq + 1;
+          const nextSeq = String(nextNum).padStart(3, '0');
+          const newSku = `NSH-SKU-${nextSeq}`;
+          const newBarcode = `890${String(100000000 + nextNum)}`;
+          setSku(newSku);
+          setBarcode(newBarcode);
+          setColorVariants([
+            {
+              id: 'var-1',
+              name: 'Royal Crimson',
+              hex: '#8B1E28',
+              sku: `${newSku}-CRM`,
+              stockCount: 1,
+              images: ['', '', ''],
+            },
+          ]);
         })
         .catch(() => {});
       return;
@@ -240,9 +256,49 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     async function fetchProductDetails() {
       if (mode !== 'edit' || !productId) return;
 
+      // 0ms Instant Pre-fill from local cache if available
       try {
-        setIsLoading(true);
-        const res = await fetch(`/api/admin/products?id=${encodeURIComponent(productId)}`);
+        const cachedRaw = typeof window !== 'undefined' ? sessionStorage.getItem('sareevanta_admin_catalog') : null;
+        if (cachedRaw) {
+          const cachedList = JSON.parse(cachedRaw);
+          const cachedItem = cachedList.find((c: any) => c.id === productId || c.slug === productId);
+          if (cachedItem) {
+            setTitle(cachedItem.title || '');
+            setWeave(cachedItem.weave || 'Mysore Silk');
+            setFabric(cachedItem.fabric || 'Pure Mulberry Silk');
+            setZariSpec(cachedItem.zariType || 'Pure 24K Tested Zari');
+            setSellingPrice(String(cachedItem.priceINR || ''));
+            setMrp(String(cachedItem.originalPriceINR || ''));
+            setCostPrice(String(Math.round((cachedItem.priceINR || 0) * 0.65)));
+            setStock(String(cachedItem.stock || 1));
+            setSku(cachedItem.sku || 'NSH-SKU-001');
+            const numPart = (cachedItem.sku || '').match(/\d+/);
+            const num = numPart ? parseInt(numPart[0], 10) : 1;
+            setBarcode(`890${String(100000000 + num)}`);
+            if (cachedItem.images && cachedItem.images.length > 0) {
+              setImages(cachedItem.images);
+              setColorVariants([
+                {
+                  id: 'var-1',
+                  name: 'Royal Crimson',
+                  hex: '#8B1E28',
+                  sku: `${cachedItem.sku}-CRM`,
+                  stockCount: cachedItem.stock || 1,
+                  images: [
+                    cachedItem.images[0] || '',
+                    cachedItem.images[1] || '',
+                    cachedItem.images[2] || '',
+                  ],
+                },
+              ]);
+            }
+            setIsLoading(false);
+          }
+        }
+      } catch (e) {}
+
+      try {
+        const res = await fetch(`/api/admin/products?id=${encodeURIComponent(productId)}`, { cache: 'no-store' });
         const data = await res.json();
         const found = data.product || (data.products && Array.isArray(data.products) ? data.products.find((p: any) => p.id === productId || p.slug === productId) : null);
         if (found) {
@@ -320,10 +376,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
           setCostPrice(String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
           setStock(String(mainVariant?.inventory?.[0]?.quantity || 1));
 
-          const fixedSku = mainVariant?.sku || `NSH-SKU-${found.id.slice(0, 6).toUpperCase()}`;
-          const fixedBarcode = `890${found.id.replace(/[^0-9]/g, '').slice(0, 9).padEnd(9, '5')}`;
-          setSku(fixedSku);
-          setBarcode(fixedBarcode);
+          // Permanent & Immutable SKU and Barcode for lifetime
+          const permanentSku = mainVariant?.sku || found.sku || `NSH-SKU-001`;
+          const skuMatch = permanentSku.match(/\d+/);
+          const skuNum = skuMatch ? parseInt(skuMatch[0], 10) : 1;
+          const permanentBarcode = mainVariant?.barcode || `890${String(100000000 + skuNum)}`;
+
+          setSku(permanentSku);
+          setBarcode(permanentBarcode);
 
           if (allMediaUrls.length > 0) {
             setImages(allMediaUrls);
@@ -526,6 +586,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       base_mrp_inr: Number(mrp) || Number(sellingPrice || 28000) * 1.18,
       base_selling_price_inr: Number(sellingPrice) || 28000,
       sku: sku || `NSH-SKU-MYS-${Math.floor(10 + Math.random() * 90)}`,
+      barcode: barcode || '890100000001',
       weave,
       fabric,
       zari: zariSpec,
