@@ -107,16 +107,10 @@ export default function AdminCatalogPage() {
   useEffect(() => {
     let isMounted = true;
 
-    // Safety timeout to ensure skeleton never hangs
-    const safetyTimer = setTimeout(() => {
-      if (isMounted) setIsLoading(false);
-    }, 2500);
-
     fetch('/api/admin/products', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;
-        clearTimeout(safetyTimer);
         if (data.products && Array.isArray(data.products)) {
           const formatted: CatalogSaree[] = data.products.map((p: any, idx: number) => {
             const firstVariant = p.product_variants?.[0] || {};
@@ -167,7 +161,6 @@ export default function AdminCatalogPage() {
 
     return () => {
       isMounted = false;
-      clearTimeout(safetyTimer);
     };
   }, []);
 
