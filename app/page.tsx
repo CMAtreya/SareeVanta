@@ -20,51 +20,32 @@ import ProductCard from '@/components/ecommerce/ProductCard';
 import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarousel';
 import { useProducts } from '@/hooks/useProducts';
 
-// Global in-memory cache for instant hero banner rendering
-const DEFAULT_HERO_SLIDES = [
-  {
-    id: 1,
-    tag: 'Royal Heritage Collection 2026',
-    title: 'The Mysore Regal Drape',
-    subtitle: 'Woven with 100% Pure Mulberry Silk & Certified 24K Tested Zari from Mysuru Guilds.',
-    link: '/products?weave=Mysore+Silk',
-    ctaText: 'Explore Collection',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=2000&q=85',
-  },
-  {
-    id: 2,
-    tag: 'Grand Muhurtham Edit',
-    title: 'Kanchipuram Heavy Korvai',
-    subtitle: 'Sculptural interlocking temple borders and heirloom pure gold brocades.',
-    link: '/products?weave=Kanchipuram',
-    ctaText: 'Discover Bridal Silks',
-    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=2000&q=85',
-  },
-];
-let cachedHeroSlides: any[] | null = DEFAULT_HERO_SLIDES;
+// Global in-memory cache for live hero banners
+let cachedHeroSlides: any[] | null = null;
 
 export default function HomePage() {
   // ----------------------------------------------------
   // 1. Hero Promo Carousel State (Live Database Banners)
   // ----------------------------------------------------
-  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>(cachedHeroSlides || DEFAULT_HERO_SLIDES);
-  const [isLoadingBanners, setIsLoadingBanners] = useState(false);
+  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>(cachedHeroSlides || []);
+  const [isLoadingBanners, setIsLoadingBanners] = useState<boolean>(!cachedHeroSlides);
 
   useEffect(() => {
     fetch('/api/banners')
       .then((res) => res.json())
       .then((data) => {
         if (data.slides && Array.isArray(data.slides)) {
-          const activeOnly = data.slides.filter((s: any) => s.is_active);
+          const activeOnly = data.slides.filter((s: any) => s.is_active !== false);
           const formatted = activeOnly.map((s: any, idx: number) => ({
             id: s.id || idx + 1,
             tag: s.badge_text || 'Heritage Handloom Collection',
-            title: s.heading,
+            title: s.heading || 'Royal Masterpiece Saree',
             subtitle: s.tagline || '100% Pure Silk Mark Certified',
             link: s.cta_link || '/products',
             ctaText: s.cta_text || 'Explore Collection',
-            image: s.desktop_image_path,
-          }));
+            image: s.desktop_image_path || '',
+          })).filter((s: any) => s.image && s.image.trim().length > 5);
+
           cachedHeroSlides = formatted;
           setLiveHeroSlides(formatted);
         }
@@ -173,6 +154,32 @@ export default function HomePage() {
                 <p className="text-xs font-mono tracking-[0.25em] text-[#FAF3E4]/60 uppercase">
                   Loading Curations...
                 </p>
+              </div>
+            </div>
+          ) : activeSlides.length === 0 ? (
+            <div className="absolute inset-0 bg-radial from-[#3A0F18] via-[#1F1B16] to-[#0D0B0A] flex items-center">
+              <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
+                <div className="max-w-3xl space-y-5 animate-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF3E4]/15 backdrop-blur-md border border-white/20 text-[#FAF3E4] text-[11px] font-mono font-semibold uppercase tracking-[0.25em]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
+                    <span>Royal Handloom Atelier</span>
+                  </div>
+                  <h2 className="font-editorial text-4xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.05] tracking-tight">
+                    Pure Heritage Silk Masterpieces
+                  </h2>
+                  <p className="text-xs sm:text-sm md:text-base text-stone-300 font-sans leading-relaxed max-w-xl">
+                    100% Pure Mulberry Silk & Certified 24K Tested Zari directly from master handloom guilds.
+                  </p>
+                  <div className="pt-2 sm:pt-4">
+                    <Link
+                      href="/products"
+                      className="inline-flex items-center gap-2.5 bg-[#C87F4A] hover:bg-[#B36737] text-white px-8 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg shadow-black/40"
+                    >
+                      <span>Explore Royal Curations</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

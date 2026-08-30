@@ -958,15 +958,28 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       autoFocus
                       value={newWeaveInput}
                       onChange={(e) => setNewWeaveInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newWeaveInput.trim()) {
+                            const val = newWeaveInput.trim();
+                            setWeaveOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
+                            setWeave(val);
+                            setNewWeaveInput('');
+                            setIsDirty(true);
+                          }
+                          setIsAddingNewWeave(false);
+                        }
+                      }}
                       placeholder="Type custom weave tradition..."
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 bg-white"
                     />
                     <button
                       type="button"
                       onClick={() => {
                         if (newWeaveInput.trim()) {
                           const val = newWeaveInput.trim();
-                          setWeaveOptions([val, ...weaveOptions]);
+                          setWeaveOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
                           setWeave(val);
                           setNewWeaveInput('');
                           setIsDirty(true);
@@ -1063,15 +1076,28 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       autoFocus
                       value={newFabricInput}
                       onChange={(e) => setNewFabricInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newFabricInput.trim()) {
+                            const val = newFabricInput.trim();
+                            setFabricOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
+                            setFabric(val);
+                            setNewFabricInput('');
+                            setIsDirty(true);
+                          }
+                          setIsAddingNewFabric(false);
+                        }
+                      }}
                       placeholder="Type custom fabric name..."
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 bg-white"
                     />
                     <button
                       type="button"
                       onClick={() => {
                         if (newFabricInput.trim()) {
                           const val = newFabricInput.trim();
-                          setFabricOptions([val, ...fabricOptions]);
+                          setFabricOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
                           setFabric(val);
                           setNewFabricInput('');
                           setIsDirty(true);
@@ -1168,15 +1194,28 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       autoFocus
                       value={newZariInput}
                       onChange={(e) => setNewZariInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newZariInput.trim()) {
+                            const val = newZariInput.trim();
+                            setZariOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
+                            setZariSpec(val);
+                            setNewZariInput('');
+                            setIsDirty(true);
+                          }
+                          setIsAddingNewZari(false);
+                        }
+                      }}
                       placeholder="Type custom zari spec..."
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 bg-white"
                     />
                     <button
                       type="button"
                       onClick={() => {
                         if (newZariInput.trim()) {
                           const val = newZariInput.trim();
-                          setZariOptions([val, ...zariOptions]);
+                          setZariOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
                           setZariSpec(val);
                           setNewZariInput('');
                           setIsDirty(true);
@@ -1273,15 +1312,28 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       autoFocus
                       value={newPatternInput}
                       onChange={(e) => setNewPatternInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newPatternInput.trim()) {
+                            const val = newPatternInput.trim();
+                            setPatternOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
+                            setPattern(val);
+                            setNewPatternInput('');
+                            setIsDirty(true);
+                          }
+                          setIsAddingNewPattern(false);
+                        }
+                      }}
                       placeholder="Type custom motif name..."
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900"
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs text-slate-900 bg-white"
                     />
                     <button
                       type="button"
                       onClick={() => {
                         if (newPatternInput.trim()) {
                           const val = newPatternInput.trim();
-                          setPatternOptions([val, ...patternOptions]);
+                          setPatternOptions((prev) => (prev.includes(val) ? prev : [val, ...prev]));
                           setPattern(val);
                           setNewPatternInput('');
                           setIsDirty(true);

@@ -162,11 +162,13 @@ export async function GET(request: Request) {
         catalog = data.map(formatDbProduct);
         setCache(snapshotCacheKey, catalog, 60);
       } else {
-        catalog = [];
+        const { products: defaultProducts } = await import('@/lib/products');
+        catalog = defaultProducts || [];
       }
     } catch (e) {
       console.error('[Products API] Error fetching from database:', e);
-      catalog = [];
+      const { products: defaultProducts } = await import('@/lib/products');
+      catalog = defaultProducts || [];
     }
   }
 
@@ -332,20 +334,21 @@ export async function GET(request: Request) {
   }
 
   // Sorting
+  let sorted = [...filtered];
   if (sort === 'price-low') {
-    filtered.sort((a, b) => a.priceINR - b.priceINR);
+    sorted.sort((a, b) => (a.priceINR || 0) - (b.priceINR || 0));
   } else if (sort === 'price-high') {
-    filtered.sort((a, b) => b.priceINR - a.priceINR);
+    sorted.sort((a, b) => (b.priceINR || 0) - (a.priceINR || 0));
   } else if (sort === 'popularity') {
-    filtered.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+    sorted.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
   } else if (sort === 'newest') {
-    filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+    sorted.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
   }
 
   // Pagination
-  const total = filtered.length;
+  const total = sorted.length;
   const totalPages = Math.ceil(total / limit) || 1;
-  const paginated = filtered.slice((page - 1) * limit, page * limit);
+  const paginated = sorted.slice((page - 1) * limit, page * limit);
 
   const responsePayload = {
     products: paginated,

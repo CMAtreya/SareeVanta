@@ -176,6 +176,21 @@ function ProductsListingContent() {
     router,
   ]);
 
+  // Compute displayProducts instantly for 0ms sorting response on screen
+  const displayProducts = useMemo(() => {
+    const list = [...apiProducts];
+    if (sortBy === 'price-low') {
+      return list.sort((a, b) => (a.priceINR || 0) - (b.priceINR || 0));
+    } else if (sortBy === 'price-high') {
+      return list.sort((a, b) => (b.priceINR || 0) - (a.priceINR || 0));
+    } else if (sortBy === 'popularity') {
+      return list.sort((a, b) => (b.rating || b.reviewCount || 0) - (a.rating || a.reviewCount || 0));
+    } else if (sortBy === 'newest') {
+      return list.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
+    }
+    return list;
+  }, [apiProducts, sortBy]);
+
   // Fetch products from GET /api/products with instant SWR cache
   useEffect(() => {
     let isMounted = true;
@@ -199,12 +214,14 @@ function ProductsListingContent() {
       const cacheKey = params.toString();
       if (filterQueryCache.has(cacheKey)) {
         const cached = filterQueryCache.get(cacheKey);
-        setApiProducts(cached.products || []);
-        setApiTotal(cached.total || 0);
-        setApiTotalPages(cached.totalPages || 1);
-        setFilterCounts(cached.counts);
-        setIsLoading(false);
-        setIsFetching(false);
+        if (isMounted) {
+          setApiProducts(cached.products || []);
+          setApiTotal(cached.total || 0);
+          setApiTotalPages(cached.totalPages || 1);
+          setFilterCounts(cached.counts);
+          setIsLoading(false);
+          setIsFetching(false);
+        }
         return;
       }
 
@@ -585,7 +602,7 @@ function ProductsListingContent() {
                   gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
                 } gap-4 sm:gap-6 transition-opacity duration-150 ${isFetching ? 'opacity-70' : 'opacity-100'}`}
               >
-                {apiProducts.map((product) => (
+                {displayProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>

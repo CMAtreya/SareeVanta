@@ -87,11 +87,16 @@ export async function POST(request: Request) {
 
     invalidateCache('admin_inventory_matrix');
     invalidateCache('storefront_products_');
+    invalidateCache('full_catalog_snapshot');
+    invalidateCache('admin_products_');
+    invalidateCache('product_');
     invalidateCache('pdp_product_');
 
     return NextResponse.json({ success: true, new_quantity: finalQty });
   }
 
   invalidateCache('admin_inventory_matrix');
+  invalidateCache('storefront_products_');
+  invalidateCache('full_catalog_snapshot');
   return NextResponse.json({ success: true, message: 'Stock update processed' });
 }

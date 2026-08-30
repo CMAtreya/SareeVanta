@@ -678,14 +678,24 @@ export default function Header() {
                             Royal Handloom Curation Matrix
                           </span>
                         </div>
-                        <Link
-                          href="/products"
-                          onClick={() => setActiveDropdown(null)}
-                          className="text-[11px] text-[#7A1C30] hover:text-[#5B1021] font-bold flex items-center gap-1.5 uppercase tracking-wider bg-white/80 hover:bg-white px-3 py-1 rounded-full border border-[#C87F4A]/30 transition-all shadow-2xs"
-                        >
-                          <span>Explore All Handlooms (600+ Pieces)</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href="/collections"
+                            onClick={() => setActiveDropdown(null)}
+                            className="text-[11px] text-[#C87F4A] hover:text-[#7A1C30] font-bold flex items-center gap-1.5 uppercase tracking-wider bg-[#FAF3E4] hover:bg-white px-3 py-1 rounded-full border border-[#C87F4A]/30 transition-all shadow-2xs"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Curated Lookbooks</span>
+                          </Link>
+                          <Link
+                            href="/products"
+                            onClick={() => setActiveDropdown(null)}
+                            className="text-[11px] text-[#7A1C30] hover:text-[#5B1021] font-bold flex items-center gap-1.5 uppercase tracking-wider bg-white/80 hover:bg-white px-3 py-1 rounded-full border border-[#C87F4A]/30 transition-all shadow-2xs"
+                          >
+                            <span>Explore All Handlooms (600+ Pieces)</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </div>
 
                       {/* 4-Column Layout (Color Removed) */}
@@ -771,7 +781,7 @@ export default function Header() {
                             {patternOptions.map((p, idx) => (
                               <li key={idx}>
                                 <Link
-                                  href={`/products?search=${encodeURIComponent(p.name)}`}
+                                  href={`/products?pattern=${encodeURIComponent(p.name)}`}
                                   onClick={() => setActiveDropdown(null)}
                                   className="px-2.5 py-1 rounded-lg hover:bg-white hover:text-[#7A1C30] hover:shadow-2xs transition-all block group"
                                 >

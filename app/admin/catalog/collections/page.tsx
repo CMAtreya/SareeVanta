@@ -65,6 +65,7 @@ export default function CollectionsTaxonomyPage() {
   const [colCover, setColCover] = useState('');
   const [colBadge, setColBadge] = useState('Festive 2026');
   const [colFeatured, setColFeatured] = useState(true);
+  const [colType, setColType] = useState<'Rule-Based' | 'Curated'>('Curated');
 
   // New Taxonomy Form State
   const [taxCategory, setTaxCategory] = useState<TaxonomyCategory>('WEAVE');
@@ -184,6 +185,7 @@ export default function CollectionsTaxonomyPage() {
           description: colDesc.trim(),
           image_url: colCover.trim(),
           badge: colBadge.trim(),
+          collection_type: colType,
           is_active: colFeatured,
         }),
       });
@@ -203,6 +205,7 @@ export default function CollectionsTaxonomyPage() {
                   description: colDesc.trim(),
                   coverImage: colCover.trim() || c.coverImage,
                   badge: colBadge.trim(),
+                  collectionType: colType,
                   isFeaturedOnHomepage: colFeatured,
                 }
               : c
@@ -218,6 +221,7 @@ export default function CollectionsTaxonomyPage() {
           description: colDesc.trim(),
           coverImage: colCover.trim() || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
           badge: colBadge.trim(),
+          collectionType: colType,
           assignedSkuCount: 0,
           isFeaturedOnHomepage: colFeatured,
           status: 'ACTIVE',
@@ -543,6 +547,16 @@ export default function CollectionsTaxonomyPage() {
                   </button>
 
                   <div className="flex items-center gap-1.5">
+                    <Link
+                      href={`/collections/${col.slug}`}
+                      target="_blank"
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-[#FAF3E4] text-[#7A1C30] border border-[#C87F4A]/30 font-bold rounded-lg text-xs flex items-center gap-1 transition-colors"
+                      title="View Live Storefront Landing Page"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>View Live</span>
+                    </Link>
+
                     <button
                       type="button"
                       onClick={() => {
@@ -554,6 +568,7 @@ export default function CollectionsTaxonomyPage() {
                         setColCover(col.coverImage);
                         setColBadge(col.badge);
                         setColFeatured(col.isFeaturedOnHomepage);
+                        setColType(col.collectionType || 'Curated');
                         setIsCollectionModalOpen(true);
                       }}
                       className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1"
@@ -830,6 +845,57 @@ export default function CollectionsTaxonomyPage() {
                   placeholder="Describe the heritage provenance and weaver story behind this curation..."
                   className="w-full p-2.5 border border-slate-300 rounded-xl text-xs text-slate-900"
                 />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1.5">
+                  Curation Mode & Product Matching
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label
+                    className={`p-3 rounded-xl border cursor-pointer flex flex-col justify-between transition-all ${
+                      colType === 'Curated'
+                        ? 'border-[#7A1C30] bg-[#FAF3E4]/70 shadow-2xs'
+                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="colType"
+                        checked={colType === 'Curated'}
+                        onChange={() => setColType('Curated')}
+                        className="text-[#7A1C30] focus:ring-[#7A1C30]"
+                      />
+                      <span className="font-bold text-xs text-slate-900">Manual Editorial</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-sans mt-1">
+                      Handpick and order exact saree SKUs for this lookbook
+                    </span>
+                  </label>
+
+                  <label
+                    className={`p-3 rounded-xl border cursor-pointer flex flex-col justify-between transition-all ${
+                      colType === 'Rule-Based'
+                        ? 'border-[#7A1C30] bg-[#FAF3E4]/70 shadow-2xs'
+                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="colType"
+                        checked={colType === 'Rule-Based'}
+                        onChange={() => setColType('Rule-Based')}
+                        className="text-[#7A1C30] focus:ring-[#7A1C30]"
+                      />
+                      <span className="font-bold text-xs text-slate-900">Automatic Rule-Based</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-sans mt-1">
+                      Auto-populates sarees matching collection title, weave & occasion
+                    </span>
+                  </label>
+                </div>
               </div>
 
               <div className="pt-2 flex items-center gap-3">
