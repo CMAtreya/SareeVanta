@@ -17,6 +17,7 @@ export interface AppliedCoupon {
   code: string;
   discountPercent?: number;
   discountFixedINR?: number;
+  maxDiscountCapINR?: number;
   description: string;
 }
 

@@ -98,7 +98,12 @@ export default function CartPage() {
 
   const discountINR = appliedCoupon
     ? appliedCoupon.discountPercent
-      ? Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100)
+      ? appliedCoupon.maxDiscountCapINR
+        ? Math.min(
+            Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100),
+            appliedCoupon.maxDiscountCapINR
+          )
+        : Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100)
       : appliedCoupon.discountFixedINR || 0
     : 0;
 
@@ -126,7 +131,7 @@ export default function CartPage() {
       const res = await fetch('/api/cart/coupon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: targetCode }),
+        body: JSON.stringify({ code: targetCode, cartSubtotalINR: selectedSubtotalINR }),
       });
 
       const data = await res.json();
@@ -136,6 +141,7 @@ export default function CartPage() {
           code: data.code,
           discountPercent: data.discountPercent,
           discountFixedINR: data.discountFixedINR,
+          maxDiscountCapINR: data.maxDiscountCapINR,
           description: data.description,
         });
         setCouponFeedback({ type: 'success', message: data.message });

@@ -424,7 +424,7 @@ function ProductsListingContent() {
         <div className="pb-5 border-b border-[#C87F4A]/20 mb-6">
           <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-[0.25em] text-[#C87F4A] font-mono font-semibold mb-1">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Neelsareehouse Permanent Curation • Mysuru</span>
+            <span>SareeVanta Permanent Curation • Mysuru</span>
           </div>
           <h1 className="font-editorial text-2xl sm:text-4xl lg:text-5xl font-normal text-[#1F1B16] tracking-tight">
             {dynamicCategoryTitle}

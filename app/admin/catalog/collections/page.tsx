@@ -124,32 +124,28 @@ export default function CollectionsTaxonomyPage() {
     });
   }, [taxonomyTerms, taxonomyCategoryFilter, taxonomySearch]);
 
-  // Action: Toggle Homepage Pin
-  const handleToggleFeaturedCollection = (id: string, current: boolean, title: string) => {
-    setCollections((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isFeaturedOnHomepage: !current } : c))
-    );
-    triggerToast(`Collection "${title}" ${!current ? 'pinned to' : 'removed from'} homepage showcase.`);
-  };
-
-  // Action: Toggle Collection Status
-  const handleToggleCollectionStatus = (id: string) => {
-    setCollections((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        const newStatus = c.status === 'ACTIVE' ? 'DRAFT' : 'ACTIVE';
-        triggerToast(`Collection "${c.title}" is now ${newStatus}.`);
-        return { ...c, status: newStatus };
-      })
-    );
+  const resetCollectionForm = () => {
+    setColTitle('');
+    setColSlug('');
+    setColTagline('');
+    setColDesc('');
+    setColCover('');
+    setColBadge('Festive 2026');
+    setColFeatured(true);
+    setColType('Curated');
+    setEditingCollection(null);
   };
 
   // Fetch live collections from database API
   useEffect(() => {
+    let isMounted = true;
     fetch('/api/admin/collections')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch collections');
+        return res.json();
+      })
       .then((data) => {
-        if (data.collections && Array.isArray(data.collections) && data.collections.length > 0) {
+        if (isMounted && data.collections && Array.isArray(data.collections)) {
           const formatted: SareeCollection[] = data.collections.map((c: any) => ({
             id: c.id,
             title: c.title,
@@ -158,84 +154,152 @@ export default function CollectionsTaxonomyPage() {
             description: c.description || '',
             coverImage: c.image_url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
             badge: c.badge || 'Festive 2026',
-            assignedSkuCount: 12,
+            collectionType: (c.collection_type as 'Rule-Based' | 'Curated') || 'Curated',
+            assignedSkuCount: Number(c.assigned_sku_count || 12),
             isFeaturedOnHomepage: Boolean(c.is_active),
             status: c.is_active ? 'ACTIVE' : 'DRAFT',
-            assignedSkus: [],
+            assignedSkus: Array.isArray(c.assigned_skus) ? c.assigned_skus : [],
           }));
           setCollections(formatted);
         }
       })
-      .catch((err) => console.error('[Collections API] Fetch error:', err));
+      .catch((err) => {
+        console.error('[Collections API] Fetch error:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Action: Save Collection
+  // Action: Toggle Homepage Pin / Active Status in DB
+  const handleToggleCollectionStatus = async (id: string) => {
+    const target = collections.find((c) => c.id === id);
+    if (!target) return;
+
+    const nextActive = target.status !== 'ACTIVE';
+    const nextStatus = nextActive ? 'ACTIVE' : 'DRAFT';
+
+    try {
+      const res = await fetch('/api/admin/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_active: nextActive }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update status');
+
+      setCollections((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: nextStatus, isFeaturedOnHomepage: nextActive } : c))
+      );
+      triggerToast(`Collection "${target.title}" is now ${nextStatus}.`);
+    } catch (err) {
+      console.error('[Collections API] Toggle status error:', err);
+      triggerToast('Error updating collection status in database.');
+    }
+  };
+
+  const handleToggleFeaturedCollection = async (id: string, current: boolean, title: string) => {
+    try {
+      const res = await fetch('/api/admin/collections', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_active: !current }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update featured status');
+
+      setCollections((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, isFeaturedOnHomepage: !current } : c))
+      );
+      triggerToast(`Collection "${title}" ${!current ? 'pinned to' : 'removed from'} homepage showcase.`);
+    } catch (err) {
+      console.error('[Collections API] Featured toggle error:', err);
+      triggerToast('Error updating showcase pin in database.');
+    }
+  };
+
+  // Action: Save Collection (Create or Update in DB)
   const handleSaveCollection = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!colTitle.trim() || !colSlug.trim()) return;
+    if (!colTitle.trim() || !colSlug.trim()) {
+      triggerToast('Title and slug are required');
+      return;
+    }
 
     try {
       const res = await fetch('/api/admin/collections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: editingCollection?.id,
           title: colTitle.trim(),
           slug: colSlug.trim(),
           tagline: colTagline.trim(),
           description: colDesc.trim(),
-          image_url: colCover.trim(),
-          badge: colBadge.trim(),
+          image_url: colCover.trim() || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+          badge: colBadge.trim() || 'Festive 2026',
           collection_type: colType,
           is_active: colFeatured,
         }),
       });
 
       const data = await res.json();
-      const newId = data.collection?.id || `col-custom-${Date.now()}`;
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Failed to save collection');
+      }
+
+      const savedDb = data.collection;
+      const formattedItem: SareeCollection = {
+        id: savedDb?.id || editingCollection?.id || `col-${Date.now()}`,
+        title: savedDb?.title || colTitle.trim(),
+        slug: savedDb?.slug || colSlug.trim(),
+        tagline: savedDb?.tagline || colTagline.trim(),
+        description: savedDb?.description || colDesc.trim(),
+        coverImage: savedDb?.image_url || colCover.trim() || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
+        badge: savedDb?.badge || colBadge.trim(),
+        collectionType: (savedDb?.collection_type as 'Rule-Based' | 'Curated') || colType,
+        assignedSkuCount: Number(savedDb?.assigned_sku_count || (editingCollection ? editingCollection.assignedSkuCount : 0)),
+        isFeaturedOnHomepage: Boolean(savedDb?.is_active ?? colFeatured),
+        status: (savedDb?.is_active ?? colFeatured) ? 'ACTIVE' : 'DRAFT',
+        assignedSkus: Array.isArray(savedDb?.assigned_skus) ? savedDb.assigned_skus : (editingCollection?.assignedSkus || []),
+      };
 
       if (editingCollection) {
         setCollections((prev) =>
-          prev.map((c) =>
-            c.id === editingCollection.id
-              ? {
-                  ...c,
-                  title: colTitle.trim(),
-                  slug: colSlug.trim(),
-                  tagline: colTagline.trim(),
-                  description: colDesc.trim(),
-                  coverImage: colCover.trim() || c.coverImage,
-                  badge: colBadge.trim(),
-                  collectionType: colType,
-                  isFeaturedOnHomepage: colFeatured,
-                }
-              : c
-          )
+          prev.map((c) => (c.id === editingCollection.id ? formattedItem : c))
         );
-        triggerToast(`Collection "${colTitle}" updated in database.`);
+        triggerToast(`Collection "${formattedItem.title}" updated successfully.`);
       } else {
-        const newCol: SareeCollection = {
-          id: newId,
-          title: colTitle.trim(),
-          slug: colSlug.trim(),
-          tagline: colTagline.trim(),
-          description: colDesc.trim(),
-          coverImage: colCover.trim() || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
-          badge: colBadge.trim(),
-          collectionType: colType,
-          assignedSkuCount: 0,
-          isFeaturedOnHomepage: colFeatured,
-          status: 'ACTIVE',
-          assignedSkus: [],
-        };
-        setCollections([newCol, ...collections]);
-        triggerToast(`Collection "${colTitle}" created and saved to database.`);
+        setCollections((prev) => [formattedItem, ...prev]);
+        triggerToast(`Collection "${formattedItem.title}" created and published.`);
       }
-    } catch (err) {
-      console.error('[Collections API] Save error:', err);
-    }
 
-    setIsCollectionModalOpen(false);
-    setEditingCollection(null);
+      setIsCollectionModalOpen(false);
+      resetCollectionForm();
+    } catch (err: any) {
+      console.error('[Collections API] Save error:', err);
+      triggerToast(`Error saving collection: ${err.message || 'Network error'}`);
+    }
+  };
+
+  // Action: Delete Collection from DB
+  const handleDeleteCollection = async (id: string, title: string) => {
+    if (!window.confirm(`Are you sure you want to remove the collection "${title}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/collections?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete collection from database');
+
+      setCollections((prev) => prev.filter((c) => c.id !== id));
+      triggerToast(`Collection "${title}" deleted.`);
+    } catch (err: any) {
+      console.error('[Collections API] Delete error:', err);
+      triggerToast('Error deleting collection from database.');
+    }
   };
 
   // Action: Save Taxonomy Term
@@ -571,10 +635,19 @@ export default function CollectionsTaxonomyPage() {
                         setColType(col.collectionType || 'Curated');
                         setIsCollectionModalOpen(true);
                       }}
-                      className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1"
+                      className="px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
                     >
                       <Edit className="w-3 h-3 text-slate-500" />
                       <span>Edit Studio</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCollection(col.id, col.title)}
+                      className="p-1.5 bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors cursor-pointer"
+                      title="Delete Collection from Database"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

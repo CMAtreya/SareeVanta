@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { code } = body;
+    const { code, cartSubtotalINR = 0 } = body;
 
     if (!code || typeof code !== 'string') {
       return NextResponse.json(
@@ -33,17 +35,54 @@ export async function POST(request: Request) {
     }
 
     if (dbCoupon) {
+      // Check Expiry Date
+      if (dbCoupon.expires_at && new Date(dbCoupon.expires_at) < new Date()) {
+        return NextResponse.json(
+          { valid: false, message: `Coupon "${cleanCode}" has expired.` },
+          { status: 400 }
+        );
+      }
+
+      // Check Minimum Order Amount
+      const minOrderINR = Math.round((dbCoupon.min_order_amount_paise || 0) / 100);
+      if (minOrderINR > 0 && cartSubtotalINR > 0 && cartSubtotalINR < minOrderINR) {
+        return NextResponse.json(
+          {
+            valid: false,
+            message: `Minimum order amount of ₹${minOrderINR.toLocaleString('en-IN')} required to use coupon "${cleanCode}".`,
+          },
+          { status: 400 }
+        );
+      }
+
+      let metaTitle = `Privilege Coupon "${cleanCode}" applied`;
+      let maxDiscountCapINR: number | undefined = undefined;
+
+      try {
+        if (dbCoupon.description && dbCoupon.description.startsWith('{')) {
+          const parsed = JSON.parse(dbCoupon.description);
+          metaTitle = parsed.title || metaTitle;
+          maxDiscountCapINR = parsed.maxCapINR ? Number(parsed.maxCapINR) : undefined;
+        } else if (dbCoupon.description) {
+          metaTitle = dbCoupon.description;
+        }
+      } catch (e) {
+        // fallback
+      }
+
       const isFixed = dbCoupon.discount_type === 'FIXED';
       const discountPercent = !isFixed ? Number(dbCoupon.discount_value) : undefined;
       const discountFixedINR = isFixed ? Number(dbCoupon.discount_value) : undefined;
-      const description = dbCoupon.description || `Privilege Coupon "${cleanCode}" applied`;
 
       return NextResponse.json({
         valid: true,
         code: cleanCode,
+        title: metaTitle,
         discountPercent,
         discountFixedINR,
-        description,
+        maxDiscountCapINR,
+        minOrderValueINR: minOrderINR,
+        description: metaTitle,
         message: `Coupon "${cleanCode}" applied successfully!`,
       });
     }
@@ -51,7 +90,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         valid: false,
-        message: `Code "${cleanCode}" is invalid or expired.`,
+        message: `Code "${cleanCode}" is invalid or inactive.`,
       },
       { status: 404 }
     );

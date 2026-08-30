@@ -72,24 +72,24 @@ export default function ProductCard({ product }: ProductCardProps) {
         />
 
         {/* Badges Overlay */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10 items-start">
           {product.isBridal && (
-            <span className="bg-[#9E2A2B] text-white text-[9px] font-sans font-bold uppercase tracking-widest px-2.5 py-1 rounded-sm shadow-sm">
-              Bridal Edit
+            <span className="bg-[#7A1C30]/95 backdrop-blur-md text-[#FFF8ED] border border-[#E2CE9F]/40 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs flex items-center gap-1">
+              <span>✦ Bridal Edit</span>
             </span>
           )}
           {product.isBestseller && !product.isBridal && (
-            <span className="bg-[#C87F4A] text-white text-[9px] font-sans font-bold uppercase tracking-widest px-2.5 py-1 rounded-sm shadow-sm">
-              Bestseller
+            <span className="bg-[#B8892B]/95 backdrop-blur-md text-white border border-amber-200/40 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
+              ★ Bestseller
             </span>
           )}
           {product.isNew && (
-            <span className="bg-[#1F1B16] text-[#FAF3E4] text-[9px] font-sans font-bold uppercase tracking-widest px-2.5 py-1 rounded-sm shadow-sm">
-              New In
+            <span className="bg-[#4A2D1B]/90 backdrop-blur-md text-[#FAF3E4] border border-[#C87F4A]/40 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-xs">
+              New Arrival
             </span>
           )}
           {product.silkMarkCertified && (
-            <span className="bg-[#FAF3E4]/90 backdrop-blur-sm text-[#773D21] border border-[#C87F4A]/30 text-[9px] font-mono font-semibold px-2 py-0.5 rounded-sm flex items-center gap-1 shadow-sm">
+            <span className="bg-[#FAF3E4]/95 backdrop-blur-md text-[#773D21] border border-[#C87F4A]/35 text-[9px] font-mono font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
               <ShieldCheck className="w-2.5 h-2.5 text-[#C87F4A]" />
               <span>Silk Mark</span>
             </span>
