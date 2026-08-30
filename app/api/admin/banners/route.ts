@@ -67,6 +67,9 @@ export async function POST(request: Request) {
     }
   }
 
+  const { count } = await supabase.from('hero_slides').select('*', { count: 'exact', head: true });
+  const nextOrder = (count || 0) + 1;
+
   const { data: slide, error } = await supabase
     .from('hero_slides')
     .insert({
@@ -77,6 +80,7 @@ export async function POST(request: Request) {
       desktop_image_path,
       mobile_image_path: mobile_image_path || desktop_image_path,
       is_active,
+      display_order: nextOrder,
     })
     .select('*')
     .single();

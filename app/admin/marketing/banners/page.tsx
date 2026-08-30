@@ -149,6 +149,36 @@ export default function StorefrontDisplayManagerPage() {
     return () => clearInterval(timer);
   }, [marqueeLines.length]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper to re-fetch fresh slides from DB
+  const refreshSlidesFromDb = async () => {
+    try {
+      const res = await fetch(`/api/admin/banners?_t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.slides && Array.isArray(data.slides)) {
+          const formatted: HeroSlide[] = data.slides.map((s: any) => ({
+            id: s.id,
+            title: s.heading,
+            subtitle: s.tagline || '',
+            ctaText: s.cta_text || 'Explore Collection',
+            destinationUrl: '/products',
+            desktopImage: s.desktop_image_path,
+            mobileImage: s.mobile_image_path || s.desktop_image_path,
+            badgeText: s.badge_text || '',
+            startDate: '2026-08-01',
+            endDate: '2026-12-31',
+            isActive: Boolean(s.is_active),
+          }));
+          setSlides(formatted);
+        }
+      }
+    } catch (err) {
+      console.error('[Banners API] Refresh error:', err);
+    }
+  };
+
   // Reorder Slide
   const moveSlide = async (index: number, direction: 'UP' | 'DOWN') => {
     const newIndex = direction === 'UP' ? index - 1 : index + 1;
@@ -167,6 +197,7 @@ export default function StorefrontDisplayManagerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reorder: reorderPayload }),
       });
+      await refreshSlidesFromDb();
     } catch (err) {
       console.error('[Banners API] Reorder error:', err);
     }
@@ -174,10 +205,12 @@ export default function StorefrontDisplayManagerPage() {
 
   // Delete Slide Permanently
   const handleDeleteSlide = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
     setSlides((prev) => prev.filter((s) => s.id !== id));
     triggerToast(`Slide "${title}" deleted.`);
     try {
       await fetch(`/api/admin/banners?id=${encodeURIComponent(id)}&_t=${Date.now()}`, { method: 'DELETE' });
+      await refreshSlidesFromDb();
     } catch (err) {
       console.error('[Banners API] Delete error:', err);
     }
@@ -196,28 +229,7 @@ export default function StorefrontDisplayManagerPage() {
   };
 
   React.useEffect(() => {
-    // Load hero slides
-    fetch(`/api/admin/banners?_t=${Date.now()}`, { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.slides && Array.isArray(data.slides) && data.slides.length > 0) {
-          const formatted: HeroSlide[] = data.slides.map((s: any) => ({
-            id: s.id,
-            title: s.heading,
-            subtitle: s.tagline || '',
-            ctaText: s.cta_text || 'Explore Collection',
-            destinationUrl: '/products',
-            desktopImage: s.desktop_image_path,
-            mobileImage: s.mobile_image_path || s.desktop_image_path,
-            badgeText: s.badge_text || '',
-            startDate: '2026-08-01',
-            endDate: '2026-12-31',
-            isActive: Boolean(s.is_active),
-          }));
-          setSlides(formatted);
-        }
-      })
-      .catch((err) => console.error('[Banners API] Fetch error:', err));
+    refreshSlidesFromDb();
 
     // Load active marquee lines & colors
     fetch(`/api/admin/marquee?_t=${Date.now()}`, { cache: 'no-store' })
@@ -250,6 +262,7 @@ export default function StorefrontDisplayManagerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slide_id: id, is_active: newActiveState }),
       });
+      await refreshSlidesFromDb();
     } catch (err) {
       console.error('[Banners API] Patch error:', err);
     }
@@ -261,6 +274,20 @@ export default function StorefrontDisplayManagerPage() {
     e.preventDefault();
     if (!editingSlide) return;
 
+    if (!editingSlide.title?.trim()) {
+      alert('Validation Error: Slide Heading is required.');
+      return;
+    }
+
+    const finalDesktopImg = editingSlide.desktopImage?.trim();
+    if (!finalDesktopImg) {
+      alert('Validation Error: Desktop Banner Image is required (choose an image file or enter a valid URL).');
+      return;
+    }
+
+    const finalMobileImg = editingSlide.mobileImage?.trim() || finalDesktopImg;
+
+    setIsSubmitting(true);
     try {
       const res = await fetch(`/api/admin/banners?_t=${Date.now()}`, {
         method: 'POST',
@@ -268,31 +295,30 @@ export default function StorefrontDisplayManagerPage() {
         body: JSON.stringify({
           id: editingSlide.id,
           slide_id: editingSlide.id,
-          heading: editingSlide.title,
-          tagline: editingSlide.subtitle,
-          badge_text: editingSlide.badgeText,
-          cta_text: editingSlide.ctaText,
-          desktop_image_path: editingSlide.desktopImage,
-          mobile_image_path: editingSlide.mobileImage,
-          is_active: editingSlide.isActive,
+          heading: editingSlide.title.trim(),
+          tagline: editingSlide.subtitle?.trim() || '',
+          badge_text: editingSlide.badgeText?.trim() || '',
+          cta_text: editingSlide.ctaText?.trim() || 'Explore Collection',
+          desktop_image_path: finalDesktopImg,
+          mobile_image_path: finalMobileImg,
+          is_active: editingSlide.isActive !== false,
         }),
       });
 
       const data = await res.json();
-      const savedId = data.slide?.id || editingSlide.id;
-
-      if (slides.some((s) => s.id === editingSlide.id)) {
-        setSlides((prev) => prev.map((s) => (s.id === editingSlide.id ? { ...editingSlide, id: savedId } : s)));
-        triggerToast(`Slide "${editingSlide.title}" updated.`);
+      if (!res.ok) {
+        alert(`Error saving banner: ${data.error || 'Server error'}`);
       } else {
-        setSlides([...slides, { ...editingSlide, id: savedId }]);
-        triggerToast(`New hero banner added to carousel.`);
+        await refreshSlidesFromDb();
+        triggerToast(`Hero banner "${editingSlide.title}" saved successfully!`);
+        setEditingSlide(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Banners API] Save error:', err);
+      alert(`Network error saving slide: ${err.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setEditingSlide(null);
   };
 
   const triggerToast = (msg: string) => {
@@ -1117,15 +1143,24 @@ export default function StorefrontDisplayManagerPage() {
                 <button
                   type="button"
                   onClick={() => setEditingSlide(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 font-medium"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium text-xs cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  disabled={isSubmitting || !editingSlide.title?.trim() || !editingSlide.desktopImage?.trim()}
+                  className="px-5 py-2 rounded-xl bg-[#7A1C30] hover:bg-[#5F1424] text-white font-bold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Commit Slide Changes
+                  {isSubmitting ? (
+                    <span>Saving Slide...</span>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-amber-200" />
+                      <span>Commit & Publish Slide</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
