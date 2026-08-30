@@ -618,6 +618,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       color_hex: colorVariants[0]?.hex || '#8B1E28',
       initial_stock: primaryVariantStock,
       images: allImagesList,
+      color_variants: colorVariants.map((v) => ({
+        id: v.id && !v.id.startsWith('var-') ? v.id : undefined,
+        name: v.name || 'Royal Crimson',
+        hex: v.hex || '#8B1E28',
+        sku: v.sku || `${sku}-CRM`,
+        stock: Number(v.stockCount) || 1,
+        images: (v.images || []).filter((img) => typeof img === 'string' && img.trim().length > 5),
+      })),
     };
 
     try {

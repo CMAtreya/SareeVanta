@@ -347,85 +347,149 @@ export async function POST(request: Request) {
     }
   }
 
-  // 2. Manage Product Variants & Media Photos
+  // 2. Manage Product Variants & Media Photos (BFS §6.3 & DSS §4 Compliant)
   const targetSku = sku || `NSH-SKU-${effectiveSlug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
   const rawNumMatch = (targetSku || '').match(/\d+/);
   const skuNum = rawNumMatch ? parseInt(rawNumMatch[0], 10) : 1;
   const targetBarcode = barcode || `890${String(100000000 + skuNum)}`;
 
-  let targetColorId = color_id;
-  if (!targetColorId) {
-    if (color_name) {
-      const { data: existingColor } = await supabase.from('colors').select('id').ilike('name', color_name.trim()).maybeSingle();
-      if (existingColor?.id) {
-        targetColorId = existingColor.id;
-      } else {
-        const { data: newColor } = await supabase.from('colors').insert({ name: color_name.trim(), hex_code: color_hex || '#8B1E28' }).select('id').single();
-        targetColorId = newColor?.id;
-      }
-    } else {
-      const { data: firstColor } = await supabase.from('colors').select('id').limit(1).maybeSingle();
-      targetColorId = firstColor?.id;
-    }
-  }
+  // Determine list of variants to save
+  const rawVariantsList: any[] = Array.isArray(body.color_variants) && body.color_variants.length > 0
+    ? body.color_variants
+    : [
+        {
+          id: undefined,
+          name: color_name || 'Royal Crimson',
+          hex: color_hex || '#8B1E28',
+          sku: targetSku,
+          barcode: targetBarcode,
+          stock: Number(initial_stock) || 1,
+          images: Array.isArray(images) ? images : [],
+        },
+      ];
 
   if (productId) {
-    // Check existing variant by product_id
-    const { data: existingVariants } = await supabase
-      .from('product_variants')
-      .select('id, sku, barcode')
-      .eq('product_id', productId);
+    const savedVariantIds: string[] = [];
 
-    let variantId = existingVariants?.[0]?.id;
+    for (let idx = 0; idx < rawVariantsList.length; idx++) {
+      const v = rawVariantsList[idx];
+      const vName = (v.name || 'Royal Crimson').trim();
+      const vHex = (v.hex || '#8B1E28').trim();
+      const vSku = v.sku || `${targetSku}-${vName.slice(0, 3).toUpperCase()}`;
+      const vBarcode = v.barcode || `890${String(100000000 + skuNum + idx)}`;
+      const vStock = typeof v.stock === 'number' ? Math.max(0, v.stock) : Number(initial_stock) || 1;
 
-    if (variantId) {
-      await supabase
-        .from('product_variants')
-        .update({
-          sku: targetSku,
-          barcode: targetBarcode,
-          price_paise: baseSellingPricePaise,
-          mrp_paise: baseMrpPaise,
-          ...(targetColorId ? { color_id: targetColorId } : {}),
-        })
-        .eq('id', variantId);
-    } else {
-      const { data: newVar } = await supabase
-        .from('product_variants')
-        .insert({
-          product_id: productId,
-          color_id: targetColorId,
-          sku: targetSku,
-          barcode: targetBarcode,
-          price_paise: baseSellingPricePaise,
-          mrp_paise: baseMrpPaise,
-        })
-        .select('id')
-        .single();
-      variantId = newVar?.id;
-    }
+      // 2a. Resolve color_id (Insert custom color dynamically if needed)
+      let colId = v.color_id;
+      if (!colId) {
+        const { data: exColor } = await supabase.from('colors').select('id').ilike('name', vName).maybeSingle();
+        if (exColor?.id) {
+          colId = exColor.id;
+        } else {
+          const { data: newCol } = await supabase.from('colors').insert({ name: vName, hex_code: vHex }).select('id').single();
+          colId = newCol?.id;
+        }
+      }
 
-    if (variantId) {
-      // Upsert Inventory
-      await supabase.from('inventory').upsert({
-        variant_id: variantId,
-        quantity: Number(initial_stock) || 10,
-        reserved_quantity: 0,
-      });
+      // 2b. Upsert product_variant
+      let currentVarId = v.id;
+      if (currentVarId && !currentVarId.startsWith('var-')) {
+        const { data: updatedVar } = await supabase
+          .from('product_variants')
+          .update({
+            color_id: colId,
+            sku: vSku,
+            barcode: vBarcode,
+            price_paise: baseSellingPricePaise,
+            mrp_paise: baseMrpPaise,
+            is_active: true,
+          })
+          .eq('id', currentVarId)
+          .select('id')
+          .maybeSingle();
+        if (updatedVar?.id) {
+          savedVariantIds.push(updatedVar.id);
+          currentVarId = updatedVar.id;
+        }
+      } else {
+        // Check if variant with this SKU already exists for this product
+        const { data: exVarBySku } = await supabase
+          .from('product_variants')
+          .select('id')
+          .eq('product_id', productId)
+          .eq('sku', vSku)
+          .maybeSingle();
 
-      // Update Media Photos: Delete old, insert new
-      if (Array.isArray(images) && images.length > 0) {
-        const validImages = images.filter((img: any) => typeof img === 'string' && img.trim().length > 5);
-        if (validImages.length > 0) {
-          await supabase.from('product_variant_media').delete().eq('variant_id', variantId);
-          const mediaInserts = validImages.map((url: string, index: number) => ({
-            variant_id: variantId,
+        if (exVarBySku?.id) {
+          await supabase
+            .from('product_variants')
+            .update({
+              color_id: colId,
+              barcode: vBarcode,
+              price_paise: baseSellingPricePaise,
+              mrp_paise: baseMrpPaise,
+              is_active: true,
+            })
+            .eq('id', exVarBySku.id);
+          currentVarId = exVarBySku.id;
+          savedVariantIds.push(exVarBySku.id);
+        } else {
+          const { data: newVar } = await supabase
+            .from('product_variants')
+            .insert({
+              product_id: productId,
+              color_id: colId,
+              sku: vSku,
+              barcode: vBarcode,
+              price_paise: baseSellingPricePaise,
+              mrp_paise: baseMrpPaise,
+              is_active: true,
+            })
+            .select('id')
+            .single();
+          if (newVar?.id) {
+            currentVarId = newVar.id;
+            savedVariantIds.push(newVar.id);
+          }
+        }
+      }
+
+      // 2c. Upsert Inventory & Media
+      if (currentVarId) {
+        await supabase.from('inventory').upsert({
+          variant_id: currentVarId,
+          quantity: vStock,
+          reserved_quantity: 0,
+        });
+
+        const vImages = Array.isArray(v.images)
+          ? v.images.filter((img: any) => typeof img === 'string' && img.trim().length > 5)
+          : [];
+
+        if (vImages.length > 0) {
+          await supabase.from('product_variant_media').delete().eq('variant_id', currentVarId);
+          const mediaInserts = vImages.map((url: string, mIdx: number) => ({
+            variant_id: currentVarId,
             url: url.trim(),
-            is_primary: index === 0,
-            display_order: index,
+            is_primary: mIdx === 0,
+            display_order: mIdx,
           }));
           await supabase.from('product_variant_media').insert(mediaInserts);
         }
+      }
+    }
+
+    // 2d. Clean up removed variants
+    if (savedVariantIds.length > 0) {
+      const { data: allExisting } = await supabase
+        .from('product_variants')
+        .select('id')
+        .eq('product_id', productId);
+      const toDelete = (allExisting || []).filter((ex) => !savedVariantIds.includes(ex.id)).map((ex) => ex.id);
+      if (toDelete.length > 0) {
+        await supabase.from('product_variant_media').delete().in('variant_id', toDelete);
+        await supabase.from('inventory').delete().in('variant_id', toDelete);
+        await supabase.from('product_variants').delete().in('id', toDelete);
       }
     }
   }
