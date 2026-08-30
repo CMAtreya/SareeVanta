@@ -17,14 +17,12 @@ function formatDbProduct(p: any): Product {
     .flatMap((v: any) => (v.product_variant_media || []).map((m: any) => m.url))
     .filter(Boolean);
 
-  const images = allVariantImages.length > 0
-    ? allVariantImages
-    : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop'];
+  const images = allVariantImages;
 
   const colorData: any = Array.isArray(firstVariant?.colors) ? firstVariant?.colors[0] : firstVariant?.colors;
 
-  const pricePaise = p.base_selling_price_paise || (firstVariant?.price_paise ?? 2800000);
-  const mrpPaise = p.base_mrp_paise || (firstVariant?.mrp_paise ?? Math.round(pricePaise * 1.25));
+  const pricePaise = p.base_selling_price_paise || (firstVariant?.price_paise ?? 0);
+  const mrpPaise = p.base_mrp_paise || (firstVariant?.mrp_paise ?? pricePaise);
   const priceINR = Math.round(pricePaise / 100);
   const originalPriceINR = Math.round(mrpPaise / 100);
 
@@ -63,10 +61,10 @@ function formatDbProduct(p: any): Product {
     return {
       id: v.id,
       sku: v.sku || `${p.slug}-${idx + 1}`,
-      name: vColor?.name || 'Heritage Saree',
-      hex: vColor?.hex_code || '#8B1E28',
+      name: vColor?.name || '',
+      hex: vColor?.hex_code || '',
       stock: 10,
-      images: vMedia.length > 0 ? vMedia : images,
+      images: vMedia,
     };
   });
 

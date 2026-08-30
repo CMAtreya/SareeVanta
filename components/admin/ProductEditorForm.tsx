@@ -277,9 +277,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               setColorVariants([
                 {
                   id: 'var-1',
-                  name: 'Royal Crimson',
-                  hex: '#8B1E28',
-                  sku: `${cachedItem.sku}-CRM`,
+                  name: '',
+                  hex: '',
+                  sku: cachedItem.sku || '',
                   stockCount: cachedItem.stock || 1,
                   images: [
                     cachedItem.images[0] || '',
@@ -318,6 +318,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             const mappedColorVars = dbVariants.map((v: any, vIdx: number) => {
               const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
               const actualStock = inv && typeof inv.quantity === 'number' ? inv.quantity : 1;
+              const colorObj = Array.isArray(v.colors) ? v.colors[0] : v.colors;
 
               const mediaList = Array.isArray(v.product_variant_media) ? v.product_variant_media : [];
               const sortedMedia = [...mediaList].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
@@ -325,9 +326,9 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
               return {
                 id: v.id || `var-${vIdx + 1}`,
-                name: v.colors?.name || 'Royal Crimson',
-                hex: v.colors?.hex_code || '#8B1E28',
-                sku: v.sku || `NSH-SKU-${(found.slug || 'SAREE').toUpperCase().slice(0, 8)}`,
+                name: colorObj?.name || '',
+                hex: colorObj?.hex_code || '',
+                sku: v.sku || '',
                 stockCount: actualStock,
                 images: [
                   vImgs[0] || '',
@@ -1559,9 +1560,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                         <input
                           type="text"
                           value={varItem.name}
+                          placeholder="e.g. Lotus Pink"
                           onChange={(e) => {
+                            const newName = e.target.value;
                             const updated = [...colorVariants];
-                            updated[idx].name = e.target.value;
+                            updated[idx].name = newName;
+                            const cleanCode = newName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+                            if (cleanCode && sku) {
+                              updated[idx].sku = `${sku}-${cleanCode}`;
+                            }
                             setColorVariants(updated);
                             setIsDirty(true);
                           }}
@@ -1733,10 +1740,10 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   ...colorVariants,
                   {
                     id: `var-${Date.now()}`,
-                    name: 'Kanchipuram Gold',
-                    hex: '#D97706',
-                    sku: `${sku}-GLD`,
-                    stockCount: 2,
+                    name: '',
+                    hex: '#000000',
+                    sku: sku ? `${sku}-${colorVariants.length + 1}` : '',
+                    stockCount: 1,
                     images: ['', '', ''],
                   },
                 ]);

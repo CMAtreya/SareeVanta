@@ -351,7 +351,14 @@ export async function POST(request: Request) {
   const targetSku = sku || `NSH-SKU-${effectiveSlug.substring(0, 5).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
   const rawNumMatch = (targetSku || '').match(/\d+/);
   const skuNum = rawNumMatch ? parseInt(rawNumMatch[0], 10) : 1;
-  const targetBarcode = barcode || `890${String(100000000 + skuNum)}`;
+  const masterBarcode = barcode || `890${String(100000000 + skuNum)}`;
+
+  // Save master_barcode onto the product record
+  try {
+    await supabase.from('products').update({ master_barcode: masterBarcode }).eq('id', productId);
+  } catch (mbErr) {
+    console.warn('[Admin Products] master_barcode column update notice:', mbErr);
+  }
 
   // Determine list of variants to save
   const rawVariantsList: any[] = Array.isArray(body.color_variants) && body.color_variants.length > 0
@@ -359,10 +366,10 @@ export async function POST(request: Request) {
     : [
         {
           id: undefined,
-          name: color_name || 'Royal Crimson',
-          hex: color_hex || '#8B1E28',
+          name: color_name || title,
+          hex: color_hex || '#000000',
           sku: targetSku,
-          barcode: targetBarcode,
+          barcode: `${masterBarcode}01`,
           stock: Number(initial_stock) || 1,
           images: Array.isArray(images) ? images : [],
         },
@@ -373,28 +380,34 @@ export async function POST(request: Request) {
 
     for (let idx = 0; idx < rawVariantsList.length; idx++) {
       const v = rawVariantsList[idx];
-      const vName = (v.name || 'Royal Crimson').trim();
-      const vHex = (v.hex || '#8B1E28').trim();
-      const vSku = v.sku || `${targetSku}-${vName.slice(0, 3).toUpperCase()}`;
-      const vBarcode = v.barcode || `890${String(100000000 + skuNum + idx)}`;
+      const vName = (v.name || title).trim();
+      const vHex = (v.hex || '#000000').trim();
+      const cleanColorSuffix = vName.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase() || `${idx + 1}`;
+      const vSku = v.sku || `${targetSku}-${cleanColorSuffix}`;
+      const vBarcode = v.barcode || `${masterBarcode}${String(idx + 1).padStart(2, '0')}`;
       const vStock = typeof v.stock === 'number' ? Math.max(0, v.stock) : Number(initial_stock) || 1;
 
       // 2a. Resolve color_id (Insert custom color dynamically if needed)
       let colId = v.color_id;
       if (!colId) {
-        const { data: exColor } = await supabase.from('colors').select('id').ilike('name', vName).maybeSingle();
+        const { data: exColor } = await supabase.from('colors').select('id').ilike('name', vName).limit(1).maybeSingle();
         if (exColor?.id) {
           colId = exColor.id;
         } else {
-          const { data: newCol } = await supabase.from('colors').insert({ name: vName, hex_code: vHex }).select('id').single();
-          colId = newCol?.id;
+          const { data: newCol } = await supabase.from('colors').insert({ name: vName, hex_code: vHex }).select('id').maybeSingle();
+          if (newCol?.id) {
+            colId = newCol.id;
+          } else {
+            const { data: fallbackCol } = await supabase.from('colors').select('id').limit(1).maybeSingle();
+            colId = fallbackCol?.id;
+          }
         }
       }
 
       // 2b. Upsert product_variant
       let currentVarId = v.id;
       if (currentVarId && !currentVarId.startsWith('var-')) {
-        const { data: updatedVar } = await supabase
+        const { data: updatedVar, error: updateVarErr } = await supabase
           .from('product_variants')
           .update({
             color_id: colId,
@@ -407,9 +420,12 @@ export async function POST(request: Request) {
           .eq('id', currentVarId)
           .select('id')
           .maybeSingle();
+
         if (updatedVar?.id) {
           savedVariantIds.push(updatedVar.id);
           currentVarId = updatedVar.id;
+        } else if (updateVarErr) {
+          console.error(`[Admin Products POST] Variant update error on ID ${currentVarId}:`, updateVarErr);
         }
       } else {
         // Check if variant with this SKU already exists for this product
@@ -434,7 +450,7 @@ export async function POST(request: Request) {
           currentVarId = exVarBySku.id;
           savedVariantIds.push(exVarBySku.id);
         } else {
-          const { data: newVar } = await supabase
+          const { data: newVar, error: newVarErr } = await supabase
             .from('product_variants')
             .insert({
               product_id: productId,
@@ -446,10 +462,35 @@ export async function POST(request: Request) {
               is_active: true,
             })
             .select('id')
-            .single();
+            .maybeSingle();
+
           if (newVar?.id) {
             currentVarId = newVar.id;
             savedVariantIds.push(newVar.id);
+          } else if (newVarErr) {
+            console.error(`[Admin Products POST] Variant insert error for SKU ${vSku}:`, newVarErr);
+            // Fallback retry with uniquely keyed barcode if a prior constraint collided
+            const retryBarcode = `${masterBarcode}${String(idx + 1).padStart(2, '0')}${Math.floor(10 + Math.random() * 90)}`;
+            const { data: retryVar, error: retryErr } = await supabase
+              .from('product_variants')
+              .insert({
+                product_id: productId,
+                color_id: colId,
+                sku: `${vSku}-${Math.floor(10 + Math.random() * 90)}`,
+                barcode: retryBarcode,
+                price_paise: baseSellingPricePaise,
+                mrp_paise: baseMrpPaise,
+                is_active: true,
+              })
+              .select('id')
+              .maybeSingle();
+
+            if (retryVar?.id) {
+              currentVarId = retryVar.id;
+              savedVariantIds.push(retryVar.id);
+            } else if (retryErr) {
+              console.error(`[Admin Products POST] Retry failed for variant ${vSku}:`, retryErr);
+            }
           }
         }
       }

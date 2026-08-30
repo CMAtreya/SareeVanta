@@ -54,12 +54,16 @@ export async function GET(
         const rawVariants = Array.isArray(prod.product_variants) ? prod.product_variants : [];
         const variantIds = rawVariants.map((v: any) => v.id);
 
-        // Concurrently fetch reviews and related products
+        // Concurrently fetch reviews and related products with their own media
         const [reviewsRes, relatedRes] = await Promise.all([
           variantIds.length > 0
             ? supabase.from('reviews').select('id, rating, review_text, title, created_at, reviewer_name, review_photos ( storage_path )').in('variant_id', variantIds).eq('moderation_status', 'APPROVED')
             : Promise.resolve({ data: [] }),
-          supabase.from('products').select('id, slug, title, base_mrp_paise, base_selling_price_paise, weaving_id').neq('id', prodId).limit(6),
+          supabase.from('products').select(`
+            id, slug, title, base_mrp_paise, base_selling_price_paise,
+            weavings(name),
+            product_variants(product_variant_media(url, is_primary, display_order))
+          `).neq('id', prodId).limit(6),
         ]);
 
         // Assemble media per variant & all gallery images
@@ -67,7 +71,7 @@ export async function GET(
         const colorVariants = rawVariants.map((v: any, idx: number) => {
           const col = Array.isArray(v.colors) ? v.colors[0] : v.colors;
           const invItem = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
-          const vStock = invItem ? Math.max(0, (invItem.quantity || 0) - (invItem.reserved_quantity || 0)) : 10;
+          const vStock = invItem ? Math.max(0, (invItem.quantity || 0) - (invItem.reserved_quantity || 0)) : 0;
           
           const rawMedia = Array.isArray(v.product_variant_media) ? v.product_variant_media : [];
           const sortedMedia = [...rawMedia].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
@@ -79,24 +83,20 @@ export async function GET(
 
           return {
             id: v.id,
-            sku: v.sku || `${prod.slug}-${idx + 1}`,
-            name: col?.name || 'Heritage Saree',
-            hex: col?.hex_code || '#8B1E28',
+            sku: v.sku || '',
+            name: col?.name || '',
+            hex: col?.hex_code || '',
             stock: vStock,
             images: vImages,
           };
         });
 
-        // Ensure each variant has at least the product gallery images if its own list is empty
+        // Ensure variants without individual media inherit the product's primary images if available
         colorVariants.forEach((cv: any) => {
-          if (cv.images.length === 0) {
-            cv.images = allImagesList.length > 0 ? allImagesList : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop'];
+          if (cv.images.length === 0 && allImagesList.length > 0) {
+            cv.images = allImagesList;
           }
         });
-
-        if (allImagesList.length === 0) {
-          allImagesList.push('https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop');
-        }
 
         // Parse Care Instructions Metadata
         let parsedMeta: any = {};
@@ -124,7 +124,7 @@ export async function GET(
             location: 'Verified Buyer',
             rating: r.rating || 5,
             date: new Date(r.created_at).toLocaleDateString(),
-            title: r.title || 'Exceptional Pure Silk Saree',
+            title: r.title || 'Product Review',
             comment: r.review_text || '',
             verified: true,
             photos: photoList,
@@ -132,22 +132,29 @@ export async function GET(
           };
         });
 
-        const weaveName = Array.isArray(prod.weavings) ? prod.weavings[0]?.name : prod.weavings?.name || 'Mysore Silk Crepe';
-        const fabricName = Array.isArray(prod.fabrics) ? prod.fabrics[0]?.name : prod.fabrics?.name || '100% Pure Mulberry Silk';
-        const occasionName = Array.isArray(prod.occasions) ? prod.occasions[0]?.name : prod.occasions?.name || (parsedMeta.occasions?.[0]) || 'Bridal & Muhurtham';
-        const patternName = Array.isArray(prod.patterns) ? prod.patterns[0]?.name : prod.patterns?.name || 'Kasuti Diamonds';
-        const zariGrade = Array.isArray(prod.zari_specifications) ? prod.zari_specifications[0]?.name : prod.zari_specifications?.name || 'Pure 24K Tested Zari';
+        const weaveName = Array.isArray(prod.weavings) ? prod.weavings[0]?.name : prod.weavings?.name || '';
+        const fabricName = Array.isArray(prod.fabrics) ? prod.fabrics[0]?.name : prod.fabrics?.name || '';
+        const occasionName = Array.isArray(prod.occasions) ? prod.occasions[0]?.name : prod.occasions?.name || (parsedMeta.occasions?.[0]) || '';
+        const patternName = Array.isArray(prod.patterns) ? prod.patterns[0]?.name : prod.patterns?.name || '';
+        const zariGrade = Array.isArray(prod.zari_specifications) ? prod.zari_specifications[0]?.name : prod.zari_specifications?.name || '';
 
-        // Related Products Assembly
-        const relatedProducts = (relatedRes.data || []).map((rp: any) => ({
-          id: rp.id,
-          slug: rp.slug,
-          title: rp.title,
-          weave: weaveName,
-          priceINR: Math.round((rp.base_selling_price_paise || 2800000) / 100),
-          originalPriceINR: Math.round((rp.base_mrp_paise || 3400000) / 100),
-          images: allImagesList,
-        }));
+        // Related Products Assembly with each product's own distinct media
+        const relatedProducts = (relatedRes.data || []).map((rp: any) => {
+          const rpWeave = Array.isArray(rp.weavings) ? rp.weavings[0]?.name : rp.weavings?.name || '';
+          const rpMedia = (rp.product_variants || [])
+            .flatMap((v: any) => (v.product_variant_media || []).map((m: any) => m.url))
+            .filter((u: any) => typeof u === 'string' && u.trim().length > 5);
+
+          return {
+            id: rp.id,
+            slug: rp.slug,
+            title: rp.title,
+            weave: rpWeave,
+            priceINR: Math.round((rp.base_selling_price_paise || 0) / 100),
+            originalPriceINR: Math.round((rp.base_mrp_paise || 0) / 100),
+            images: rpMedia,
+          };
+        });
 
         const formatted = {
           id: prod.id,

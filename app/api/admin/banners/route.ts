@@ -142,14 +142,31 @@ export async function DELETE(request: Request) {
   const supabase = createAdminClient();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
+  const heading = searchParams.get('heading');
 
-  if (!id) {
-    return NextResponse.json({ error: 'id parameter is required' }, { status: 400 });
+  if (!id && !heading) {
+    return NextResponse.json({ error: 'id or heading parameter is required' }, { status: 400 });
   }
 
-  const { error } = await supabase.from('hero_slides').delete().eq('id', id);
+  const isUuid = id && /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(id);
+
+  let deleteQuery = supabase.from('hero_slides').delete();
+
+  if (isUuid) {
+    deleteQuery = deleteQuery.eq('id', id);
+  } else if (id && id.toLowerCase() === 'all') {
+    deleteQuery = deleteQuery.neq('heading', '__NONE__');
+  } else if (heading) {
+    deleteQuery = deleteQuery.ilike('heading', `%${heading}%`);
+  } else if (id) {
+    // If not standard UUID, try matching by heading or title
+    deleteQuery = deleteQuery.or(`heading.ilike.%${id}%,tagline.ilike.%${id}%`);
+  }
+
+  const { error } = await deleteQuery;
 
   if (error) {
+    console.error('[Admin Banners DELETE] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

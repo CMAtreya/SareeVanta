@@ -123,9 +123,7 @@ export default function AdminCatalogPage() {
             const mrpINR = Math.round((p.base_mrp_paise || 3200000) / 100);
 
             const mediaList = firstVariant.product_variant_media || [];
-            const displayImages = mediaList.length > 0 ? mediaList.map((m: any) => m.url) : [
-              'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-            ];
+            const displayImages = mediaList.map((m: any) => m.url).filter(Boolean);
 
             return {
               id: p.id,
