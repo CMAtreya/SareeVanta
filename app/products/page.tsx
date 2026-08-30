@@ -596,15 +596,20 @@ function ProductsListingContent() {
                 </button>
               </div>
             ) : (
-              /* Products Grid: 3-4 columns desktop, 2 columns mobile with 0ms transition */
-              <div
-                className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 ${
-                  gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
-                } gap-4 sm:gap-6 transition-opacity duration-150 ${isFetching ? 'opacity-70' : 'opacity-100'}`}
-              >
-                {displayProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
+              /* Products Grid: Crisp, Vibrant, No Jarring Opacity Dims */
+              <div className="relative">
+                {isFetching && (
+                  <div className="absolute -top-3 left-0 right-0 h-0.5 bg-gradient-to-r from-[#7A1C30] via-[#C87F4A] to-[#7A1C30] animate-pulse z-20 rounded-full" />
+                )}
+                <div
+                  className={`grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 ${
+                    gridCols === 4 ? 'lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5' : 'lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4'
+                  } gap-4 sm:gap-6`}
+                >
+                  {displayProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
               </div>
             )}
 

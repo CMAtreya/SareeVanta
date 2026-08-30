@@ -51,8 +51,12 @@ export async function GET(request: Request) {
     responsePayload = { success: true, products: products || [] };
   }
 
-  setCache(cacheKey, responsePayload, 30);
-  return NextResponse.json(responsePayload);
+  setCache(cacheKey, responsePayload, 300);
+  return NextResponse.json(responsePayload, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    },
+  });
 }
 
 export async function POST(request: Request) {

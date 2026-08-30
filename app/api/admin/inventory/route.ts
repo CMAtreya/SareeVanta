@@ -44,8 +44,12 @@ export async function GET() {
   }
 
   const payload = { inventory: inventory || [] };
-  setCache(cacheKey, payload, 30);
-  return NextResponse.json(payload);
+  setCache(cacheKey, payload, 300);
+  return NextResponse.json(payload, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+    },
+  });
 }
 
 export async function POST(request: Request) {

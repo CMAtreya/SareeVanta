@@ -64,8 +64,21 @@ interface AuditLogRecord {
 let cachedInventoryData: InventoryItem[] | null = null;
 
 export default function InventoryMatrixPage() {
-  const [inventory, setInventory] = useState<InventoryItem[]>(cachedInventoryData || []);
-  const [loading, setLoading] = useState<boolean>(!cachedInventoryData);
+  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
+    if (cachedInventoryData && cachedInventoryData.length > 0) return cachedInventoryData;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('sareevanta_admin_inventory');
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (cachedInventoryData && cachedInventoryData.length > 0) return false;
+    if (typeof window !== 'undefined' && sessionStorage.getItem('sareevanta_admin_inventory')) return false;
+    return true;
+  });
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'MATRIX' | 'LOGS'>('MATRIX');
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,6 +119,9 @@ export default function InventoryMatrixPage() {
             };
           });
           cachedInventoryData = formatted;
+          try {
+            sessionStorage.setItem('sareevanta_admin_inventory', JSON.stringify(formatted));
+          } catch (e) {}
           setInventory(formatted);
           setLoading(false);
         }

@@ -62,8 +62,21 @@ interface CatalogSaree {
 let adminCatalogCache: CatalogSaree[] | null = null;
 
 export default function AdminCatalogPage() {
-  const [catalog, setCatalog] = useState<CatalogSaree[]>(adminCatalogCache || []);
-  const [isLoading, setIsLoading] = useState(!adminCatalogCache);
+  const [catalog, setCatalog] = useState<CatalogSaree[]>(() => {
+    if (adminCatalogCache && adminCatalogCache.length > 0) return adminCatalogCache;
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('sareevanta_admin_catalog');
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    if (adminCatalogCache && adminCatalogCache.length > 0) return false;
+    if (typeof window !== 'undefined' && sessionStorage.getItem('sareevanta_admin_catalog')) return false;
+    return true;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<
     'ALL' | 'ACTIVE' | 'LOW_STOCK' | 'SINGLE_PIECE' | 'DRAFT' | 'ARCHIVED'
@@ -114,6 +127,9 @@ export default function AdminCatalogPage() {
             };
           });
           adminCatalogCache = formatted;
+          try {
+            sessionStorage.setItem('sareevanta_admin_catalog', JSON.stringify(formatted));
+          } catch (e) {}
           setCatalog(formatted);
         }
       })
