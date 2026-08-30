@@ -17,8 +17,11 @@ export const availableColors: AvailableColor[] = [
 ];
 
 export interface ColorVariant {
+  id?: string;
+  sku?: string;
   name: string;
   hex: string;
+  stock?: number;
   images: string[];
 }
 
