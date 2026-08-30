@@ -76,6 +76,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     'Ikkat',
     'Organza',
     'Chanderi',
+    'Tissue Georgette',
   ]);
   const [weave, setWeave] = useState('Mysore Silk');
   const [isAddingNewWeave, setIsAddingNewWeave] = useState(false);

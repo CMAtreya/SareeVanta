@@ -104,22 +104,32 @@ export async function POST(request: Request) {
 
   const effectiveSlug = (slug || title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
-  // Robust taxonomy resolver with code generation and partial match
+  // Robust taxonomy resolver with code generation and prioritized exact match
   const getOrInsertId = async (table: string, val?: string) => {
     if (!val || !val.trim()) return null;
     const clean = val.trim();
 
-    // 1. Try exact or partial match
-    const { data: existing } = await supabase
+    // 1. Try exact match first
+    const { data: exact } = await supabase
+      .from(table)
+      .select('id')
+      .ilike('name', clean)
+      .limit(1)
+      .maybeSingle();
+
+    if (exact?.id) return exact.id;
+
+    // 2. Try partial match
+    const { data: partial } = await supabase
       .from(table)
       .select('id')
       .or(`name.ilike.%${clean}%,code.ilike.%${clean}%`)
       .limit(1)
       .maybeSingle();
 
-    if (existing?.id) return existing.id;
+    if (partial?.id) return partial.id;
 
-    // 2. Generate code and insert new entry
+    // 3. Generate code and insert new entry
     const code = clean.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/(^_|_$)/g, '').slice(0, 20);
     const { data: created } = await supabase
       .from(table)

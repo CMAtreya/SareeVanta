@@ -25,7 +25,7 @@ interface WeaveCategory {
 const weaveCategories: WeaveCategory[] = [
   {
     id: 'mysore-silk',
-    name: 'Mysore Royal Crepe Silk',
+    name: 'Mysore Silk',
     kannadaName: 'ಮೈಸೂರು ರೇಷ್ಮೆ',
     origin: 'Mysuru, Karnataka',
     tagline: 'Liquid luster, pure 100% mulberry crepe with royal Wodeyar seal borders.',
@@ -46,7 +46,7 @@ const weaveCategories: WeaveCategory[] = [
   },
   {
     id: 'kanchipuram',
-    name: 'Kanchipuram Temple Brocade',
+    name: 'Kanchipuram',
     kannadaName: 'ಕಾಂಚೀಪುರಂ ರೇಷ್ಮೆ',
     origin: 'Kanchipuram, Tamil Nadu',
     tagline: 'Heavy three-shuttle Korvai weaves with authentic temple spire borders.',
@@ -67,7 +67,7 @@ const weaveCategories: WeaveCategory[] = [
   },
   {
     id: 'banarasi',
-    name: 'Banarasi Pure Katan Silk',
+    name: 'Banarasi',
     kannadaName: 'ಬನಾರಸಿ ರೇಷ್ಮೆ',
     origin: 'Varanasi, Uttar Pradesh',
     tagline: 'Opulent Kadwa jaal with Persian floral vines and antique zari kalga.',
@@ -87,8 +87,8 @@ const weaveCategories: WeaveCategory[] = [
     ],
   },
   {
-    id: 'chanderi-tussar',
-    name: 'Chanderi & Tussar Gold',
+    id: 'chanderi',
+    name: 'Chanderi',
     kannadaName: 'ಚಂದೇರಿ ತುಸ್ಸಾರ್',
     origin: 'Chanderi & Vidarbha Looms',
     tagline: 'Featherlight sheer gossamer silk enriched with delicate zari bootas.',
@@ -109,7 +109,7 @@ const weaveCategories: WeaveCategory[] = [
   },
   {
     id: 'paithani',
-    name: 'Paithani & Tissue Radiance',
+    name: 'Paithani',
     kannadaName: 'ಪೈಠಣಿ ಮತ್ತು ಟಿಶ್ಯೂ',
     origin: 'Yeola Looms, Maharashtra',
     tagline: 'Prismatic shot-color silken tapestry with tapestry-woven peacock pallu.',

@@ -80,6 +80,19 @@ export interface CategoryWithThumbnails {
 
 export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
   {
+    id: 'mysore-silk',
+    name: 'Mysore Silk',
+    desc: 'Royal Crepe & Liquid Luster',
+    count: '48 Designs',
+    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
+    ],
+  },
+  {
     id: 'kanchipuram',
     name: 'Kanchipuram',
     desc: 'Heavy Bridal Korvai & 24K Zari',
@@ -106,16 +119,42 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
     ],
   },
   {
-    id: 'mysore-silk',
-    name: 'Mysore Silk',
-    desc: 'Royal Crepe & Liquid Luster',
-    count: '48 Designs',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    id: 'paithani',
+    name: 'Paithani',
+    desc: 'Shot Tones & Tapestry Peacocks',
+    count: '22 Designs',
+    image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
     thumbnails: [
-      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
+    ],
+  },
+  {
+    id: 'patola',
+    name: 'Patola',
+    desc: 'Geometric Double Ikkat Heritage',
+    count: '16 Designs',
+    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
+    ],
+  },
+  {
+    id: 'ikkat',
+    name: 'Ikkat',
+    desc: 'Mathematical Double Patola',
+    count: '18 Designs',
+    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    thumbnails: [
       'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
     ],
   },
   {
@@ -132,10 +171,10 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
     ],
   },
   {
-    id: 'paithani',
-    name: 'Paithani',
-    desc: 'Shot Tones & Tapestry Peacocks',
-    count: '22 Designs',
+    id: 'chanderi',
+    name: 'Chanderi',
+    desc: 'Featherlight Sheer Gossamer Weave',
+    count: '20 Designs',
     image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=800&q=80',
     thumbnails: [
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
@@ -145,16 +184,16 @@ export const sixCategoriesWithThumbnails: CategoryWithThumbnails[] = [
     ],
   },
   {
-    id: 'ikkat',
-    name: 'Ikkat',
-    desc: 'Mathematical Double Patola',
-    count: '18 Designs',
-    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=800&q=80',
+    id: 'tissue-georgette',
+    name: 'Tissue Georgette',
+    desc: 'Luminous Metallic Sheen & Flowing Drape',
+    count: '15 Designs',
+    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
     thumbnails: [
-      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
-      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=300&q=80',
       'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=300&q=80',
+      'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=300&q=80',
     ],
   },
 ];
@@ -173,6 +212,27 @@ export const fabricFilters = [
   'Organza',
   'Pure Katan Silk',
   'Chanderi Silk',
+];
+
+export const zariFilters = [
+  'Pure 24K Tested Zari',
+  'Tested Gold Zari',
+  'Silver Tested Zari',
+  'Pure Zari Thread Interlock',
+  'Antique Gold Zari',
+  'Copper Zari Weave',
+  'No Zari / Resham Threadwork',
+];
+
+export const patternFilters = [
+  'Kasuti Diamonds',
+  'Peacock Mayil & Yanai',
+  'Temple Korvai Border',
+  'Floral Kadwa Meenakari',
+  'Asawali Floral Vines',
+  'Ashrafi Bootas',
+  'Jacquard Zari Butta',
+  'Temple Border',
 ];
 
 export const occasionFilters = [
