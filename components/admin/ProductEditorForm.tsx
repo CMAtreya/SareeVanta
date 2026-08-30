@@ -67,65 +67,27 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [description, setDescription] = useState('');
 
   // Form State: Weaving & Fabric Specs (Order: Weave -> Fabric -> Zari -> Pattern)
-  const [weaveOptions, setWeaveOptions] = useState<string[]>([
-    'Mysore Silk',
-    'Kanchipuram',
-    'Banarasi',
-    'Paithani',
-    'Patola',
-    'Ikkat',
-    'Organza',
-    'Chanderi',
-  ]);
-  const [weave, setWeave] = useState('Mysore Silk');
+  const [weaveOptions, setWeaveOptions] = useState<string[]>([]);
+  const [weave, setWeave] = useState('');
   const [isAddingNewWeave, setIsAddingNewWeave] = useState(false);
   const [newWeaveInput, setNewWeaveInput] = useState('');
   const [isWeaveDropdownOpen, setIsWeaveDropdownOpen] = useState(false);
 
-  const [fabricOptions, setFabricOptions] = useState<string[]>([
-    'Pure Mulberry Silk',
-    'Tissue Georgette',
-    'Soft Silk',
-    'Raw Silk',
-    'Crepe Silk',
-    'Georgette',
-    'Tissue Silk',
-    'Tussar Silk',
-    'Organza',
-    'Pure Katan Silk',
-    'Chanderi Silk',
-  ]);
-  const [fabric, setFabric] = useState('Pure Mulberry Silk');
+  const [fabricOptions, setFabricOptions] = useState<string[]>([]);
+  const [fabric, setFabric] = useState('');
   const [isAddingNewFabric, setIsAddingNewFabric] = useState(false);
   const [newFabricInput, setNewFabricInput] = useState('');
   const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false);
 
-  const [zariOptions, setZariOptions] = useState<string[]>([
-    'Pure 24K Tested Zari',
-    'Tested Gold Zari',
-    'Silver Tested Zari',
-    'Pure Zari Thread Interlock',
-    'Antique Gold Zari',
-    'Copper Zari Weave',
-    'No Zari / Resham Threadwork',
-  ]);
-  const [zariSpec, setZariSpec] = useState('Pure 24K Tested Zari');
+  const [zariOptions, setZariOptions] = useState<string[]>([]);
+  const [zariSpec, setZariSpec] = useState('');
   const [isAddingNewZari, setIsAddingNewZari] = useState(false);
   const [newZariInput, setNewZariInput] = useState('');
   const [isZariDropdownOpen, setIsZariDropdownOpen] = useState(false);
 
   // Form State: Motif & Heritage Pattern Selection
-  const [patternOptions, setPatternOptions] = useState<string[]>([
-    'Kasuti Diamonds',
-    'Peacock Mayil & Yanai',
-    'Temple Korvai Border',
-    'Floral Kadwa Meenakari',
-    'Asawali Floral Vines',
-    'Ashrafi Bootas',
-    'Jacquard Zari Butta',
-    'Temple Border',
-  ]);
-  const [pattern, setPattern] = useState('Kasuti Diamonds');
+  const [patternOptions, setPatternOptions] = useState<string[]>([]);
+  const [pattern, setPattern] = useState('');
   const [isAddingNewPattern, setIsAddingNewPattern] = useState(false);
   const [newPatternInput, setNewPatternInput] = useState('');
   const [isPatternDropdownOpen, setIsPatternDropdownOpen] = useState(false);
@@ -188,15 +150,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     { id: string; name: string; hex: string; sku: string; stockCount: number; images: [string, string, string] }[]
   >([]);
 
-  // Form State: Occasions (Multi-Select Tags matching storefront filters)
+  // Form State: Occasions (Multi-Select Tags directly from backend)
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>(['Bridal & Muhurtham']);
-  const availableOccasions = [
+  const [availableOccasions, setAvailableOccasions] = useState<string[]>([
     'Bridal & Muhurtham',
     'Festive & Puja',
     'Reception & Cocktail',
     'Daily Classic',
     'Temple Visits',
-  ];
+  ]);
 
   // Form State: Special Marketing Badges & Tags
   const [selectedBadges, setSelectedBadges] = useState<string[]>(['New Arrival']);
@@ -244,95 +206,46 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
   // Populate data in edit mode or compute sequential SKU in create mode
   useEffect(() => {
-    // 1. Fetch dynamic master taxonomies on mount
-    fetch('/api/admin/taxonomies')
+    // 1. Fetch dynamic master taxonomies and next SKU directly from backend
+    fetch('/api/admin/taxonomies', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
-        if (data.weaves && Array.isArray(data.weaves)) setWeaveOptions(data.weaves);
-        if (data.fabrics && Array.isArray(data.fabrics)) setFabricOptions(data.fabrics);
-        if (data.zari && Array.isArray(data.zari)) setZariOptions(data.zari);
-        if (data.patterns && Array.isArray(data.patterns)) setPatternOptions(data.patterns);
-      })
-      .catch(() => {});
+        if (Array.isArray(data.weaves)) setWeaveOptions(data.weaves);
+        if (Array.isArray(data.fabrics)) setFabricOptions(data.fabrics);
+        if (Array.isArray(data.zari)) setZariOptions(data.zari);
+        if (Array.isArray(data.patterns)) setPatternOptions(data.patterns);
+        if (Array.isArray(data.occasions) && data.occasions.length > 0) {
+          setAvailableOccasions(data.occasions);
+        }
 
-    if (mode === 'create') {
-      // 0ms instant optimistic calculation from local catalog cache
-      let initialMax = 0;
-      try {
-        const cachedRaw = typeof window !== 'undefined' ? sessionStorage.getItem('sareevanta_admin_catalog') : null;
-        if (cachedRaw) {
-          const list = JSON.parse(cachedRaw);
-          if (Array.isArray(list)) {
-            list.forEach((p: any) => {
-              const match = (p.sku || '').match(/NSH-SKU-(\d+)/i);
-              if (match && match[1]) {
-                const n = parseInt(match[1], 10);
-                if (!isNaN(n) && n > initialMax) initialMax = n;
-              }
-            });
+        if (mode === 'create') {
+          if (data.weaves?.length > 0) setWeave((prev) => prev || data.weaves[0]);
+          if (data.fabrics?.length > 0) setFabric((prev) => prev || data.fabrics[0]);
+          if (data.zari?.length > 0) setZariSpec((prev) => prev || data.zari[0]);
+          if (data.patterns?.length > 0) setPattern((prev) => prev || data.patterns[0]);
+
+          if (data.nextSku) {
+            setSku(data.nextSku);
+            const resolvedBarcode = data.nextBarcode || `890${String(100000000 + (data.nextSeq || 1))}`;
+            setBarcode(resolvedBarcode);
+            setColorVariants([
+              {
+                id: 'var-1',
+                name: 'Royal Crimson',
+                hex: '#8B1E28',
+                sku: `${data.nextSku}-CRM`,
+                stockCount: 1,
+                images: ['', '', ''],
+              },
+            ]);
           }
         }
-      } catch (e) {}
+      })
+      .catch((err) => {
+        console.error('Error loading database taxonomies:', err);
+      });
 
-      const initSeqNum = initialMax + 1;
-      const initSeqStr = String(initSeqNum).padStart(3, '0');
-      const initSku = `NSH-SKU-${initSeqStr}`;
-      const initBarcode = `890${String(100000000 + initSeqNum)}`;
-      setSku(initSku);
-      setBarcode(initBarcode);
-      setColorVariants([
-        {
-          id: 'var-1',
-          name: 'Royal Crimson',
-          hex: '#8B1E28',
-          sku: `${initSku}-CRM`,
-          stockCount: 1,
-          images: ['', '', ''],
-        },
-      ]);
-
-      // Background verify against database
-      fetch('/api/admin/products', { cache: 'no-store' })
-        .then((res) => res.json())
-        .then((data) => {
-          let maxSeq = 0;
-          if (data.products && Array.isArray(data.products)) {
-            data.products.forEach((p: any) => {
-              const allVariants = p.product_variants || [];
-              allVariants.forEach((v: any) => {
-                const match = (v.sku || '').match(/NSH-SKU-(\d+)/i);
-                if (match && match[1]) {
-                  const num = parseInt(match[1], 10);
-                  if (!isNaN(num) && num > maxSeq) maxSeq = num;
-                }
-              });
-              const rootSkuMatch = (p.sku || '').match(/NSH-SKU-(\d+)/i);
-              if (rootSkuMatch && rootSkuMatch[1]) {
-                const num = parseInt(rootSkuMatch[1], 10);
-                if (!isNaN(num) && num > maxSeq) maxSeq = num;
-              }
-            });
-          }
-          const nextNum = maxSeq + 1;
-          const nextSeq = String(nextNum).padStart(3, '0');
-          const newSku = `NSH-SKU-${nextSeq}`;
-          const newBarcode = `890${String(100000000 + nextNum)}`;
-          setSku(newSku);
-          setBarcode(newBarcode);
-          setColorVariants([
-            {
-              id: 'var-1',
-              name: 'Royal Crimson',
-              hex: '#8B1E28',
-              sku: `${newSku}-CRM`,
-              stockCount: 1,
-              images: ['', '', ''],
-            },
-          ]);
-        })
-        .catch(() => {});
-      return;
-    }
+    if (mode === 'create') return;
 
     async function fetchProductDetails() {
       if (mode !== 'edit' || !productId) return;

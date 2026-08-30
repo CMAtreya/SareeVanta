@@ -8,30 +8,52 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
   const slug = searchParams.get('slug');
+  const action = searchParams.get('action');
 
-  const cacheKey = `admin_products_${id || slug || 'all'}`;
-  const cached = getCache<any>(cacheKey);
-  if (cached) {
-    return NextResponse.json(cached, {
+  const supabase = createAdminClient();
+
+  if (action === 'next_sku') {
+    const { data: variants } = await supabase.from('product_variants').select('sku, barcode');
+    let maxSeq = 0;
+    (variants || []).forEach((v: any) => {
+      const match = (v.sku || '').match(/NSH-SKU-(\d+)/i);
+      if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxSeq) maxSeq = num;
+      }
+    });
+    const nextNum = maxSeq + 1;
+    const nextSeqStr = String(nextNum).padStart(3, '0');
+    return NextResponse.json({
+      nextSeq: nextNum,
+      nextSku: `NSH-SKU-${nextSeqStr}`,
+      nextBarcode: `890${String(100000000 + nextNum)}`,
+    }, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
     });
   }
 
-  const supabase = createAdminClient();
-
   let query = supabase
     .from('products')
     .select(`
-      *,
+      id,
+      title,
+      slug,
+      description,
+      care_instructions,
+      base_mrp_paise,
+      base_selling_price_paise,
+      is_published,
+      created_at,
       weavings(name),
       fabrics(name),
       occasions(name),
       patterns(name),
       border_stylings(name),
       zari_specifications(name),
-      product_variants(*, colors(name, hex_code), inventory(*), product_variant_media(*))
+      product_variants(id, sku, barcode, price_paise, mrp_paise, is_active, colors(name, hex_code), inventory(quantity, reserved_quantity), product_variant_media(url, is_primary))
     `);
 
   if (id) {
@@ -55,10 +77,9 @@ export async function GET(request: Request) {
     responsePayload = { success: true, products: products || [] };
   }
 
-  setCache(cacheKey, responsePayload, 10);
   return NextResponse.json(responsePayload, {
     headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
     },
   });
 }

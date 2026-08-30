@@ -3,58 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin-client';
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_TAXONOMIES = {
-  weaves: [
-    'Mysore Silk',
-    'Kanchipuram',
-    'Banarasi',
-    'Paithani',
-    'Patola',
-    'Ikkat',
-    'Organza',
-    'Chanderi',
-  ],
-  fabrics: [
-    'Pure Mulberry Silk',
-    'Tissue Georgette',
-    'Soft Silk',
-    'Raw Silk',
-    'Crepe Silk',
-    'Georgette',
-    'Tissue Silk',
-    'Tussar Silk',
-    'Organza',
-    'Pure Katan Silk',
-    'Chanderi Silk',
-  ],
-  zari: [
-    'Pure 24K Tested Zari',
-    'Tested Gold Zari',
-    'Silver Tested Zari',
-    'Pure Zari Thread Interlock',
-    'Antique Gold Zari',
-    'Copper Zari Weave',
-    'No Zari / Resham Threadwork',
-  ],
-  patterns: [
-    'Kasuti Diamonds',
-    'Peacock Mayil & Yanai',
-    'Temple Korvai Border',
-    'Floral Kadwa Meenakari',
-    'Asawali Floral Vines',
-    'Ashrafi Bootas',
-    'Jacquard Zari Butta',
-    'Temple Border',
-  ],
-  occasions: [
-    'Bridal & Muhurtham',
-    'Festive & Puja',
-    'Reception & Cocktail',
-    'Daily Classic',
-    'Temple Visits',
-  ],
-};
-
 export async function GET() {
   const supabase = createAdminClient();
 
@@ -65,35 +13,57 @@ export async function GET() {
       { data: zariData },
       { data: patternsData },
       { data: occasionsData },
+      { data: variantsData },
     ] = await Promise.all([
       supabase.from('weavings').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('fabrics').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('zari_specifications').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('patterns').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('occasions').select('name').eq('is_active', true).order('created_at', { ascending: true }),
+      supabase.from('product_variants').select('sku, barcode'),
     ]);
 
-    // Merge database names with default names ensuring no duplicates and preserving order
-    const mergeNames = (dbList: any[] | null, defaults: string[]) => {
-      const set = new Set<string>(defaults);
-      (dbList || []).forEach((row) => {
+    // Extract exact list from database rows without frontend hardcoded merging
+    const extractNames = (list: any[] | null) => {
+      const set = new Set<string>();
+      (list || []).forEach((row) => {
         if (row.name && row.name.trim()) set.add(row.name.trim());
       });
       return Array.from(set);
     };
 
+    // Calculate highest sequential SKU index directly from database records
+    let maxSeq = 0;
+    (variantsData || []).forEach((v: any) => {
+      const match = (v.sku || '').match(/NSH-SKU-(\d+)/i);
+      if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxSeq) maxSeq = num;
+      }
+    });
+
+    const nextNum = maxSeq + 1;
+    const nextSeqStr = String(nextNum).padStart(3, '0');
+    const nextSku = `NSH-SKU-${nextSeqStr}`;
+    const nextBarcode = `890${String(100000000 + nextNum)}`;
+
     return NextResponse.json({
-      weaves: mergeNames(weavingsData, DEFAULT_TAXONOMIES.weaves),
-      fabrics: mergeNames(fabricsData, DEFAULT_TAXONOMIES.fabrics),
-      zari: mergeNames(zariData, DEFAULT_TAXONOMIES.zari),
-      patterns: mergeNames(patternsData, DEFAULT_TAXONOMIES.patterns),
-      occasions: mergeNames(occasionsData, DEFAULT_TAXONOMIES.occasions),
+      weaves: extractNames(weavingsData),
+      fabrics: extractNames(fabricsData),
+      zari: extractNames(zariData),
+      patterns: extractNames(patternsData),
+      occasions: extractNames(occasionsData),
+      nextSku,
+      nextBarcode,
+      nextSeq: nextNum,
     }, {
-      headers: { 'Cache-Control': 'no-cache, must-revalidate' }
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
     });
   } catch (error: any) {
     console.error('[Taxonomies API] GET Error:', error);
-    return NextResponse.json(DEFAULT_TAXONOMIES);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
