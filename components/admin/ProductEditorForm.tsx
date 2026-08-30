@@ -167,10 +167,6 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     'Best Seller',
     'Bridal Edit',
     'Limited Edition',
-    'Pure 24K Zari',
-    'Handwoven Heritage',
-    'Celebrity Favorite',
-    'Royal Heirloom',
   ]);
   const [customTagInput, setCustomTagInput] = useState('');
 

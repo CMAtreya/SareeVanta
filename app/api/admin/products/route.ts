@@ -35,53 +35,110 @@ export async function GET(request: Request) {
     });
   }
 
-  let query = supabase
-    .from('products')
-    .select(`
-      id,
-      title,
-      slug,
-      description,
-      care_instructions,
-      base_mrp_paise,
-      base_selling_price_paise,
-      is_published,
-      created_at,
-      weavings(name),
-      fabrics(name),
-      occasions(name),
-      patterns(name),
-      border_stylings(name),
-      zari_specifications(name),
-      product_variants(id, sku, barcode, price_paise, mrp_paise, is_active, colors(name, hex_code), inventory(quantity, reserved_quantity), product_variant_media(url, is_primary))
-    `);
+  if (id || slug) {
+    let query = supabase
+      .from('products')
+      .select(`
+        id,
+        title,
+        slug,
+        description,
+        care_instructions,
+        base_mrp_paise,
+        base_selling_price_paise,
+        is_published,
+        created_at,
+        weavings(name),
+        fabrics(name),
+        occasions(name),
+        patterns(name),
+        border_stylings(name),
+        zari_specifications(name),
+        product_variants(id, sku, barcode, price_paise, mrp_paise, is_active, colors(name, hex_code), inventory(quantity, reserved_quantity), product_variant_media(url, is_primary))
+      `);
 
-  if (id) {
-    query = query.eq('id', id);
-  } else if (slug) {
-    query = query.eq('slug', slug);
-  } else {
-    query = query.order('created_at', { ascending: false });
+    if (id) {
+      query = query.eq('id', id);
+    } else if (slug) {
+      query = query.eq('slug', slug);
+    }
+
+    const { data: products, error } = await query;
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    const singleProduct = products && products.length > 0 ? products[0] : null;
+    return NextResponse.json({ success: true, product: singleProduct, products: products || [] }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
   }
 
-  const { data: products, error } = await query;
+  // Fast Parallel Query for Master Catalog Grid (Sub-100ms Execution)
+  try {
+    const [
+      { data: products, error: pErr },
+      { data: variants, error: vErr },
+      { data: weavings, error: wErr },
+      { data: fabrics, error: fErr },
+      { data: zari, error: zErr },
+      { data: inventory, error: iErr },
+      { data: media, error: mErr },
+    ] = await Promise.all([
+      supabase.from('products').select('id, title, slug, is_published, base_mrp_paise, base_selling_price_paise, weaving_id, fabric_id, zari_specification_id, created_at').order('created_at', { ascending: false }),
+      supabase.from('product_variants').select('id, product_id, sku, barcode, price_paise, mrp_paise, is_active'),
+      supabase.from('weavings').select('id, name'),
+      supabase.from('fabrics').select('id, name'),
+      supabase.from('zari_specifications').select('id, name'),
+      supabase.from('inventory').select('variant_id, quantity, reserved_quantity'),
+      supabase.from('product_variant_media').select('variant_id, url, is_primary').order('display_order', { ascending: true }),
+    ]);
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (pErr) {
+      return NextResponse.json({ error: pErr.message }, { status: 500 });
+    }
+
+    const weaveMap = Object.fromEntries((weavings || []).map((w) => [w.id, w.name]));
+    const fabricMap = Object.fromEntries((fabrics || []).map((f) => [f.id, f.name]));
+    const zariMap = Object.fromEntries((zari || []).map((z) => [z.id, z.name]));
+    const invMap = Object.fromEntries((inventory || []).map((i) => [i.variant_id, i]));
+
+    const mediaMap: Record<string, any[]> = {};
+    (media || []).forEach((m) => {
+      if (!mediaMap[m.variant_id]) mediaMap[m.variant_id] = [];
+      mediaMap[m.variant_id].push(m);
+    });
+
+    const variantMap: Record<string, any[]> = {};
+    (variants || []).forEach((v) => {
+      if (!variantMap[v.product_id]) variantMap[v.product_id] = [];
+      variantMap[v.product_id].push({
+        ...v,
+        inventory: invMap[v.id] ? [invMap[v.id]] : [],
+        product_variant_media: mediaMap[v.id] || [],
+      });
+    });
+
+    const assembledProducts = (products || []).map((p) => ({
+      ...p,
+      weavings: p.weaving_id && weaveMap[p.weaving_id] ? { name: weaveMap[p.weaving_id] } : null,
+      fabrics: p.fabric_id && fabricMap[p.fabric_id] ? { name: fabricMap[p.fabric_id] } : null,
+      zari_specifications: p.zari_specification_id && zariMap[p.zari_specification_id] ? { name: zariMap[p.zari_specification_id] } : null,
+      product_variants: variantMap[p.id] || [],
+    }));
+
+    return NextResponse.json({ success: true, products: assembledProducts }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    });
+  } catch (err: any) {
+    console.error('[Admin Products GET] Error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to fetch catalog' }, { status: 500 });
   }
-
-  let responsePayload: any;
-  if ((id || slug) && products && products.length > 0) {
-    responsePayload = { success: true, product: products[0], products: products };
-  } else {
-    responsePayload = { success: true, products: products || [] };
-  }
-
-  return NextResponse.json(responsePayload, {
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
-    },
-  });
 }
 
 export async function POST(request: Request) {

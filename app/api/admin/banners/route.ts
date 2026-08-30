@@ -61,6 +61,8 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (updated) {
+      invalidateCache(BANNERS_CACHE_KEY);
+      invalidateCache('storefront_hero_banners');
       return NextResponse.json({ success: true, slide: updated });
     }
   }
