@@ -415,11 +415,11 @@ export default function ProductDetailPage() {
 
                 if (hasValidImage) {
                   return (
-                    <div className="relative w-full h-[520px] sm:h-[600px] bg-stone-100">
+                    <div className="relative w-full h-[520px] sm:h-[620px] bg-white flex items-center justify-center p-2">
                       <img
                         src={currentImg}
                         alt={product.title}
-                        className={`w-full h-full object-cover object-top transition-opacity duration-200 ${
+                        className={`w-full h-full object-contain object-center transition-opacity duration-200 ${
                           isZoomed ? 'opacity-0' : 'opacity-100'
                         }`}
                       />
@@ -549,6 +549,18 @@ export default function ProductDetailPage() {
               );
             })()}
 
+            {/* Description Card */}
+            {product.description && (
+              <div className="p-4 rounded-2xl bg-white/90 border border-[#C87F4A]/20 shadow-xs space-y-1.5">
+                <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-[#C87F4A] block">
+                  Atelier Heritage Story
+                </span>
+                <p className="text-xs sm:text-[13px] text-stone-700 leading-relaxed font-sans">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
             {/* Weave Tradition & Fabric Spec Chips */}
             <div className="grid grid-cols-2 gap-2.5 text-xs font-sans">
               <div className="p-3 bg-white/80 rounded-xl border border-[#C87F4A]/20 shadow-xs">
@@ -562,39 +574,48 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Color Variant Swatches (Clicking swaps gallery images) */}
-            {product.colorVariants && product.colorVariants.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold uppercase tracking-wider text-[#1F1B16]">
-                    Color Variant: <strong className="text-[#C87F4A]">{product.colorVariants[selectedVariantIndex].name}</strong>
-                  </span>
-                  <span className="text-[11px] font-mono text-stone-500">
-                    {product.colorVariants.length} Colors Available
-                  </span>
-                </div>
+            {(() => {
+              const variantsList = product.colorVariants || [];
+              const activeVariant = variantsList[selectedVariantIndex] || variantsList[0];
+              if (variantsList.length === 0) return null;
 
-                <div className="flex flex-wrap gap-2.5">
-                  {product.colorVariants.map((variant, vIdx) => (
-                    <button
-                      key={vIdx}
-                      type="button"
-                      onClick={() => handleVariantClick(vIdx)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-sans ${
-                        selectedVariantIndex === vIdx
-                          ? 'border-[#C87F4A] bg-white font-bold text-[#1F1B16] shadow-xs ring-2 ring-[#C87F4A]/30'
-                          : 'border-stone-300 bg-white/60 text-stone-700 hover:border-[#C87F4A]'
-                      }`}
-                    >
-                      <span
-                        className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs"
-                        style={{ backgroundColor: variant.hex }}
-                      />
-                      <span>{variant.name}</span>
-                    </button>
-                  ))}
+              return (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold uppercase tracking-wider text-[#1F1B16]">
+                      Color Variant: <strong className="text-[#C87F4A]">{activeVariant?.name || product.color}</strong>
+                    </span>
+                    <span className="text-[11px] font-mono text-stone-500">
+                      {variantsList.length} {variantsList.length === 1 ? 'Color Available' : 'Colors Available'}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2.5">
+                    {variantsList.map((variant, vIdx) => (
+                      <button
+                        key={variant.id || vIdx}
+                        type="button"
+                        onClick={() => handleVariantClick(vIdx)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-xs font-sans cursor-pointer ${
+                          selectedVariantIndex === vIdx
+                            ? 'border-[#C87F4A] bg-white font-bold text-[#1F1B16] shadow-xs ring-2 ring-[#C87F4A]/30'
+                            : 'border-stone-300 bg-white/60 text-stone-700 hover:border-[#C87F4A]'
+                        }`}
+                      >
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-xs"
+                          style={{ backgroundColor: variant.hex || '#8B1E28' }}
+                        />
+                        <span>{variant.name || `Color ${vIdx + 1}`}</span>
+                        {variant.stock !== undefined && (
+                          <span className="text-[10px] font-mono text-stone-400">({variant.stock})</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Stock Indicator (Warning tone badge when stock is low) */}
             <div className="flex items-center gap-2 py-1">

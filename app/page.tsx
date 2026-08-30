@@ -20,36 +20,6 @@ import ProductCard from '@/components/ecommerce/ProductCard';
 import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarousel';
 import { useProducts } from '@/hooks/useProducts';
 
-const DEFAULT_HERO_SLIDES = [
-  {
-    id: 'hero-1',
-    tag: 'Royal Masterpiece Saree',
-    title: 'Heritage Mysore Crepe Silk Saree',
-    subtitle: '100% Pure Silk Mark Certified with 24K Pure Gold Tested Zari',
-    link: '/products',
-    ctaText: 'Explore Collection',
-    image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1920&auto=format&fit=crop',
-  },
-  {
-    id: 'hero-2',
-    tag: 'Festive Bridal Edit',
-    title: 'Varanasi Kadwa Katan Silk Marvels',
-    subtitle: 'Authentic silk weave featuring delicate hand-carved silver Meenakari motifs.',
-    link: '/products',
-    ctaText: 'Discover Banarasi Silk',
-    image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=1920&auto=format&fit=crop',
-  },
-  {
-    id: 'hero-3',
-    tag: 'Sacred Korvai Loom',
-    title: 'Kanchipuram Heavy Temple Saree',
-    subtitle: 'Interlocked 3-shuttle weaving with pure antique gold zari borders.',
-    link: '/products',
-    ctaText: 'View Bridal Sarees',
-    image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?q=80&w=1920&auto=format&fit=crop',
-  },
-];
-
 // Global in-memory cache for live hero banners
 let cachedHeroSlides: any[] | null = null;
 
@@ -76,17 +46,15 @@ export default function HomePage() {
             image: s.desktop_image_path || '',
           })).filter((s: any) => s.image && s.image.trim().length > 5);
 
-          if (formatted.length > 0) {
-            cachedHeroSlides = formatted;
-            setLiveHeroSlides(formatted);
-          }
+          cachedHeroSlides = formatted;
+          setLiveHeroSlides(formatted);
         }
       })
       .catch((err) => console.error('[Homepage Hero] Error fetching banners:', err))
       .finally(() => setIsLoadingBanners(false));
   }, []);
 
-  const activeSlides = liveHeroSlides.length > 0 ? liveHeroSlides : DEFAULT_HERO_SLIDES;
+  const activeSlides = liveHeroSlides;
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
