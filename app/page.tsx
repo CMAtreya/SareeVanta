@@ -31,7 +31,7 @@ export default function HomePage() {
   const [isLoadingBanners, setIsLoadingBanners] = useState<boolean>(!cachedHeroSlides);
 
   useEffect(() => {
-    fetch('/api/banners')
+    fetch(`/api/banners?_t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.slides && Array.isArray(data.slides)) {

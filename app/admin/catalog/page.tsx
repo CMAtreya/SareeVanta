@@ -63,18 +63,36 @@ let adminCatalogCache: CatalogSaree[] | null = null;
 
 export default function AdminCatalogPage() {
   const [catalog, setCatalog] = useState<CatalogSaree[]>(() => {
-    if (adminCatalogCache && adminCatalogCache.length > 0) return adminCatalogCache;
+    if (adminCatalogCache && Array.isArray(adminCatalogCache) && adminCatalogCache.length > 0) {
+      return adminCatalogCache;
+    }
     if (typeof window !== 'undefined') {
       try {
         const stored = sessionStorage.getItem('sareevanta_admin_catalog');
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            adminCatalogCache = parsed;
+            return parsed;
+          }
+        }
       } catch (e) {}
     }
     return [];
   });
   const [isLoading, setIsLoading] = useState<boolean>(() => {
-    if (adminCatalogCache && adminCatalogCache.length > 0) return false;
-    if (typeof window !== 'undefined' && sessionStorage.getItem('sareevanta_admin_catalog')) return false;
+    if (adminCatalogCache && Array.isArray(adminCatalogCache) && adminCatalogCache.length > 0) {
+      return false;
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('sareevanta_admin_catalog');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) return false;
+        }
+      } catch (e) {}
+    }
     return true;
   });
   const [searchQuery, setSearchQuery] = useState('');

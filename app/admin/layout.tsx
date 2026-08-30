@@ -391,6 +391,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
               <Link
                 href="/admin"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin'
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -404,6 +405,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/orders"
+                prefetch={true}
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/orders'
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -419,6 +421,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/shipments"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/shipments')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -432,6 +435,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/returns"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/returns')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -453,6 +457,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
               <Link
                 href="/admin/catalog"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/catalog'
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -466,6 +471,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/inventory"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/inventory'
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -479,6 +485,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/catalog/collections"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.includes('/collections')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -500,6 +507,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
               <Link
                 href="/admin/marketing/coupons"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/marketing/coupons')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -513,6 +521,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/marketing/banners"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/marketing/banners')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -526,6 +535,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/marketing/instagram-reels"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname === '/admin/marketing/instagram-reels'
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -539,6 +549,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/marketing/video-appointments"
+                prefetch={true}
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/marketing/video-appointments')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -559,6 +570,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/customerreviews"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/customerreviews')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -580,6 +592,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               )}
               <Link
                 href="/admin/customers"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/customers')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -593,6 +606,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
               <Link
                 href="/admin/analytics"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/analytics')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'
@@ -605,7 +619,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
 
               <Link
-                href="/admin/settings/staff"
+                href="/admin/settings"
+                prefetch={true}
                 className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl transition-all ${
                   pathname.startsWith('/admin/settings')
                     ? 'bg-gradient-to-r from-[#7A1C30] to-[#9E2A3B] text-white font-semibold shadow-xs border border-[#C87F4A]/30'

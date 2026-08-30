@@ -132,7 +132,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   };
 
   // Form State: Color Variant Management (BFS-1 §6.3 & DSS §4)
-  const SAREE_COLOR_PALETTE = [
+  const BASE_COLOR_PALETTE = [
     { name: 'Royal Crimson', hex: '#8B1E28', code: 'CRM' },
     { name: 'Peacock Teal', hex: '#005F73', code: 'TEL' },
     { name: 'Kanchipuram Gold', hex: '#D97706', code: 'GLD' },
@@ -145,6 +145,13 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     { name: 'Raw Silk Off-White', hex: '#F5F5F4', code: 'WHT' },
     { name: 'Charcoal Black', hex: '#18181B', code: 'BLK' },
   ];
+
+  const [customColors, setCustomColors] = useState<{ name: string; hex: string; code: string }[]>([]);
+  const [isAddingColor, setIsAddingColor] = useState(false);
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorHex, setNewColorHex] = useState('#8B1E28');
+
+  const SAREE_COLOR_PALETTE = [...BASE_COLOR_PALETTE, ...customColors];
 
   const [colorVariants, setColorVariants] = useState<
     { id: string; name: string; hex: string; sku: string; stockCount: number; images: [string, string, string] }[]
@@ -178,14 +185,14 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [gstRate, setGstRate] = useState('18');
   const [hsnCode, setHsnCode] = useState('5007');
 
-  // Form State: Blouse & Physical Dimensions
+  // Form State: Blouse & Physical Dimensions (Pure Numeric values)
   const [hasBlousePiece, setHasBlousePiece] = useState(true);
-  const [blouseLength, setBlouseLength] = useState('0.80m');
-  const [blouseWidth, setBlouseWidth] = useState('1.14m');
-  const [sareeLength, setSareeLength] = useState('5.5m');
-  const [sareeWidth, setSareeWidth] = useState('1.14m');
-  const [packageWeight, setPackageWeight] = useState('680g');
-  const [packageDimensions, setPackageDimensions] = useState('38 x 28 x 4 cm');
+  const [blouseLength, setBlouseLength] = useState('0.80');
+  const [blouseWidth, setBlouseWidth] = useState('1.14');
+  const [sareeLength, setSareeLength] = useState('5.50');
+  const [sareeWidth, setSareeWidth] = useState('1.14');
+  const [packageWeight, setPackageWeight] = useState('680');
+  const [packageDimensions, setPackageDimensions] = useState('38 x 28 x 4');
 
   // Form State: Certification & Status
   const [isSilkMarkCertified, setIsSilkMarkCertified] = useState(true);
@@ -598,12 +605,12 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       occasions: selectedOccasions,
       badges: selectedBadges,
       has_blouse_piece: hasBlousePiece,
-      blouse_length: blouseLength,
-      blouse_width: blouseWidth,
-      saree_length: sareeLength,
-      saree_width: sareeWidth,
-      package_weight: packageWeight,
-      package_dimensions: packageDimensions,
+      blouse_length: blouseLength ? blouseLength.replace(/[^0-9.]/g, '') : '0.80',
+      blouse_width: blouseWidth ? blouseWidth.replace(/[^0-9.]/g, '') : '1.14',
+      saree_length: sareeLength ? sareeLength.replace(/[^0-9.]/g, '') : '5.50',
+      saree_width: sareeWidth ? sareeWidth.replace(/[^0-9.]/g, '') : '1.14',
+      package_weight: packageWeight ? packageWeight.replace(/[^0-9]/g, '') : '680',
+      package_dimensions: packageDimensions.trim(),
       is_silk_mark_certified: isSilkMarkCertified,
       hsn_code: hsnCode,
       gst_rate: gstRate,
@@ -1442,7 +1449,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                       </label>
                       <div className="flex flex-wrap items-center gap-1.5">
                         {SAREE_COLOR_PALETTE.map((pal) => {
-                          const isSelected = varItem.hex === pal.hex;
+                          const isSelected = varItem.hex.toLowerCase() === pal.hex.toLowerCase();
                           return (
                             <button
                               key={pal.code}
@@ -1461,10 +1468,74 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                               style={{ backgroundColor: pal.hex }}
                               title={`${pal.name} (${pal.code})`}
                             >
-                              {isSelected && <Check className={`w-3 h-3 ${pal.hex === '#F5F5F4' ? 'text-slate-800' : 'text-white'}`} />}
+                              {isSelected && <Check className={`w-3 h-3 ${['#f5f5f4', '#ffffff'].includes(pal.hex.toLowerCase()) ? 'text-slate-800' : 'text-white'}`} />}
                             </button>
                           );
                         })}
+
+                        {!isAddingColor ? (
+                          <button
+                            type="button"
+                            onClick={() => setIsAddingColor(true)}
+                            className="px-2 py-0.5 rounded-full border border-dashed border-[#7A1C30] text-[#7A1C30] hover:bg-[#7A1C30]/5 text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Add Custom Color"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>+ Custom</span>
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-slate-300 shadow-sm">
+                            <input
+                              type="color"
+                              value={newColorHex}
+                              onChange={(e) => setNewColorHex(e.target.value)}
+                              className="w-5 h-5 rounded cursor-pointer border-0 p-0"
+                              title="Pick Hex Color"
+                            />
+                            <input
+                              type="text"
+                              autoFocus
+                              value={newColorName}
+                              onChange={(e) => setNewColorName(e.target.value)}
+                              placeholder="Color name..."
+                              className="px-1.5 py-0.5 text-[10px] border border-slate-200 rounded w-24 text-slate-800 font-medium"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (newColorName.trim()) {
+                                  const cleanCode = newColorName.trim().slice(0, 3).toUpperCase();
+                                  const newCol = {
+                                    name: newColorName.trim(),
+                                    hex: newColorHex,
+                                    code: cleanCode,
+                                  };
+                                  setCustomColors((prev) => [...prev, newCol]);
+                                  const updated = [...colorVariants];
+                                  updated[idx].hex = newCol.hex;
+                                  updated[idx].name = newCol.name;
+                                  updated[idx].sku = `${sku}-${newCol.code}`;
+                                  setColorVariants(updated);
+                                  setNewColorName('');
+                                  setIsAddingColor(false);
+                                  setIsDirty(true);
+                                } else {
+                                  setIsAddingColor(false);
+                                }
+                              }}
+                              className="px-2 py-0.5 bg-[#7A1C30] text-white rounded text-[10px] font-bold cursor-pointer hover:bg-[#5F1424]"
+                            >
+                              Add
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingColor(false)}
+                              className="px-1 py-0.5 text-slate-400 hover:text-slate-600 text-[10px] cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1719,25 +1790,45 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">Blouse Length *</label>
-                  <input
-                    type="text"
-                    required={hasBlousePiece}
-                    value={blouseLength}
-                    onChange={(e) => setBlouseLength(e.target.value)}
-                    placeholder="e.g. 0.80m"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      required={hasBlousePiece}
+                      value={blouseLength}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*\.?\d*$/.test(val)) {
+                          setBlouseLength(val);
+                          setIsDirty(true);
+                        }
+                      }}
+                      placeholder="0.80"
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                    />
+                    <span className="text-xs font-mono font-bold text-slate-500 select-none">m</span>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 mb-1">Blouse Width *</label>
-                  <input
-                    type="text"
-                    required={hasBlousePiece}
-                    value={blouseWidth}
-                    onChange={(e) => setBlouseWidth(e.target.value)}
-                    placeholder="e.g. 1.14m"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      required={hasBlousePiece}
+                      value={blouseWidth}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d*\.?\d*$/.test(val)) {
+                          setBlouseWidth(val);
+                          setIsDirty(true);
+                        }
+                      }}
+                      placeholder="1.14"
+                      className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                    />
+                    <span className="text-xs font-mono font-bold text-slate-500 select-none">m</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -1745,36 +1836,69 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">Saree Length *</label>
-                <input
-                  type="text"
-                  required
-                  value={sareeLength}
-                  onChange={(e) => setSareeLength(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={sareeLength}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) {
+                        setSareeLength(val);
+                        setIsDirty(true);
+                      }
+                    }}
+                    placeholder="5.50"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                  />
+                  <span className="text-xs font-mono font-bold text-slate-500 select-none">m</span>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">Saree Width *</label>
-                <input
-                  type="text"
-                  required
-                  value={sareeWidth}
-                  onChange={(e) => setSareeWidth(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    required
+                    value={sareeWidth}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*\.?\d*$/.test(val)) {
+                        setSareeWidth(val);
+                        setIsDirty(true);
+                      }
+                    }}
+                    placeholder="1.14"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                  />
+                  <span className="text-xs font-mono font-bold text-slate-500 select-none">m</span>
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">Package Weight *</label>
-                <input
-                  type="text"
-                  required
-                  value={packageWeight}
-                  onChange={(e) => setPackageWeight(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
-                />
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    required
+                    value={packageWeight}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d*$/.test(val)) {
+                        setPackageWeight(val);
+                        setIsDirty(true);
+                      }
+                    }}
+                    placeholder="680"
+                    className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                  />
+                  <span className="text-xs font-mono font-bold text-slate-500 select-none">g</span>
+                </div>
               </div>
               <div>
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">Package Dimensions *</label>
@@ -1782,7 +1906,11 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                   type="text"
                   required
                   value={packageDimensions}
-                  onChange={(e) => setPackageDimensions(e.target.value)}
+                  onChange={(e) => {
+                    setPackageDimensions(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  placeholder="38 x 28 x 4 cm"
                   className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
                 />
               </div>

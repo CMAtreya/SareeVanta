@@ -110,49 +110,66 @@ export async function GET(request: Request) {
 
   try {
     const [
-      { data: prodData, error },
+      { data: rawProducts, error: pErr },
+      { data: variants },
       { data: wData },
       { data: fData },
       { data: oData },
+      { data: pData },
+      { data: zData },
+      { data: colors },
+      { data: media },
     ] = await Promise.all([
       supabase
         .from('products')
-        .select(`
-          id,
-          title,
-          slug,
-          description,
-          care_instructions,
-          base_mrp_paise,
-          base_selling_price_paise,
-          is_published,
-          created_at,
-          weavings ( name ),
-          fabrics ( name ),
-          occasions ( name ),
-          patterns ( name ),
-          border_stylings ( name ),
-          zari_specifications ( name ),
-          product_variants (
-            id,
-            sku,
-            barcode,
-            price_paise,
-            mrp_paise,
-            is_active,
-            colors ( name, hex_code ),
-            product_variant_media ( url, is_primary )
-          )
-        `)
+        .select('id, title, slug, description, care_instructions, base_mrp_paise, base_selling_price_paise, is_published, created_at, weaving_id, fabric_id, occasion_id, pattern_id, zari_specification_id')
         .eq('is_published', true)
         .order('created_at', { ascending: false }),
-      supabase.from('weavings').select('name').eq('is_active', true),
-      supabase.from('fabrics').select('name').eq('is_active', true),
-      supabase.from('occasions').select('name').eq('is_active', true),
+      supabase.from('product_variants').select('id, product_id, sku, barcode, price_paise, mrp_paise, is_active, color_id'),
+      supabase.from('weavings').select('id, name').eq('is_active', true),
+      supabase.from('fabrics').select('id, name').eq('is_active', true),
+      supabase.from('occasions').select('id, name').eq('is_active', true),
+      supabase.from('patterns').select('id, name').eq('is_active', true),
+      supabase.from('zari_specifications').select('id, name').eq('is_active', true),
+      supabase.from('colors').select('id, name, hex_code'),
+      supabase.from('product_variant_media').select('variant_id, url, is_primary').order('display_order', { ascending: true }),
     ]);
 
-    if (!error && prodData && prodData.length > 0) {
-      catalog = prodData.map(formatDbProduct);
+    if (!pErr && rawProducts && rawProducts.length > 0) {
+      const weaveMap = Object.fromEntries((wData || []).map((w) => [w.id, w.name]));
+      const fabricMap = Object.fromEntries((fData || []).map((f) => [f.id, f.name]));
+      const occasionMap = Object.fromEntries((oData || []).map((o) => [o.id, o.name]));
+      const patternMap = Object.fromEntries((pData || []).map((p) => [p.id, p.name]));
+      const zariMap = Object.fromEntries((zData || []).map((z) => [z.id, z.name]));
+      const colorMap = Object.fromEntries((colors || []).map((c) => [c.id, c]));
+
+      const mediaMap: Record<string, any[]> = {};
+      (media || []).forEach((m) => {
+        if (!mediaMap[m.variant_id]) mediaMap[m.variant_id] = [];
+        mediaMap[m.variant_id].push(m);
+      });
+
+      const variantMap: Record<string, any[]> = {};
+      (variants || []).forEach((v) => {
+        if (!variantMap[v.product_id]) variantMap[v.product_id] = [];
+        variantMap[v.product_id].push({
+          ...v,
+          colors: v.color_id && colorMap[v.color_id] ? colorMap[v.color_id] : null,
+          product_variant_media: mediaMap[v.id] || [],
+        });
+      });
+
+      const assembledProducts = rawProducts.map((p) => ({
+        ...p,
+        weavings: p.weaving_id && weaveMap[p.weaving_id] ? { name: weaveMap[p.weaving_id] } : null,
+        fabrics: p.fabric_id && fabricMap[p.fabric_id] ? { name: fabricMap[p.fabric_id] } : null,
+        occasions: p.occasion_id && occasionMap[p.occasion_id] ? { name: occasionMap[p.occasion_id] } : null,
+        patterns: p.pattern_id && patternMap[p.pattern_id] ? { name: patternMap[p.pattern_id] } : null,
+        zari_specifications: p.zari_specification_id && zariMap[p.zari_specification_id] ? { name: zariMap[p.zari_specification_id] } : null,
+        product_variants: variantMap[p.id] || [],
+      }));
+
+      catalog = assembledProducts.map(formatDbProduct);
     } else {
       catalog = [];
     }
