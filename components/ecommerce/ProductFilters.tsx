@@ -106,17 +106,17 @@ export default function ProductFilters({
 
   const handleWeaveToggle = (weaveName: string) => {
     if (selectedWeaves.includes(weaveName)) {
-      setSelectedWeaves(selectedWeaves.filter((w) => w !== weaveName));
+      setSelectedWeaves([]);
     } else {
-      setSelectedWeaves([...selectedWeaves, weaveName]);
+      setSelectedWeaves([weaveName]);
     }
   };
 
   const handleFabricToggle = (fabric: string) => {
     if (selectedFabrics.includes(fabric)) {
-      setSelectedFabrics(selectedFabrics.filter((f) => f !== fabric));
+      setSelectedFabrics([]);
     } else {
-      setSelectedFabrics([...selectedFabrics, fabric]);
+      setSelectedFabrics([fabric]);
     }
   };
 
