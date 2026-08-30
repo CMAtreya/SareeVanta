@@ -95,7 +95,18 @@ export async function POST(request: Request) {
     color_hex,
     initial_stock,
     images = [],
-    color_variants = [],
+    // Physical Specs & Dimensions
+    has_blouse_piece,
+    blouse_length,
+    blouse_width,
+    saree_length,
+    saree_width,
+    package_weight,
+    package_dimensions,
+    is_silk_mark_certified,
+    hsn_code,
+    gst_rate,
+    cost_price,
   } = body;
 
   if (!title || !base_selling_price_inr) {
@@ -154,6 +165,17 @@ export async function POST(request: Request) {
   const metadataPayload = JSON.stringify({
     occasions: Array.isArray(occasions) && occasions.length > 0 ? occasions : (occasion ? [occasion] : []),
     badges: Array.isArray(badges) ? badges : [],
+    has_blouse_piece: has_blouse_piece !== undefined ? Boolean(has_blouse_piece) : true,
+    blouse_length: blouse_length || '0.80m',
+    blouse_width: blouse_width || '1.14m',
+    saree_length: saree_length || '5.5m',
+    saree_width: saree_width || '1.14m',
+    package_weight: package_weight || '680g',
+    package_dimensions: package_dimensions || '38 x 28 x 4 cm',
+    is_silk_mark_certified: is_silk_mark_certified !== undefined ? Boolean(is_silk_mark_certified) : true,
+    hsn_code: hsn_code || '5007',
+    gst_rate: gst_rate || '18',
+    cost_price: cost_price || '',
     saved_at: new Date().toISOString(),
   });
 

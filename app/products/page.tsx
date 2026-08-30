@@ -202,7 +202,7 @@ function ProductsListingContent() {
 
       const cacheKey = params.toString();
       const cached = filterQueryCache.get(cacheKey);
-      const isFresh = cached && (Date.now() - cached.timestamp < 10000);
+      const isFresh = cached && (Date.now() - cached.timestamp < 3000) && Array.isArray(cached.data?.products) && cached.data.products.length > 0;
 
       if (cached && isFresh) {
         if (isMounted) {

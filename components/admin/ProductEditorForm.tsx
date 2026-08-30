@@ -59,8 +59,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
   const [isLoading, setIsLoading] = useState(mode === 'edit');
 
   // Form State: System Identifiers (Deterministic Sequential SKUs)
-  const [sku, setSku] = useState('NSH-SKU-025');
-  const [barcode, setBarcode] = useState('890000000025');
+  const [sku, setSku] = useState('');
+  const [barcode, setBarcode] = useState('');
 
   // Form State: Basic Info
   const [title, setTitle] = useState('');
@@ -146,16 +146,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
   const [colorVariants, setColorVariants] = useState<
     { id: string; name: string; hex: string; sku: string; stockCount: number; images: [string, string, string] }[]
-  >([
-    {
-      id: 'var-1',
-      name: 'Royal Crimson',
-      hex: '#8B1E28',
-      sku: 'NSH-SKU-025-CRM',
-      stockCount: 1,
-      images: ['', '', ''],
-    },
-  ]);
+  >([]);
 
   // Form State: Occasions (Multi-Select Tags matching storefront filters)
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>(['Bridal & Muhurtham']);
@@ -374,8 +365,20 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
 
           setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
           setMrp(String(Math.round((found.base_mrp_paise || 0) / 100)));
-          setCostPrice(String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
+          setCostPrice(parsedMeta.cost_price ? String(parsedMeta.cost_price) : String(Math.round(((found.base_selling_price_paise || 0) / 100) * 0.65)));
           setStock(String(mainVariant?.inventory?.[0]?.quantity || 1));
+
+          // Restore physical dimensions and specs from metadata
+          if (parsedMeta.has_blouse_piece !== undefined) setHasBlousePiece(Boolean(parsedMeta.has_blouse_piece));
+          if (parsedMeta.blouse_length) setBlouseLength(parsedMeta.blouse_length);
+          if (parsedMeta.blouse_width) setBlouseWidth(parsedMeta.blouse_width);
+          if (parsedMeta.saree_length) setSareeLength(parsedMeta.saree_length);
+          if (parsedMeta.saree_width) setSareeWidth(parsedMeta.saree_width);
+          if (parsedMeta.package_weight) setPackageWeight(parsedMeta.package_weight);
+          if (parsedMeta.package_dimensions) setPackageDimensions(parsedMeta.package_dimensions);
+          if (parsedMeta.is_silk_mark_certified !== undefined) setIsSilkMarkCertified(Boolean(parsedMeta.is_silk_mark_certified));
+          if (parsedMeta.hsn_code) setHsnCode(parsedMeta.hsn_code);
+          if (parsedMeta.gst_rate) setGstRate(parsedMeta.gst_rate);
 
           // Permanent & Immutable SKU and Barcode for lifetime
           const permanentSku = mainVariant?.sku || found.sku || `NSH-SKU-001`;
@@ -586,15 +589,26 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       description: description.trim(),
       base_mrp_inr: Number(mrp) || Number(sellingPrice || 28000) * 1.18,
       base_selling_price_inr: Number(sellingPrice) || 28000,
-      sku: sku || `NSH-SKU-MYS-${Math.floor(10 + Math.random() * 90)}`,
+      cost_price: costPrice,
+      sku: sku || 'NSH-SKU-001',
       barcode: barcode || '890100000001',
       weave,
       fabric,
       zari: zariSpec,
       pattern,
-      occasion: selectedOccasions[0] || 'Bridal',
+      occasion: selectedOccasions[0] || 'Bridal & Muhurtham',
       occasions: selectedOccasions,
       badges: selectedBadges,
+      has_blouse_piece: hasBlousePiece,
+      blouse_length: blouseLength,
+      blouse_width: blouseWidth,
+      saree_length: sareeLength,
+      saree_width: sareeWidth,
+      package_weight: packageWeight,
+      package_dimensions: packageDimensions,
+      is_silk_mark_certified: isSilkMarkCertified,
+      hsn_code: hsnCode,
+      gst_rate: gstRate,
       color_name: colorVariants[0]?.name || 'Royal Crimson',
       color_hex: colorVariants[0]?.hex || '#8B1E28',
       initial_stock: primaryVariantStock,

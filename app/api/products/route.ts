@@ -86,19 +86,6 @@ function formatDbProduct(p: any): Product {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const cacheKey = `storefront_products_${url.search}`;
-  const cached = getCache<any>(cacheKey);
-  if (cached && Array.isArray(cached.products) && cached.products.length > 0) {
-    return NextResponse.json(
-      { ...cached, cached: true },
-      {
-        headers: {
-          'Cache-Control': 'no-cache, must-revalidate',
-        },
-      }
-    );
-  }
-
   const { searchParams } = url;
   const weaveParam = searchParams.get('weave') || searchParams.get('category');
   const fabricParam = searchParams.get('fabric');
@@ -115,59 +102,49 @@ export async function GET(request: Request) {
   const limit = Math.max(1, parseInt(searchParams.get('limit') || '12', 10));
 
   let catalog: Product[] = [];
-  let source = 'database';
+  const supabase = createAdminClient();
 
-  const snapshotCacheKey = 'full_catalog_snapshot';
-  const cachedCatalog = getCache<Product[]>(snapshotCacheKey);
-
-  if (cachedCatalog && Array.isArray(cachedCatalog) && cachedCatalog.length > 0) {
-    catalog = cachedCatalog;
-    source = 'memory_cache';
-  } else {
-    const supabase = createAdminClient();
-
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        title,
+        slug,
+        description,
+        care_instructions,
+        base_mrp_paise,
+        base_selling_price_paise,
+        is_published,
+        created_at,
+        weavings ( name ),
+        fabrics ( name ),
+        occasions ( name ),
+        patterns ( name ),
+        border_stylings ( name ),
+        zari_specifications ( name ),
+        product_variants (
           id,
-          title,
-          slug,
-          description,
-          care_instructions,
-          base_mrp_paise,
-          base_selling_price_paise,
-          is_published,
-          created_at,
-          weavings ( name ),
-          fabrics ( name ),
-          occasions ( name ),
-          patterns ( name ),
-          border_stylings ( name ),
-          zari_specifications ( name ),
-          product_variants (
-            id,
-            sku,
-            price_paise,
-            mrp_paise,
-            is_active,
-            colors ( name, hex_code ),
-            product_variant_media ( url, is_primary )
-          )
-        `)
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
+          sku,
+          barcode,
+          price_paise,
+          mrp_paise,
+          is_active,
+          colors ( name, hex_code ),
+          product_variant_media ( url, is_primary )
+        )
+      `)
+      .eq('is_published', true)
+      .order('created_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
-        catalog = data.map(formatDbProduct);
-        setCache(snapshotCacheKey, catalog, 60);
-      } else {
-        catalog = [];
-      }
-    } catch (e) {
-      console.error('[Products API] Error fetching from database:', e);
+    if (!error && data && data.length > 0) {
+      catalog = data.map(formatDbProduct);
+    } else {
       catalog = [];
     }
+  } catch (e) {
+    console.error('[Products API] Error fetching from database:', e);
+    catalog = [];
   }
 
   const normalize = (str?: string) => (str || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -355,10 +332,8 @@ export async function GET(request: Request) {
     page,
     limit,
     counts,
-    source,
+    source: 'database',
   };
-
-  setCache(cacheKey, responsePayload, 10);
 
   return NextResponse.json(responsePayload, {
     headers: {
