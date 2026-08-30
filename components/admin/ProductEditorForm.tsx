@@ -638,9 +638,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
       if (!res.ok) {
         const errData = await res.json();
         console.error('API save error:', errData);
+        alert(`Save Failed: ${errData.error || 'Could not save saree masterpiece to database.'}`);
+        setIsSaving(false);
+        return;
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error dispatching product save to API:', err);
+      alert(`Save Network Error: ${err?.message || 'Network communication failed.'}`);
+      setIsSaving(false);
+      return;
     }
 
     try {
@@ -1652,22 +1658,60 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                                   type="file"
                                   accept="image/*"
                                   className="hidden"
-                                  onChange={(e) => {
+                                  onChange={async (e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                      const reader = new FileReader();
-                                      reader.onload = (event) => {
-                                        const base64DataUrl = event.target?.result as string;
-                                        if (base64DataUrl) {
-                                          const updated = [...colorVariants];
-                                          const newImgs = [...updated[idx].images] as [string, string, string];
-                                          newImgs[imgIdx] = base64DataUrl;
-                                          updated[idx].images = newImgs;
-                                          setColorVariants(updated);
-                                          setIsDirty(true);
+                                      // Show instant local preview
+                                      const localPreviewUrl = URL.createObjectURL(file);
+                                      const updated = [...colorVariants];
+                                      const newImgs = [...updated[idx].images] as [string, string, string];
+                                      newImgs[imgIdx] = localPreviewUrl;
+                                      updated[idx].images = newImgs;
+                                      setColorVariants(updated);
+                                      setIsDirty(true);
+
+                                      try {
+                                        const formData = new FormData();
+                                        formData.append('file', file);
+                                        const uploadRes = await fetch('/api/admin/upload', {
+                                          method: 'POST',
+                                          body: formData,
+                                        });
+                                        if (uploadRes.ok) {
+                                          const uploadData = await uploadRes.json();
+                                          if (uploadData.url) {
+                                            setColorVariants((prev) => {
+                                              const fresh = [...prev];
+                                              if (fresh[idx]) {
+                                                const freshImgs = [...fresh[idx].images] as [string, string, string];
+                                                freshImgs[imgIdx] = uploadData.url;
+                                                fresh[idx].images = freshImgs;
+                                              }
+                                              return fresh;
+                                            });
+                                          }
+                                        } else {
+                                          // Fallback to base64 if storage not configured
+                                          const reader = new FileReader();
+                                          reader.onload = (event) => {
+                                            const base64 = event.target?.result as string;
+                                            if (base64) {
+                                              setColorVariants((prev) => {
+                                                const fresh = [...prev];
+                                                if (fresh[idx]) {
+                                                  const freshImgs = [...fresh[idx].images] as [string, string, string];
+                                                  freshImgs[imgIdx] = base64;
+                                                  fresh[idx].images = freshImgs;
+                                                }
+                                                return fresh;
+                                              });
+                                            }
+                                          };
+                                          reader.readAsDataURL(file);
                                         }
-                                      };
-                                      reader.readAsDataURL(file);
+                                      } catch (uploadErr) {
+                                        console.warn('Storage upload fallback:', uploadErr);
+                                      }
                                     }
                                   }}
                                 />

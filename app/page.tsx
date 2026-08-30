@@ -20,15 +20,12 @@ import ProductCard from '@/components/ecommerce/ProductCard';
 import InstagramReelsCarousel from '@/components/ecommerce/InstagramReelsCarousel';
 import { useProducts } from '@/hooks/useProducts';
 
-// Global in-memory cache for live hero banners
-let cachedHeroSlides: any[] | null = null;
-
 export default function HomePage() {
   // ----------------------------------------------------
   // 1. Hero Promo Carousel State (Live Database Banners)
   // ----------------------------------------------------
-  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>(cachedHeroSlides || []);
-  const [isLoadingBanners, setIsLoadingBanners] = useState<boolean>(!cachedHeroSlides);
+  const [liveHeroSlides, setLiveHeroSlides] = useState<any[]>([]);
+  const [isLoadingBanners, setIsLoadingBanners] = useState<boolean>(true);
 
   useEffect(() => {
     fetch(`/api/banners?_t=${Date.now()}`, { cache: 'no-store' })
@@ -40,17 +37,21 @@ export default function HomePage() {
             id: s.id || idx + 1,
             tag: s.badge_text || 'Heritage Handloom Collection',
             title: s.heading || 'Royal Masterpiece Saree',
-            subtitle: s.tagline || '100% Pure Silk Mark Certified',
+            subtitle: s.tagline || '',
             link: s.cta_link || '/products',
             ctaText: s.cta_text || 'Explore Collection',
             image: s.desktop_image_path || '',
           })).filter((s: any) => s.image && s.image.trim().length > 5);
 
-          cachedHeroSlides = formatted;
           setLiveHeroSlides(formatted);
+        } else {
+          setLiveHeroSlides([]);
         }
       })
-      .catch((err) => console.error('[Homepage Hero] Error fetching banners:', err))
+      .catch((err) => {
+        console.error('[Homepage Hero] Error fetching banners:', err);
+        setLiveHeroSlides([]);
+      })
       .finally(() => setIsLoadingBanners(false));
   }, []);
 

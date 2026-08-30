@@ -22,10 +22,23 @@ export async function GET(
     try {
       const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(slug);
 
-      // 1. Fetch Master Product Record
+      // 1. Fetch Master Product Record with all nested relations in a single fast indexed query
       let productQuery = supabase
         .from('products')
-        .select('*');
+        .select(`
+          *,
+          weavings(name),
+          fabrics(name),
+          zari_specifications(name),
+          patterns(name),
+          occasions(name),
+          product_variants(
+            id, sku, barcode, price_paise, mrp_paise, is_active,
+            colors(id, name, hex_code),
+            inventory(quantity, reserved_quantity),
+            product_variant_media(url, is_primary, display_order)
+          )
+        `);
 
       if (isUuid) {
         productQuery = productQuery.or(`slug.eq.${slug},id.eq.${slug}`);
@@ -38,83 +51,52 @@ export async function GET(
       if (prod && !prodErr) {
         const prodId = prod.id;
 
-        // 2. Concurrently fetch all relational taxonomies, variants, inventory, media, reviews, and related items
-        const [
-          weavingsRes,
-          fabricsRes,
-          zarisRes,
-          patternsRes,
-          occasionsRes,
-          variantsRes,
-          allColorsRes,
-          relatedRes,
-        ] = await Promise.all([
-          prod.weaving_id ? supabase.from('weavings').select('id, name').eq('id', prod.weaving_id).maybeSingle() : Promise.resolve({ data: null }),
-          prod.fabric_id ? supabase.from('fabrics').select('id, name').eq('id', prod.fabric_id).maybeSingle() : Promise.resolve({ data: null }),
-          prod.zari_specification_id ? supabase.from('zari_specifications').select('id, name').eq('id', prod.zari_specification_id).maybeSingle() : Promise.resolve({ data: null }),
-          prod.pattern_id ? supabase.from('patterns').select('id, name').eq('id', prod.pattern_id).maybeSingle() : Promise.resolve({ data: null }),
-          prod.occasion_id ? supabase.from('occasions').select('id, name').eq('id', prod.occasion_id).maybeSingle() : Promise.resolve({ data: null }),
-          supabase.from('product_variants').select('id, sku, barcode, price_paise, mrp_paise, color_id').eq('product_id', prodId),
-          supabase.from('colors').select('id, name, hex_code'),
-          supabase.from('products').select('id, slug, title, base_mrp_paise, base_selling_price_paise, weaving_id').neq('id', prodId).limit(6),
-        ]);
+        const rawVariants = Array.isArray(prod.product_variants) ? prod.product_variants : [];
+        const variantIds = rawVariants.map((v: any) => v.id);
 
-        const rawVariants = variantsRes.data || [];
-        const variantIds = rawVariants.map((v) => v.id);
-
-        // Fetch Inventory & Media for all variants
-        const [invRes, mediaRes, reviewsRes] = await Promise.all([
-          variantIds.length > 0
-            ? supabase.from('inventory').select('variant_id, quantity, reserved_quantity').in('variant_id', variantIds)
-            : Promise.resolve({ data: [] }),
-          variantIds.length > 0
-            ? supabase.from('product_variant_media').select('variant_id, url, is_primary, display_order').in('variant_id', variantIds)
-            : Promise.resolve({ data: [] }),
+        // Concurrently fetch reviews and related products
+        const [reviewsRes, relatedRes] = await Promise.all([
           variantIds.length > 0
             ? supabase.from('reviews').select('id, rating, review_text, title, created_at, reviewer_name, review_photos ( storage_path )').in('variant_id', variantIds).eq('moderation_status', 'APPROVED')
             : Promise.resolve({ data: [] }),
+          supabase.from('products').select('id, slug, title, base_mrp_paise, base_selling_price_paise, weaving_id').neq('id', prodId).limit(6),
         ]);
 
-        // Map lookup dictionaries
-        const colorsMap = new Map((allColorsRes.data || []).map((c) => [c.id, c]));
-        const invMap = new Map((invRes.data || []).map((i) => [i.variant_id, i]));
-        
-        const mediaMap = new Map<string, string[]>();
-        (mediaRes.data || []).forEach((m) => {
-          if (!mediaMap.has(m.variant_id)) mediaMap.set(m.variant_id, []);
-          if (m.url && typeof m.url === 'string' && m.url.trim().length > 5) {
-            mediaMap.get(m.variant_id)!.push(m.url.trim());
-          }
-        });
-
-        // Assemble All Gallery Images across variants
+        // Assemble media per variant & all gallery images
         const allImagesList: string[] = [];
-        mediaMap.forEach((urls) => {
-          urls.forEach((u) => {
+        const colorVariants = rawVariants.map((v: any, idx: number) => {
+          const col = Array.isArray(v.colors) ? v.colors[0] : v.colors;
+          const invItem = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
+          const vStock = invItem ? Math.max(0, (invItem.quantity || 0) - (invItem.reserved_quantity || 0)) : 10;
+          
+          const rawMedia = Array.isArray(v.product_variant_media) ? v.product_variant_media : [];
+          const sortedMedia = [...rawMedia].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+          const vImages = sortedMedia.map((m: any) => m.url).filter((u: any) => typeof u === 'string' && u.trim().length > 5);
+
+          vImages.forEach((u: string) => {
             if (!allImagesList.includes(u)) allImagesList.push(u);
           });
+
+          return {
+            id: v.id,
+            sku: v.sku || `${prod.slug}-${idx + 1}`,
+            name: col?.name || 'Heritage Saree',
+            hex: col?.hex_code || '#8B1E28',
+            stock: vStock,
+            images: vImages,
+          };
+        });
+
+        // Ensure each variant has at least the product gallery images if its own list is empty
+        colorVariants.forEach((cv: any) => {
+          if (cv.images.length === 0) {
+            cv.images = allImagesList.length > 0 ? allImagesList : ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop'];
+          }
         });
 
         if (allImagesList.length === 0) {
           allImagesList.push('https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=1200&auto=format&fit=crop');
         }
-
-        // Assemble Color Variants
-        const colorVariants = rawVariants.map((v, idx) => {
-          const col = colorsMap.get(v.color_id);
-          const vImages = mediaMap.get(v.id) || [];
-          const invItem = invMap.get(v.id);
-          const vStock = invItem ? Math.max(0, (invItem.quantity || 0) - (invItem.reserved_quantity || 0)) : 10;
-
-          return {
-            id: v.id,
-            sku: v.sku || `${prod.slug}-${idx + 1}`,
-            name: col?.name || 'Royal Silk',
-            hex: col?.hex_code || '#8B1E28',
-            stock: vStock,
-            images: vImages.length > 0 ? vImages : allImagesList,
-          };
-        });
 
         // Parse Care Instructions Metadata
         let parsedMeta: any = {};
@@ -125,7 +107,7 @@ export async function GET(
         }
 
         // Calculate Stock
-        const totalStock = colorVariants.reduce((sum, cv) => sum + cv.stock, 0);
+        const totalStock = colorVariants.reduce((sum: number, cv: any) => sum + (cv.stock || 0), 0);
 
         // Reviews Assembly
         const revs = reviewsRes.data || [];
@@ -150,13 +132,18 @@ export async function GET(
           };
         });
 
+        const weaveName = Array.isArray(prod.weavings) ? prod.weavings[0]?.name : prod.weavings?.name || 'Mysore Silk Crepe';
+        const fabricName = Array.isArray(prod.fabrics) ? prod.fabrics[0]?.name : prod.fabrics?.name || '100% Pure Mulberry Silk';
+        const occasionName = Array.isArray(prod.occasions) ? prod.occasions[0]?.name : prod.occasions?.name || (parsedMeta.occasions?.[0]) || 'Bridal & Muhurtham';
+        const patternName = Array.isArray(prod.patterns) ? prod.patterns[0]?.name : prod.patterns?.name || 'Kasuti Diamonds';
+        const zariGrade = Array.isArray(prod.zari_specifications) ? prod.zari_specifications[0]?.name : prod.zari_specifications?.name || 'Pure 24K Tested Zari';
+
         // Related Products Assembly
-        const relatedWeavingsMap = new Map((weavingsRes.data ? [weavingsRes.data] : []).map((w: any) => [w.id, w.name]));
         const relatedProducts = (relatedRes.data || []).map((rp: any) => ({
           id: rp.id,
           slug: rp.slug,
           title: rp.title,
-          weave: relatedWeavingsMap.get(rp.weaving_id) || 'Mysore Silk',
+          weave: weaveName,
           priceINR: Math.round((rp.base_selling_price_paise || 2800000) / 100),
           originalPriceINR: Math.round((rp.base_mrp_paise || 3400000) / 100),
           images: allImagesList,
@@ -166,10 +153,10 @@ export async function GET(
           id: prod.id,
           slug: prod.slug,
           title: prod.title,
-          weave: weavingsRes.data?.name || 'Mysore Silk Crepe',
-          fabric: fabricsRes.data?.name || '100% Pure Mulberry Silk',
-          occasion: occasionsRes.data?.name || (parsedMeta.occasions?.[0]) || 'Bridal & Muhurtham',
-          pattern: patternsRes.data?.name || 'Kasuti Diamonds',
+          weave: weaveName,
+          fabric: fabricName,
+          occasion: occasionName,
+          pattern: patternName,
           priceINR: Math.round((prod.base_selling_price_paise || 2800000) / 100),
           originalPriceINR: Math.round((prod.base_mrp_paise || 3400000) / 100),
           pricePaise: prod.base_selling_price_paise,
@@ -180,14 +167,14 @@ export async function GET(
           color: colorVariants[0]?.name || 'Royal Silk',
           colorHex: colorVariants[0]?.hex || '#8B1E28',
           images: allImagesList,
-          zariGrade: zarisRes.data?.name || 'Pure 24K Tested Zari',
+          zariGrade: zariGrade,
           dimensions: `${parsedMeta.saree_length || '5.50'}m Saree (${parsedMeta.saree_width || '1.14'}m width)`,
           blouseDimensions: `${parsedMeta.blouse_length || '0.80'}m Blouse Piece`,
           packageWeight: `${parsedMeta.package_weight || '680'}g`,
           packageDimensions: parsedMeta.package_dimensions || '38 x 28 x 4 cm',
           inStock: totalStock > 0,
           stockCount: totalStock,
-          description: prod.description || `Handcrafted with meticulous precision by master weavers, this ${weavingsRes.data?.name || 'Heritage'} saree exemplifies generational handloom mastery. Woven from 100% certified ${fabricsRes.data?.name || 'Pure Silk'} with authentic ${zarisRes.data?.name || 'Pure Tested Zari'} embellishments, creating a luminous drape that transitions seamlessly across auspicious celebrations and weddings.`,
+          description: prod.description || `Handcrafted with meticulous precision by master weavers, this ${weaveName} saree exemplifies generational handloom mastery. Woven from 100% certified ${fabricName} with authentic ${zariGrade} embellishments, creating a luminous drape that transitions seamlessly across auspicious celebrations and weddings.`,
           artisanCluster: 'Mysuru Master Loom Guild',
           silkMarkCertified: true,
           colorVariants,
