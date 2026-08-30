@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -20,7 +20,7 @@ import {
   ChevronLeft,
   X,
 } from 'lucide-react';
-import { products, Product } from '@/lib/products';
+import { Product } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
 
 function ReturnRequestContent() {
@@ -31,11 +31,18 @@ function ReturnRequestContent() {
   const orderNumberParam = searchParams.get('order') || 'NSH-2026-7419';
 
   const { currency } = useCart();
+  const [returnedProduct, setReturnedProduct] = useState<Product | null>(null);
 
-  // Find matching product from ID or fallback to sample
-  const returnedProduct: Product =
-    products.find((p) => p.id === orderItemParam || p.slug === orderItemParam) ||
-    products[2]; // Royal Emerald Kadwa Banarasi
+  useEffect(() => {
+    if (orderItemParam) {
+      fetch(`/api/products/${orderItemParam}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.product) setReturnedProduct(data.product);
+        })
+        .catch(() => {});
+    }
+  }, [orderItemParam]);
 
   // Form States
   const [reason, setReason] = useState<'fit' | 'not_as_described' | 'damaged' | 'changed_mind'>('damaged');
@@ -91,7 +98,7 @@ function ReturnRequestContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order_id: orderNumberParam,
-          order_item_id: returnedProduct.id || '00000000-0000-0000-0000-000000000000',
+          order_item_id: returnedProduct?.id || orderItemParam || '00000000-0000-0000-0000-000000000000',
           claim_type: claimTypeMap[reason] || 'DAMAGED_PRODUCT',
           reason_code: reason.toUpperCase(),
           reason_text: details || `${reason} return request submitted by patron.`,
@@ -229,17 +236,23 @@ function ReturnRequestContent() {
             {/* ================================================== */}
             <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF3E4]/70 border border-[#C87F4A]/30 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <img
-                  src={returnedProduct.images[0]}
-                  alt={returnedProduct.title}
-                  className="w-16 h-20 rounded-xl object-cover border border-stone-200 flex-shrink-0"
-                />
+                {returnedProduct?.images?.[0] ? (
+                  <img
+                    src={returnedProduct.images[0]}
+                    alt={returnedProduct.title}
+                    className="w-16 h-20 rounded-xl object-cover border border-stone-200 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-16 h-20 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center text-stone-400">
+                    <Package className="w-6 h-6 text-[#C87F4A]" />
+                  </div>
+                )}
                 <div className="space-y-0.5">
                   <span className="text-[10px] font-mono uppercase tracking-widest text-[#C87F4A] font-bold block">
-                    {returnedProduct.weave} • Order #{orderNumberParam}
+                    {returnedProduct?.weave || 'Handloom Creation'} • Order #{orderNumberParam}
                   </span>
                   <h3 className="font-editorial text-sm sm:text-base font-bold text-[#1F1B16]">
-                    {returnedProduct.title}
+                    {returnedProduct?.title || `Order Item #${orderItemParam || 'General Return'}`}
                   </h3>
                   <span className="text-[11px] text-stone-500 font-sans block">
                     Variant: 5.5m Pure Silk Saree
@@ -247,9 +260,11 @@ function ReturnRequestContent() {
                 </div>
               </div>
 
-              <span className="font-editorial text-base sm:text-lg font-bold text-[#1F1B16] self-end sm:self-center flex-shrink-0">
-                {formatPrice(returnedProduct.priceINR)}
-              </span>
+              {returnedProduct && (
+                <span className="font-editorial text-base sm:text-lg font-bold text-[#1F1B16] self-end sm:self-center flex-shrink-0">
+                  {formatPrice(returnedProduct.priceINR)}
+                </span>
+              )}
             </div>
 
             {/* ================================================== */}

@@ -26,7 +26,7 @@ import {
   ChevronRight,
   Play,
 } from 'lucide-react';
-import { products } from '@/lib/products';
+
 
 interface IngestionRow {
   rowNumber: number;
@@ -319,7 +319,7 @@ export default function BulkUploadEnginePage() {
   };
 
   // Download Current Inventory Data
-  const handleDownloadCurrentInventory = () => {
+  const handleDownloadCurrentInventory = async () => {
     const headers = [
       'Master SKU',
       'Title',
@@ -334,19 +334,30 @@ export default function BulkUploadEnginePage() {
       'Weight in Grams',
     ];
 
-    const rowsData = products.map((p, i) => [
-      `"NSH-SKU-${p.weave.substring(0, 3).toUpperCase()}-${String(i + 1).padStart(2, '0')}"`,
-      `"${p.title}"`,
-      `"${p.weave}"`,
-      '"100% Pure Mulberry Silk"',
-      '"24K Tested Pure Zari"',
-      p.priceINR,
-      p.originalPriceINR || Math.round(p.priceINR * 1.15),
-      3,
-      '"5007.20.10"',
-      `"CSB-2026-MYS-${1000 + i}"`,
-      680,
-    ]);
+    let rowsData: (string | number)[][] = [];
+    try {
+      const res = await fetch('/api/admin/products');
+      const data = await res.json();
+      if (data?.products && Array.isArray(data.products)) {
+        rowsData = data.products.map((p: any, i: number) => {
+          const firstVariant = p.product_variants?.[0] || {};
+          const inv = Array.isArray(firstVariant.inventory) ? firstVariant.inventory[0] : firstVariant.inventory;
+          return [
+            `"${firstVariant.sku || `SKU-MYS-${10 + i}`}"`,
+            `"${p.title || 'Pure Silk Saree'}"`,
+            `"${p.weavings?.name || 'Mysore Silk'}"`,
+            `"${p.fabrics?.name || '100% Pure Mulberry Silk'}"`,
+            `"${p.zari_specifications?.name || '24K Tested Pure Zari'}"`,
+            Math.round((p.base_selling_price_paise || 0) / 100),
+            Math.round((p.base_mrp_paise || 0) / 100),
+            inv?.quantity || 0,
+            '"5007.20.10"',
+            `"CSB-2026-${1000 + i}"`,
+            680,
+          ];
+        });
+      }
+    } catch (e) {}
 
     const csvContent =
       'data:text/csv;charset=utf-8,' +
@@ -355,7 +366,7 @@ export default function BulkUploadEnginePage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `NeelSareeHouse_Current_Inventory_${Date.now()}.csv`);
+    link.setAttribute('download', `SareeVanta_Current_Inventory_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

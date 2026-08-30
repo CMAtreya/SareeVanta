@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Product, products as defaultProducts } from '@/lib/products';
+import { Product } from '@/lib/products';
 
 export interface UseProductsOptions {
   weave?: string;
@@ -25,8 +25,7 @@ export function useProducts(options: UseProductsOptions = {}) {
   if (limit) queryParams.set('limit', limit.toString());
 
   const cacheKey = queryParams.toString() || 'all_storefront_products';
-  const isDefaultQuery = !weave && !fabric && !occasion && !color && !search;
-  const initialCached = globalProductCache.get(cacheKey) || (isDefaultQuery ? defaultProducts : []);
+  const initialCached = globalProductCache.get(cacheKey) || [];
 
   const [products, setProducts] = useState<Product[]>(initialCached);
   const [loading, setLoading] = useState<boolean>(!initialCached || initialCached.length === 0);

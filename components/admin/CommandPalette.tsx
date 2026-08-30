@@ -29,7 +29,6 @@ import {
   Star,
   FolderOpen,
 } from 'lucide-react';
-import { products } from '@/lib/products';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -104,29 +103,9 @@ export default function CommandPalette({
     },
   ];
 
-  // Search through sarees
-  const matchedProducts = products
-    .filter(
-      (p) =>
-        p.title.toLowerCase().includes(cleanQ) ||
-        p.weave.toLowerCase().includes(cleanQ) ||
-        p.color.toLowerCase().includes(cleanQ) ||
-        ((p as any).sku && (p as any).sku.toLowerCase().includes(cleanQ))
-    )
-    .slice(0, 5)
-    .map((p) => ({
-      title: `${p.title} (${p.weave})`,
-      category: 'Products & SKUs',
-      sku: (p as any).sku || `NSH-SKU-${p.id.slice(0, 4)}`,
-      price: `₹${p.priceINR.toLocaleString('en-IN')}`,
-      icon: Package,
-      href: `/products/${p.slug}`,
-    }));
-
   const allItems = [
     ...navigationCommands.filter((c) => c.title.toLowerCase().includes(cleanQ)),
     ...quickActions.filter((c) => c.title.toLowerCase().includes(cleanQ)),
-    ...matchedProducts,
   ];
 
   return (

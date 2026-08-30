@@ -17,7 +17,7 @@ import {
   FileText,
   Scissors,
 } from 'lucide-react';
-import { products, Product } from '@/lib/products';
+import { Product } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
 
 interface OrderItem {

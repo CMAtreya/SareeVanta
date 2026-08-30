@@ -35,7 +35,7 @@ import {
   RefreshCw,
   Info,
 } from 'lucide-react';
-import { products, Product } from '@/lib/products';
+import { Product } from '@/lib/products';
 
 // Extended Catalog Item Type
 interface CatalogSaree {

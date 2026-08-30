@@ -18,7 +18,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
-import { products, Product } from '@/lib/products';
+import { Product } from '@/lib/products';
 
 export default function AccountOrderDetailPage() {
   const params = useParams();

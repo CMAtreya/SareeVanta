@@ -36,7 +36,7 @@ import {
   INITIAL_COLLECTIONS,
   INITIAL_TAXONOMY_TERMS,
 } from '@/lib/taxonomy';
-import { products } from '@/lib/products';
+
 
 export default function CollectionsTaxonomyPage() {
   const [activeMainTab, setActiveMainTab] = useState<'COLLECTIONS' | 'TAXONOMY'>('COLLECTIONS');

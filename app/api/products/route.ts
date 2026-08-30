@@ -162,13 +162,11 @@ export async function GET(request: Request) {
         catalog = data.map(formatDbProduct);
         setCache(snapshotCacheKey, catalog, 60);
       } else {
-        const { products: defaultProducts } = await import('@/lib/products');
-        catalog = defaultProducts || [];
+        catalog = [];
       }
     } catch (e) {
       console.error('[Products API] Error fetching from database:', e);
-      const { products: defaultProducts } = await import('@/lib/products');
-      catalog = defaultProducts || [];
+      catalog = [];
     }
   }
 

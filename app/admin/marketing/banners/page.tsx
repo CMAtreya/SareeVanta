@@ -32,7 +32,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { products } from '@/lib/products';
+
 
 interface HeroSlide {
   id: string;
