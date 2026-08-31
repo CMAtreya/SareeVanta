@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { Product, products } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
+import TaxInvoiceModal from '@/components/invoice/TaxInvoiceModal';
 
 interface TrackingStage {
   id: string;
@@ -77,7 +78,7 @@ export default function OrderTrackingPage() {
   const [orderData, setOrderData] = useState<OrderTrackingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copiedAwb, setCopiedAwb] = useState(false);
-  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   const formatPrice = (inr: number) => {
     if (currency === 'USD') return `$${(inr / 83).toFixed(0)}`;
@@ -138,11 +139,7 @@ export default function OrderTrackingPage() {
   };
 
   const handleDownloadInvoice = () => {
-    setDownloadingInvoice(true);
-    setTimeout(() => {
-      setDownloadingInvoice(false);
-      alert(`Invoice for Order #${orderId} generated and downloaded successfully.`);
-    }, 800);
+    setShowInvoiceModal(true);
   };
 
   if (isLoading) {
@@ -450,20 +447,10 @@ export default function OrderTrackingPage() {
             <button
               type="button"
               onClick={handleDownloadInvoice}
-              disabled={downloadingInvoice}
-              className="w-full py-3.5 bg-[#1F1B16] hover:bg-black text-[#FAF3E4] rounded-sm text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-50"
+              className="w-full py-3.5 bg-[#1F1B16] hover:bg-black text-[#FAF3E4] rounded-sm text-xs font-mono font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
             >
-              {downloadingInvoice ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-[#FAF3E4] border-t-transparent rounded-full animate-spin" />
-                  <span>Generating PDF...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 text-[#C87F4A]" />
-                  <span>Download Tax Invoice (PDF)</span>
-                </>
-              )}
+              <Download className="w-4 h-4 text-[#C87F4A]" />
+              <span>Download Tax Invoice (PDF)</span>
             </button>
 
             <Link
@@ -474,6 +461,33 @@ export default function OrderTrackingPage() {
             </Link>
           </div>
         </div>
+
+        {/* Standardized Tax Invoice Modal */}
+        {showInvoiceModal && orderData && (
+          <TaxInvoiceModal
+            invoice={{
+              orderId: orderData.order_number || String(orderId),
+              orderDate: orderData.placed_at ? new Date(orderData.placed_at).toLocaleDateString('en-IN') : 'Recent',
+              customerName: orderData.shipping_address?.name || 'Valued Patron',
+              phone: orderData.shipping_address?.phone || '',
+              address: orderData.shipping_address?.addressLine1 || '',
+              city: orderData.shipping_address?.city || 'Bengaluru',
+              state: orderData.shipping_address?.state || 'Karnataka',
+              pincode: orderData.shipping_address?.pincode || '560001',
+              items: (orderData.items || []).map((it: any) => ({
+                title: it.product?.title || 'Pure Silk Saree',
+                sku: it.product?.sku || 'NSH-SKU-MYS-01',
+                hsn: '5007',
+                quantity: it.quantity || 1,
+                price: it.product?.priceINR || Math.round(orderData.totalINR),
+              })),
+              totalAmount: orderData.totalINR || 28500,
+              paymentGateway: orderData.payment_method || 'Razorpay UPI',
+              paymentStatus: 'PAID',
+            }}
+            onClose={() => setShowInvoiceModal(false)}
+          />
+        )}
       </div>
     </div>
   );

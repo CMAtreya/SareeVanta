@@ -7,17 +7,31 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   const supabase = createAdminClient();
 
-  const { data: coupons, error } = await supabase
-    .from('coupons')
-    .select('*')
-    .order('created_at', { ascending: false });
+  const [{ data: coupons, error }, { data: orders }] = await Promise.all([
+    supabase.from('coupons').select('*').order('created_at', { ascending: false }),
+    supabase.from('orders').select('id, coupon_id, total_paise, discount_paise, order_status'),
+  ]);
 
   if (error) {
     console.error('[Admin Coupons GET] Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ coupons: coupons || [] });
+  // Calculate live redemptions and attributed revenue per coupon from real orders
+  const formattedCoupons = (coupons || []).map((c: any) => {
+    const couponOrders = (orders || []).filter((o: any) => o.coupon_id === c.id);
+    const liveUsageCount = couponOrders.length || c.times_redeemed || 0;
+    const liveRevenuePaise = couponOrders.reduce((sum: number, o: any) => sum + (o.total_paise || 0), 0);
+
+    return {
+      ...c,
+      times_redeemed: liveUsageCount,
+      usage_count: liveUsageCount,
+      attributed_revenue_paise: liveRevenuePaise || c.attributed_revenue_paise || 0,
+    };
+  });
+
+  return NextResponse.json({ coupons: formattedCoupons });
 }
 
 export async function POST(request: Request) {

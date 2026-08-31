@@ -11,18 +11,12 @@ import {
   ArrowRight,
   ShieldCheck,
   Truck,
-  RotateCcw,
   Sparkles,
   Tag,
   Check,
   X,
   AlertCircle,
-  Scissors,
-  CheckCircle2,
   ChevronRight,
-  Heart,
-  Gift,
-  Award,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 
@@ -34,28 +28,22 @@ export default function CartPage() {
     cartCount,
     cartSubtotalINR,
     cartTotalINR,
+    selectedKeys,
+    selectedCartItems,
+    selectedCount,
+    selectedSubtotalINR,
+    selectedTotalINR,
+    selectedDiscountINR,
+    toggleItemSelection,
+    selectAllItems,
+    deselectAllItems,
+    getItemKey,
     appliedCoupon,
     couponDiscountINR,
     applyCoupon,
     removeCoupon,
     currency,
   } = useCart();
-
-  const [selectedIds, setSelectedIds] = useState<string[]>(() => cart.map((i) => i.product.id));
-  const [includeGiftWrap, setIncludeGiftWrap] = useState(false);
-  const [includeSilkMarkCertificate, setIncludeSilkMarkCertificate] = useState(true);
-  const [includeFallPico, setIncludeFallPico] = useState(true);
-
-  // Sync selected IDs when cart items change
-  useEffect(() => {
-    setSelectedIds((prev) => {
-      const currentCartIds = cart.map((i) => i.product.id);
-      if (prev.length === 0 && currentCartIds.length > 0) return currentCartIds;
-      const validPrev = prev.filter((id) => currentCartIds.includes(id));
-      const newlyAdded = currentCartIds.filter((id) => !prev.includes(id));
-      return [...validPrev, ...newlyAdded];
-    });
-  }, [cart]);
 
   const [couponInput, setCouponInput] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
@@ -64,50 +52,25 @@ export default function CartPage() {
     message: string;
   } | null>(null);
 
+  const isAllSelected = cart.length > 0 && selectedKeys.length === cart.length;
+  const isPartiallySelected = selectedKeys.length > 0 && selectedKeys.length < cart.length;
+
   const toggleSelectAll = () => {
-    if (selectedIds.length === cart.length) {
-      setSelectedIds([]);
+    if (isAllSelected) {
+      deselectAllItems();
     } else {
-      setSelectedIds(cart.map((i) => i.product.id));
+      selectAllItems();
     }
   };
 
-  const toggleItemSelect = (productId: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
-    );
-  };
-
   const removeSelectedItems = () => {
-    selectedIds.forEach((id) => removeFromCart(id));
-    setSelectedIds([]);
+    cart.forEach((item) => {
+      const key = getItemKey(item);
+      if (selectedKeys.includes(key)) {
+        removeFromCart(item.product.id, item.variantId, item.selectedColor);
+      }
+    });
   };
-
-  const isAllSelected = cart.length > 0 && selectedIds.length === cart.length;
-  const isPartiallySelected = selectedIds.length > 0 && selectedIds.length < cart.length;
-
-  const selectedCartItems = cart.filter((item) => selectedIds.includes(item.product.id));
-  const selectedCount = selectedCartItems.reduce((acc, item) => acc + item.quantity, 0);
-
-  const selectedSubtotalINR = selectedCartItems.reduce(
-    (total, item) => total + (item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity,
-    0
-  );
-
-  const giftPackagingINR = includeGiftWrap && selectedCount > 0 ? 249 : 0;
-
-  const discountINR = appliedCoupon
-    ? appliedCoupon.discountPercent
-      ? appliedCoupon.maxDiscountCapINR
-        ? Math.min(
-            Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100),
-            appliedCoupon.maxDiscountCapINR
-          )
-        : Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100)
-      : appliedCoupon.discountFixedINR || 0
-    : 0;
-
-  const finalTotalINR = Math.max(0, selectedSubtotalINR + giftPackagingINR - discountINR);
 
   const formatPrice = (inr: number) => {
     if (currency === 'USD') return `$${(inr / 83).toFixed(0)}`;
@@ -149,13 +112,13 @@ export default function CartPage() {
       } else {
         setCouponFeedback({
           type: 'error',
-          message: data.message || 'Invalid or expired coupon code.',
+          message: data.message || 'Invalid coupon code.',
         });
       }
     } catch (err) {
       setCouponFeedback({
         type: 'error',
-        message: 'Could not validate coupon. Please try again.',
+        message: 'Could not validate coupon. Please check connection.',
       });
     } finally {
       setCouponLoading(false);
@@ -163,21 +126,25 @@ export default function CartPage() {
   };
 
   return (
-    <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-6 sm:py-10">
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
-        {/* Breadcrumb Trail */}
+    <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Breadcrumb Row */}
         <nav className="flex items-center space-x-2 text-xs text-stone-500 font-sans mb-6">
           <Link href="/" className="hover:text-[#C87F4A] transition-colors">
             Home
           </Link>
           <ChevronRight className="w-3 h-3 text-stone-400" />
+          <Link href="/products" className="hover:text-[#C87F4A] transition-colors">
+            Collections
+          </Link>
+          <ChevronRight className="w-3 h-3 text-stone-400" />
           <span className="text-[#1F1B16] font-semibold">Shopping Bag</span>
         </nav>
 
-        {/* Page Title */}
-        <div className="pb-4 border-b border-[#C87F4A]/20 mb-8">
-          <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#C87F4A] font-mono font-semibold mb-1">
-            <Sparkles className="w-3.5 h-3.5" />
+        {/* Page Title & Status */}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#7A1C30]/10 border border-[#7A1C30]/20 text-[#7A1C30] text-[11px] font-mono font-bold uppercase tracking-[0.2em] mb-3">
+            <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
             <span>Neelsareehouse Checkout Portal</span>
           </div>
           <h1 className="font-editorial text-3xl sm:text-4xl lg:text-5xl font-normal text-[#1F1B16] tracking-tight">
@@ -218,14 +185,9 @@ export default function CartPage() {
             </div>
           </div>
         ) : (
-          /* ==================================================== */
-          /* 2-COLUMN CART LAYOUT                                 */
-          /* LEFT: LINE ITEMS LIST | RIGHT: ORDER SUMMARY         */
-          /* ==================================================== */
+          /* 2-COLUMN CART LAYOUT */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-            {/* ==================================================== */}
-            {/* LEFT: CART LINE ITEMS (COL-span-7 or 8)              */}
-            {/* ==================================================== */}
+            {/* LEFT: CART LINE ITEMS */}
             <div className="lg:col-span-8 space-y-4">
               {/* Select All / Batch Control Bar */}
               <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#C87F4A]/25 shadow-xs flex items-center justify-between gap-4">
@@ -256,11 +218,11 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {selectedIds.length > 0 && (
+                {selectedKeys.length > 0 && (
                   <button
                     type="button"
                     onClick={removeSelectedItems}
-                    className="text-xs font-sans text-stone-500 hover:text-red-600 transition-colors flex items-center gap-1.5 p-1"
+                    className="text-xs font-sans text-stone-500 hover:text-red-600 transition-colors flex items-center gap-1.5 p-1 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span className="hidden sm:inline">Remove Selected</span>
@@ -271,13 +233,16 @@ export default function CartPage() {
               {/* Items Card List */}
               <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C87F4A]/25 shadow-silk divide-y divide-[#C87F4A]/15">
                 {cart.map((item, idx) => {
-                  const isSelected = selectedIds.includes(item.product.id);
+                  const itemKey = getItemKey(item);
+                  const isSelected = selectedKeys.includes(itemKey);
                   const itemPrice = item.product.priceINR + (item.tailoringExtraINR || 0);
                   const lineTotal = itemPrice * item.quantity;
+                  const itemColor = item.selectedColor || item.product.color;
+                  const itemHex = item.selectedColorHex || item.product.colorHex;
 
                   return (
                     <div
-                      key={`${item.product.id}-${item.blouseOption}-${idx}`}
+                      key={itemKey}
                       className={`py-6 first:pt-0 last:pb-0 flex flex-col sm:flex-row gap-5 items-start sm:items-center justify-between transition-opacity ${
                         isSelected ? 'opacity-100' : 'opacity-60 bg-stone-50/50 -mx-2 px-2 rounded-xl'
                       }`}
@@ -287,7 +252,7 @@ export default function CartPage() {
                         {/* Checkbox Button */}
                         <button
                           type="button"
-                          onClick={() => toggleItemSelect(item.product.id)}
+                          onClick={() => toggleItemSelection(itemKey)}
                           className={`w-5 h-5 mt-1 sm:mt-0 rounded-md border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
                             isSelected
                               ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-xs'
@@ -303,7 +268,7 @@ export default function CartPage() {
                           className="w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden bg-[#FAF3E4] border border-[#C87F4A]/25 flex-shrink-0 group shadow-xs relative"
                         >
                           <img
-                            src={item.product.images[0]}
+                            src={item.product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=400&auto=format&fit=crop'}
                             alt={item.product.title}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
@@ -316,7 +281,7 @@ export default function CartPage() {
                           )}
                         </Link>
 
-                        <div className="space-y-1 truncate flex-1 min-w-0">
+                        <div className="space-y-1.5 truncate flex-1 min-w-0">
                           <span className="text-[10px] font-mono uppercase tracking-widest text-[#C87F4A] font-semibold block">
                             {item.product.weave} • {item.product.fabric}
                           </span>
@@ -328,11 +293,19 @@ export default function CartPage() {
                             {item.product.title}
                           </Link>
 
-                          {/* Complimentary Ready to Drape Assurance */}
-                          <div className="flex items-center gap-1 text-[11px] font-mono text-emerald-800">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Includes Ready-to-Drape Fall & Pico</span>
-                          </div>
+                          {/* Color Variant Dot Pill */}
+                          {itemColor && (
+                            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#FAF3E4] border border-[#C87F4A]/20 text-[10px] font-mono text-stone-700">
+                              <span
+                                className="w-2.5 h-2.5 rounded-full border border-black/20"
+                                style={{ backgroundColor: itemHex || '#8B1E28' }}
+                              />
+                              <span>{itemColor}</span>
+                              {item.selectedSku && (
+                                <span className="text-stone-400">({item.selectedSku})</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -354,7 +327,7 @@ export default function CartPage() {
                           )}
                         </div>
 
-                        {/* Stepper + Remove Row with BFS 9.3 Stock Capping */}
+                        {/* Stepper + Remove Row */}
                         {(() => {
                           const maxStock = item.product.stockCount ?? 5;
                           const isAtMax = item.quantity >= maxStock;
@@ -364,7 +337,7 @@ export default function CartPage() {
                                 <div className="inline-flex items-center bg-[#FAF3E4] border border-[#C87F4A]/30 rounded-lg p-0.5 shadow-xs">
                                   <button
                                     type="button"
-                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variantId, item.selectedColor)}
                                     className="p-1.5 rounded text-stone-700 hover:text-[#C87F4A] transition-colors cursor-pointer"
                                     aria-label="Decrease Quantity"
                                   >
@@ -376,7 +349,7 @@ export default function CartPage() {
                                   <button
                                     type="button"
                                     disabled={isAtMax}
-                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variantId, item.selectedColor)}
                                     className={`p-1.5 rounded transition-colors ${
                                       isAtMax
                                         ? 'opacity-30 cursor-not-allowed text-stone-400 bg-stone-100'
@@ -392,7 +365,7 @@ export default function CartPage() {
                                 {/* Remove Button */}
                                 <button
                                   type="button"
-                                  onClick={() => removeFromCart(item.product.id)}
+                                  onClick={() => removeFromCart(item.product.id, item.variantId, item.selectedColor)}
                                   className="p-2 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                                   aria-label={`Remove ${item.product.title}`}
                                 >
@@ -412,109 +385,9 @@ export default function CartPage() {
                   );
                 })}
               </div>
-
-              {/* Luxury Services & Complimentary Options Checkbox Panel */}
-              <div className="bg-white rounded-3xl p-6 border border-[#C87F4A]/25 shadow-xs space-y-3.5">
-                <h4 className="font-editorial text-base font-bold text-[#1F1B16] flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#C87F4A]" />
-                  <span>Curated Heritage Services & Packaging</span>
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {/* Service 1: Ready to drape Fall & Pico Checkbox */}
-                  <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF3E4]/60 border border-[#C87F4A]/20 cursor-pointer hover:bg-[#FAF3E4] transition-colors select-none">
-                    <button
-                      type="button"
-                      onClick={() => setIncludeFallPico(!includeFallPico)}
-                      className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
-                        includeFallPico
-                          ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
-                          : 'border-stone-300 bg-white'
-                      }`}
-                    >
-                      {includeFallPico && <Check className="w-3 h-3 stroke-[2.5]" />}
-                    </button>
-                    <div className="text-xs">
-                      <div className="font-semibold text-[#1F1B16] flex items-center gap-1.5">
-                        <Scissors className="w-3 h-3 text-[#C87F4A]" />
-                        <span>Ready-to-Drape Fall & Pico</span>
-                      </div>
-                      <p className="text-[11px] text-stone-500 mt-0.5">Complimentary hand-hemming</p>
-                      <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase mt-1 block">
-                        Included (FREE)
-                      </span>
-                    </div>
-                  </label>
-
-                  {/* Service 2: Royal Mysore Gift Box Checkbox */}
-                  <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF3E4]/60 border border-[#C87F4A]/20 cursor-pointer hover:bg-[#FAF3E4] transition-colors select-none">
-                    <button
-                      type="button"
-                      onClick={() => setIncludeGiftWrap(!includeGiftWrap)}
-                      className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
-                        includeGiftWrap
-                          ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
-                          : 'border-stone-300 bg-white'
-                      }`}
-                    >
-                      {includeGiftWrap && <Check className="w-3 h-3 stroke-[2.5]" />}
-                    </button>
-                    <div className="text-xs">
-                      <div className="font-semibold text-[#1F1B16] flex items-center gap-1.5">
-                        <Gift className="w-3 h-3 text-[#C87F4A]" />
-                        <span>Royal Mysore Velvet Gift Box</span>
-                      </div>
-                      <p className="text-[11px] text-stone-500 mt-0.5">Includes Gold Calligraphy Note</p>
-                      <span className="text-[10px] font-mono text-[#7A1C30] font-bold uppercase mt-1 block">
-                        +₹249 (Premium Box)
-                      </span>
-                    </div>
-                  </label>
-
-                  {/* Service 3: Silk Mark Authenticity Seal Checkbox */}
-                  <label className="flex items-start gap-3 p-3 rounded-2xl bg-[#FAF3E4]/60 border border-[#C87F4A]/20 cursor-pointer hover:bg-[#FAF3E4] transition-colors select-none">
-                    <button
-                      type="button"
-                      onClick={() => setIncludeSilkMarkCertificate(!includeSilkMarkCertificate)}
-                      className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
-                        includeSilkMarkCertificate
-                          ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
-                          : 'border-stone-300 bg-white'
-                      }`}
-                    >
-                      {includeSilkMarkCertificate && <Check className="w-3 h-3 stroke-[2.5]" />}
-                    </button>
-                    <div className="text-xs">
-                      <div className="font-semibold text-[#1F1B16] flex items-center gap-1.5">
-                        <Award className="w-3 h-3 text-amber-600" />
-                        <span>Govt. Silk Mark Guarantee</span>
-                      </div>
-                      <p className="text-[11px] text-stone-500 mt-0.5">Physical QR Authenticity Seal</p>
-                      <span className="text-[10px] font-mono text-emerald-800 font-bold uppercase mt-1 block">
-                        Included (FREE)
-                      </span>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              {/* Complimentary Gift Packaging & Silk Mark Assurance Band */}
-              <div className="bg-white/80 rounded-2xl p-4 border border-[#C87F4A]/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-700">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#C87F4A] flex-shrink-0" />
-                  <span>
-                    Every saree arrives in our signature cedar preservation box with Govt. Silk Mark certificate.
-                  </span>
-                </div>
-                <Link href="/products" className="text-[#C87F4A] hover:underline font-bold font-mono text-[11px] flex-shrink-0">
-                  + Add Another Saree
-                </Link>
-              </div>
             </div>
 
-            {/* ==================================================== */}
-            {/* RIGHT: ORDER SUMMARY CARD (COL-span-4 or 5)          */}
-            {/* ==================================================== */}
+            {/* RIGHT: ORDER SUMMARY CARD */}
             <div className="lg:col-span-4 space-y-6">
               <div className="bg-white rounded-3xl p-6 sm:p-7 border border-[#C87F4A]/25 shadow-silk space-y-6">
                 <h3 className="font-editorial text-xl sm:text-2xl font-bold text-[#1F1B16] pb-3 border-b border-[#C87F4A]/20">
@@ -530,19 +403,6 @@ export default function CartPage() {
                     </span>
                   </div>
 
-                  {/* Gift Wrap Packaging Line Item */}
-                  {includeGiftWrap && selectedCount > 0 && (
-                    <div className="flex items-center justify-between text-stone-700 font-medium">
-                      <span className="flex items-center gap-1.5">
-                        <Gift className="w-3.5 h-3.5 text-[#C87F4A]" />
-                        <span>Royal Velvet Gift Box</span>
-                      </span>
-                      <span className="font-mono text-sm font-semibold text-[#1F1B16]">
-                        +{formatPrice(giftPackagingINR)}
-                      </span>
-                    </div>
-                  )}
-
                   {/* Applied Coupon Discount */}
                   {appliedCoupon && (
                     <div className="flex items-center justify-between text-emerald-800 font-medium bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
@@ -556,11 +416,11 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold">-{formatPrice(discountINR)}</span>
+                        <span className="font-mono font-bold">-{formatPrice(selectedDiscountINR)}</span>
                         <button
                           type="button"
                           onClick={removeCoupon}
-                          className="text-stone-400 hover:text-red-600 p-0.5"
+                          className="text-stone-400 hover:text-red-600 p-0.5 cursor-pointer"
                           aria-label="Remove Coupon"
                         >
                           <X className="w-3 h-3" />
@@ -573,17 +433,11 @@ export default function CartPage() {
                   <div className="flex items-center justify-between text-stone-600">
                     <span className="flex items-center gap-1">
                       <Truck className="w-3.5 h-3.5 text-[#C87F4A]" />
-                      <span>Estimated Shipping</span>
+                      <span>Express Air Delivery</span>
                     </span>
                     <span className="font-mono font-semibold text-emerald-800 uppercase text-[11px]">
-                      FREE (Insured Express)
+                      FREE
                     </span>
-                  </div>
-
-                  {/* Taxes Guarantee */}
-                  <div className="flex items-center justify-between text-stone-600">
-                    <span>GST & Customs</span>
-                    <span className="font-mono text-stone-500 text-[11px]">Included (0%)</span>
                   </div>
                 </div>
 
@@ -591,14 +445,14 @@ export default function CartPage() {
                 <div className="pt-4 border-t border-[#C87F4A]/20 flex items-baseline justify-between">
                   <div>
                     <span className="text-xs uppercase tracking-wider font-mono font-bold text-[#773D21] block">
-                      Grand Total
+                      Final Total Amount (After Discount)
                     </span>
                     <span className="text-[10px] text-stone-400 font-sans">
-                      Includes all taxes & complimentary fall/pico
+                      Includes 18% Handloom GST
                     </span>
                   </div>
                   <span className="font-editorial text-2xl sm:text-3xl font-bold text-[#1F1B16]">
-                    {formatPrice(finalTotalINR)}
+                    {formatPrice(selectedTotalINR)}
                   </span>
                 </div>
 
@@ -642,7 +496,7 @@ export default function CartPage() {
                       type="button"
                       disabled={couponLoading}
                       onClick={() => handleApplyCoupon()}
-                      className="px-4 py-2 bg-[#1F1B16] hover:bg-black text-[#FAF3E4] rounded-xl text-xs font-mono font-bold uppercase disabled:opacity-50 transition-colors"
+                      className="px-4 py-2 bg-[#1F1B16] hover:bg-black text-[#FAF3E4] rounded-xl text-xs font-mono font-bold uppercase disabled:opacity-50 transition-colors cursor-pointer"
                     >
                       {couponLoading ? 'Checking...' : 'Apply'}
                     </button>
@@ -665,47 +519,6 @@ export default function CartPage() {
                       <span>{couponFeedback.message}</span>
                     </div>
                   )}
-
-                  {/* Popular Coupon Chips */}
-                  {!appliedCoupon && (
-                    <div className="pt-1">
-                      <span className="text-[10px] text-stone-500 font-mono block mb-1.5">
-                        Available Promos (Click to Apply):
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { code: 'ROYAL10', label: '10% Off (ROYAL10)' },
-                          { code: 'MYSORE2021', label: '₹2,500 Off (MYSORE2021)' },
-                          { code: 'FESTIVE15', label: '15% Off (FESTIVE15)' },
-                        ].map((c, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => handleApplyCoupon(c.code)}
-                            className="bg-[#FAF3E4] hover:bg-[#C87F4A] hover:text-white text-stone-700 text-[10px] font-mono px-2 py-1 rounded-md border border-[#C87F4A]/25 transition-colors"
-                          >
-                            {c.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Trust Badges */}
-                <div className="pt-4 border-t border-[#C87F4A]/15 space-y-2 text-[11px] text-stone-600 font-sans">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#C87F4A] flex-shrink-0" />
-                    <span>Govt. Tested Pure 24K Zari & Silk Mark Authenticity</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RotateCcw className="w-3.5 h-3.5 text-[#C87F4A] flex-shrink-0" />
-                    <span>7-Day Hassle-Free Exchange & Return Policy</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Truck className="w-3.5 h-3.5 text-[#C87F4A] flex-shrink-0" />
-                    <span>Insured Air Courier Dispatch with Live GPS Tracking</span>
-                  </div>
                 </div>
               </div>
             </div>

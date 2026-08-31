@@ -30,10 +30,19 @@ interface ActiveReel {
 
 // Helper to extract clean Instagram Reel shortcodes (e.g. Cq5h1VQBW5R) from any Instagram link
 function getShortcode(url: string, fallback?: string): string {
-  if (fallback && fallback.length >= 5) return fallback;
+  if (fallback && fallback.length >= 5 && fallback.toLowerCase() !== 'reel' && fallback.toLowerCase() !== 'reels') return fallback;
   if (!url) return '';
-  const match = url.match(/(?:reel|p)\/([A-Za-z0-9_-]+)/);
-  return match ? match[1] : '';
+  const match = url.match(/\/(?:reel|reels|p)\/([A-Za-z0-9_-]{5,35})/i);
+  if (match) return match[1];
+  const cleanPath = url.split('?')[0].split('#')[0];
+  const segments = cleanPath.split('/').filter(Boolean);
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const seg = segments[i];
+    if (/^[A-Za-z0-9_-]{5,35}$/.test(seg) && seg.toLowerCase() !== 'reel' && seg.toLowerCase() !== 'reels') {
+      return seg;
+    }
+  }
+  return '';
 }
 
 // Direct Live Instagram Reel Card (Real Video Embed, Zero Static Placeholders)
@@ -61,7 +70,7 @@ export default function InstagramReelsCarousel() {
   const [isHovered, setIsHovered] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const animFrameRef = useRef<number | null>(null);
 
   const fetchActiveReels = useCallback(async () => {
     try {
@@ -95,32 +104,39 @@ export default function InstagramReelsCarousel() {
   }, [fetchActiveReels]);
 
   // ----------------------------------------------------
-  // 2. INFINITE AUTO-ROTATING CAROUSEL ENGINE
+  // 2. CONTINUOUS SMOOTH AUTO-ROTATING INFINITE CAROUSEL
   // ----------------------------------------------------
   useEffect(() => {
-    if (isHovered || reels.length === 0) return;
+    if (reels.length === 0) return;
 
-    autoScrollIntervalRef.current = setInterval(() => {
-      if (scrollContainerRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 15) {
-          scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          scrollContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+    let isPaused = isHovered;
+
+    const scrollLoop = () => {
+      if (!isPaused && scrollContainerRef.current) {
+        const el = scrollContainerRef.current;
+        const maxScroll = el.scrollWidth / 2;
+
+        el.scrollLeft += 0.8; // Smooth 60fps continuous glide
+
+        if (el.scrollLeft >= maxScroll) {
+          el.scrollLeft = 0; // Seamless loop without jump
         }
       }
-    }, 3500);
+      animFrameRef.current = requestAnimationFrame(scrollLoop);
+    };
+
+    animFrameRef.current = requestAnimationFrame(scrollLoop);
 
     return () => {
-      if (autoScrollIntervalRef.current) {
-        clearInterval(autoScrollIntervalRef.current);
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
       }
     };
   }, [isHovered, reels.length]);
 
   const handleManualScroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
-      const step = direction === 'left' ? -340 : 340;
+      const step = direction === 'left' ? -350 : 350;
       scrollContainerRef.current.scrollBy({ left: step, behavior: 'smooth' });
     }
   };
@@ -194,11 +210,11 @@ export default function InstagramReelsCarousel() {
               onMouseLeave={() => setIsHovered(false)}
               onTouchStart={() => setIsHovered(true)}
               onTouchEnd={() => setIsHovered(false)}
-              className="flex gap-5 sm:gap-6 items-stretch overflow-x-auto pb-6 pt-2 scrollbar-none snap-x snap-mandatory focus:outline-none px-1"
+              className="flex gap-5 sm:gap-6 items-stretch overflow-x-auto pb-6 pt-2 scrollbar-none focus:outline-none px-1"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
-              {reels.map((reel) => (
-                <DirectInlineReelCard key={reel.id} reel={reel} />
+              {[...reels, ...reels].map((reel, idx) => (
+                <DirectInlineReelCard key={`${reel.id}-${idx}`} reel={reel} />
               ))}
             </div>
           </div>

@@ -71,6 +71,8 @@ export interface Product {
   description: string;
   artisanCluster: string;
   silkMarkCertified: boolean;
+  sku?: string;
+  variantId?: string;
   colorVariants?: ColorVariant[];
   reviewsList?: Review[];
 }

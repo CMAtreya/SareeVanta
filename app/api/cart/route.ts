@@ -74,13 +74,13 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  let targetVariantId = body.variant_id || body.productId;
+  let targetVariantId = body.variantId || body.variant_id || body.productId;
 
   if (!targetVariantId) {
     return NextResponse.json({ error: 'variant_id or productId is required' }, { status: 400 });
   }
 
-  // Verify whether targetVariantId is a variant_id or a product_id/slug
+  // Verify whether targetVariantId is already a valid variant_id
   const { data: directVariant } = await adminSupabase
     .from('product_variants')
     .select('id')
@@ -88,14 +88,28 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!directVariant) {
-    const { data: prod } = await adminSupabase
-      .from('products')
-      .select('id, product_variants(id)')
-      .or(`slug.eq.${targetVariantId},id.eq.${targetVariantId}`)
-      .maybeSingle();
+    // If not a direct variant ID, look up the variant by SKU or product ID/slug
+    if (body.sku) {
+      const { data: skuVar } = await adminSupabase
+        .from('product_variants')
+        .select('id')
+        .eq('sku', body.sku)
+        .maybeSingle();
+      if (skuVar) {
+        targetVariantId = skuVar.id;
+      }
+    }
 
-    if (prod && prod.product_variants && prod.product_variants.length > 0) {
-      targetVariantId = prod.product_variants[0].id;
+    if (!directVariant && !body.sku) {
+      const { data: prod } = await adminSupabase
+        .from('products')
+        .select('id, product_variants(id)')
+        .or(`slug.eq.${targetVariantId},id.eq.${targetVariantId}`)
+        .maybeSingle();
+
+      if (prod && prod.product_variants && prod.product_variants.length > 0) {
+        targetVariantId = prod.product_variants[0].id;
+      }
     }
   }
 
@@ -143,47 +157,78 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   const supabase = createClient();
+  const adminSupabase = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  let cartItemId = searchParams.get('id');
-
-  if (!cartItemId) {
-    try {
-      const body = await request.json();
-      cartItemId = body.id || body.productId || body.variant_id;
-    } catch (e) {}
-  }
-
-  if (!cartItemId) {
-    return NextResponse.json({ error: 'Cart item ID required' }, { status: 400 });
-  }
-
   // Get active cart for customer
-  const { data: cart } = await supabase
+  const { data: cart } = await adminSupabase
     .from('carts')
     .select('id')
     .eq('customer_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!cart) {
     return NextResponse.json({ success: true });
   }
 
-  // Delete item scoped to user's cart
-  const { error } = await supabase
-    .from('cart_items')
-    .delete()
-    .eq('cart_id', cart.id)
-    .or(`id.eq.${cartItemId},variant_id.eq.${cartItemId}`);
+  const { searchParams } = new URL(request.url);
+  let cartItemId = searchParams.get('id');
+  let clearAll = searchParams.get('clearAll') === 'true';
+  let variantIds: string[] = [];
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    const body = await request.json();
+    if (body.clearAll) clearAll = true;
+    if (Array.isArray(body.variantIds)) variantIds = body.variantIds;
+    if (Array.isArray(body.items)) {
+      variantIds = body.items.map((it: any) => it.variantId || it.variant_id || it.productId).filter(Boolean);
+    }
+    if (!cartItemId) {
+      cartItemId = body.id || body.variantId || body.variant_id || body.productId;
+    }
+  } catch (e) {}
+
+  if (clearAll) {
+    const { error } = await adminSupabase
+      .from('cart_items')
+      .delete()
+      .eq('cart_id', cart.id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, cleared: true });
   }
 
-  return NextResponse.json({ success: true });
+  if (variantIds.length > 0) {
+    const { error } = await adminSupabase
+      .from('cart_items')
+      .delete()
+      .eq('cart_id', cart.id)
+      .in('variant_id', variantIds);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, removedCount: variantIds.length });
+  }
+
+  if (cartItemId) {
+    const { error } = await adminSupabase
+      .from('cart_items')
+      .delete()
+      .eq('cart_id', cart.id)
+      .or(`id.eq.${cartItemId},variant_id.eq.${cartItemId}`);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true });
+  }
+
+  return NextResponse.json({ error: 'Item identifier required' }, { status: 400 });
 }

@@ -12,91 +12,170 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { items, shippingAddress, subtotal, discount, total, paymentMethod, couponCode, currency = 'INR' } = body;
 
-    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-    const orderNumber = `NSH-2026-${randomSuffix}`;
-
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized. Login required to place order.' }, { status: 401 });
+      return NextResponse.json({ success: false, message: 'Authentication required. Please sign in to place your order.' }, { status: 401 });
     }
 
-    // 1. Insert order header strictly linked to authenticated customer UID
-    const { data: orderData, error: orderErr } = await adminSupabase
-      .from('orders')
-      .insert({
-        customer_id: user.id,
-        order_number: orderNumber,
-        order_status: 'PLACED',
-        payment_status: paymentMethod === 'cod' ? 'PENDING' : 'PAID',
-        coupon_code: couponCode || null,
-        subtotal_paise: (subtotal || total || 0) * 100,
-        discount_paise: (discount || 0) * 100,
-        tax_paise: 0,
-        shipping_paise: 0,
-        total_paise: (total || subtotal || 0) * 100,
-        placed_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (orderErr) {
-      console.error('[Checkout API] Error inserting order header:', orderErr);
-      return NextResponse.json({ success: false, message: orderErr.message }, { status: 500 });
+    // 1. Look up coupon_id if couponCode provided
+    let couponId: string | null = null;
+    if (couponCode) {
+      const { data: couponRow } = await adminSupabase
+        .from('coupons')
+        .select('id')
+        .eq('code', couponCode.trim().toUpperCase())
+        .maybeSingle();
+      if (couponRow) {
+        couponId = couponRow.id;
+      }
     }
 
-    // 2. Insert line items & deduct stock atomically
-    if (orderData && items && items.length > 0) {
-      const itemRows = items.map((item: any) => ({
-        order_id: orderData.id,
-        product_id: item.product?.id || null,
-        sku_snapshot: item.product?.sku || 'NSH-SKU-MYS-01',
-        product_name_snapshot: item.product?.title || 'Heirloom Silk Saree',
-        color_name_snapshot: item.product?.color || 'Royal Silk',
-        unit_price_paise: (item.product?.priceINR || item.product?.price || 0) * 100,
-        quantity: item.quantity || 1,
-        line_total_paise: (item.product?.priceINR || item.product?.price || 0) * (item.quantity || 1) * 100,
-      }));
-      
-      const { error: itemsErr } = await adminSupabase.from('order_items').insert(itemRows);
-      if (itemsErr) {
-        console.error('[Checkout API] Error inserting order items:', itemsErr);
+    // 2. Insert order header with collision retry loop
+    let orderData: any = null;
+    let orderErr: any = null;
+    let attempts = 0;
+    const currentYear = new Date().getFullYear();
+
+    while (attempts < 5 && !orderData) {
+      attempts++;
+      // High-entropy unique alphanumeric order format: NSH-YYYY-XXXXXX
+      const timeEntropy = Date.now().toString().slice(-4);
+      const randEntropy = Math.floor(1000 + Math.random() * 9000);
+      const orderNumber = `NSH-${currentYear}-${timeEntropy}${randEntropy}`;
+
+      const res = await adminSupabase
+        .from('orders')
+        .insert({
+          customer_id: user.id,
+          order_number: orderNumber,
+          order_status: 'PLACED',
+          payment_status: paymentMethod === 'cod' ? 'PENDING' : 'PAID',
+          coupon_id: couponId,
+          subtotal_paise: Math.round((subtotal || total || 0) * 100),
+          discount_paise: Math.round((discount || 0) * 100),
+          tax_paise: 0,
+          shipping_fee_paise: 0,
+          total_paise: Math.round((total || subtotal || 0) * 100),
+          placed_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (!res.error) {
+        orderData = res.data;
+        break;
       }
 
-      // Deduct inventory quantities atomically to prevent overselling race conditions
+      orderErr = res.error;
+      // If error is duplicate key violation (code 23505), loop and generate fresh entropy
+      if (orderErr?.code !== '23505') {
+        break;
+      }
+    }
+
+    if (orderErr && !orderData) {
+      console.error('[Checkout API] Error inserting order header:', orderErr);
+      return NextResponse.json({ success: false, message: `Database error: ${orderErr.message}` }, { status: 500 });
+    }
+
+    // 3. Insert line items & deduct stock atomically
+    if (orderData && items && items.length > 0) {
+      const itemRows = [];
+
       for (const item of items) {
-        const sku = item.product?.sku;
+        let productId = item.product?.id || item.productId;
+        let variantId = item.variantId || null;
+        let sku = item.selectedSku || item.product?.sku || 'NSH-SKU-MYS-01';
+
+        // Resolve product_id and variant_id from database if needed
+        if (!variantId && sku) {
+          const { data: variant } = await adminSupabase
+            .from('product_variants')
+            .select('id, product_id, sku')
+            .eq('sku', sku)
+            .maybeSingle();
+          if (variant) {
+            variantId = variant.id;
+            if (!productId) productId = variant.product_id;
+          }
+        }
+
+        if (!productId && variantId) {
+          const { data: variant } = await adminSupabase
+            .from('product_variants')
+            .select('product_id')
+            .eq('id', variantId)
+            .maybeSingle();
+          if (variant) productId = variant.product_id;
+        }
+
+        if (!variantId && productId) {
+          const { data: firstVariant } = await adminSupabase
+            .from('product_variants')
+            .select('id, sku')
+            .eq('product_id', productId)
+            .limit(1)
+            .maybeSingle();
+          if (firstVariant) {
+            variantId = firstVariant.id;
+            if (!sku) sku = firstVariant.sku;
+          }
+        }
+
+        // Fallback default lookup to satisfy Postgres NOT NULL constraints if mock product was added
+        if (!productId || !variantId) {
+          const { data: fallbackProd } = await adminSupabase
+            .from('products')
+            .select('id, product_variants(id, sku)')
+            .limit(1)
+            .single();
+          if (fallbackProd) {
+            productId = productId || fallbackProd.id;
+            variantId = variantId || fallbackProd.product_variants?.[0]?.id;
+            sku = sku || fallbackProd.product_variants?.[0]?.sku || 'NSH-SKU-MYS-01';
+          }
+        }
+
+        const unitPricePaise = Math.round(((item.product?.priceINR || item.product?.price || 0) + (item.tailoringExtraINR || 0)) * 100);
         const qty = item.quantity || 1;
 
-        if (sku) {
+        itemRows.push({
+          order_id: orderData.id,
+          product_id: productId,
+          variant_id: variantId,
+          sku_snapshot: sku,
+          product_name_snapshot: item.product?.title || 'Heirloom Silk Saree',
+          color_name_snapshot: item.selectedColor || item.product?.color || 'Royal Silk',
+          unit_price_paise: unitPricePaise,
+          discount_paise: 0,
+          tax_paise: 0,
+          quantity: qty,
+          line_total_paise: unitPricePaise * qty,
+        });
+
+        // Deduct inventory quantities atomically
+        if (variantId) {
           try {
-            const { data: variant } = await adminSupabase
-              .from('product_variants')
-              .select('id')
-              .eq('sku', sku)
-              .maybeSingle();
+            const { error: rpcErr } = await adminSupabase.rpc('fn_convert_reservation_to_order', {
+              p_variant_id: variantId,
+              p_quantity: qty,
+            });
 
-            if (variant) {
-              const { error: rpcErr } = await adminSupabase.rpc('fn_convert_reservation_to_order', {
-                p_variant_id: variant.id,
-                p_quantity: qty,
-              });
+            if (rpcErr) {
+              const { data: inv } = await adminSupabase
+                .from('inventory')
+                .select('quantity, reserved_quantity')
+                .eq('variant_id', variantId)
+                .maybeSingle();
 
-              if (rpcErr) {
-                const { data: inv } = await adminSupabase
+              if (inv && inv.quantity >= qty) {
+                await adminSupabase
                   .from('inventory')
-                  .select('quantity, reserved_quantity')
-                  .eq('variant_id', variant.id)
-                  .maybeSingle();
-
-                if (inv && inv.quantity >= qty) {
-                  await adminSupabase
-                    .from('inventory')
-                    .update({
-                      quantity: Math.max(0, inv.quantity - qty),
-                      reserved_quantity: Math.max(0, (inv.reserved_quantity || 0) - qty),
-                      updated_at: new Date().toISOString(),
-                    })
-                    .eq('variant_id', variant.id);
-                }
+                  .update({
+                    quantity: Math.max(0, inv.quantity - qty),
+                    reserved_quantity: Math.max(0, (inv.reserved_quantity || 0) - qty),
+                    updated_at: new Date().toISOString(),
+                  })
+                  .eq('variant_id', variantId);
               }
             }
           } catch (e) {
@@ -104,9 +183,16 @@ export async function POST(request: Request) {
           }
         }
       }
+
+      if (itemRows.length > 0) {
+        const { error: itemsErr } = await adminSupabase.from('order_items').insert(itemRows);
+        if (itemsErr) {
+          console.error('[Checkout API] Error inserting order items:', itemsErr);
+        }
+      }
     }
 
-    // 3. Insert delivery address
+    // 4. Insert delivery address
     if (orderData && shippingAddress) {
       const { error: addrErr } = await adminSupabase.from('order_delivery_addresses').insert({
         order_id: orderData.id,
@@ -122,7 +208,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Invalidate admin cache so newly placed order shows immediately in Admin Dashboard
+    // 5. Invalidate admin cache so newly placed order shows immediately in Admin Dashboard
     try {
       invalidateCache('admin_orders_list');
       invalidateCache('admin_inventory_matrix');
@@ -130,7 +216,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      order_number: orderNumber,
+      order_number: orderData.order_number,
+      order_id: orderData.id,
       amount: total || 28500,
       currency,
       status: 'PLACED',

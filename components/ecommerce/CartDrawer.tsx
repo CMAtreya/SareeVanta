@@ -15,46 +15,27 @@ export default function CartDrawer() {
     cartTotalINR,
     cartCount,
     currency,
+    selectedKeys,
+    selectedCount,
+    selectedSubtotalINR,
+    toggleItemSelection,
+    selectAllItems,
+    deselectAllItems,
+    getItemKey,
   } = useCart();
-
-  const [selectedIds, setSelectedIds] = useState<string[]>(() => cart.map((i) => i.product.id));
-
-  useEffect(() => {
-    setSelectedIds((prev) => {
-      const currentCartIds = cart.map((i) => i.product.id);
-      if (prev.length === 0 && currentCartIds.length > 0) return currentCartIds;
-      const validPrev = prev.filter((id) => currentCartIds.includes(id));
-      const newlyAdded = currentCartIds.filter((id) => !prev.includes(id));
-      return [...validPrev, ...newlyAdded];
-    });
-  }, [cart]);
 
   if (!isCartDrawerOpen) return null;
 
+  const isAllSelected = cart.length > 0 && selectedKeys.length === cart.length;
+  const isPartiallySelected = selectedKeys.length > 0 && selectedKeys.length < cart.length;
+
   const toggleSelectAll = () => {
-    if (selectedIds.length === cart.length) {
-      setSelectedIds([]);
+    if (isAllSelected) {
+      deselectAllItems();
     } else {
-      setSelectedIds(cart.map((i) => i.product.id));
+      selectAllItems();
     }
   };
-
-  const toggleItemSelect = (productId: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
-    );
-  };
-
-  const isAllSelected = cart.length > 0 && selectedIds.length === cart.length;
-  const isPartiallySelected = selectedIds.length > 0 && selectedIds.length < cart.length;
-
-  const selectedCartItems = cart.filter((item) => selectedIds.includes(item.product.id));
-  const selectedCount = selectedCartItems.reduce((acc, item) => acc + item.quantity, 0);
-
-  const selectedSubtotalINR = selectedCartItems.reduce(
-    (total, item) => total + (item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity,
-    0
-  );
 
   const freeShippingThreshold = 10000;
   const progressPercent = Math.min(100, (cartTotalINR / freeShippingThreshold) * 100);
@@ -117,7 +98,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Cart Item List */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-3">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8">
                 <ShoppingBag className="w-12 h-12 text-[#C87F4A]/40 mb-4" />
@@ -172,10 +153,11 @@ export default function CartDrawer() {
                 </div>
 
                 {cart.map((item) => {
-                  const isSelected = selectedIds.includes(item.product.id);
+                  const itemKey = getItemKey(item);
+                  const isSelected = selectedKeys.includes(itemKey);
                   return (
                     <div
-                      key={item.product.id}
+                      key={itemKey}
                       className={`flex gap-3 p-3.5 rounded-xl border transition-all ${
                         isSelected
                           ? 'bg-white border-[#C87F4A]/25 shadow-xs'
@@ -185,7 +167,7 @@ export default function CartDrawer() {
                       {/* Item Checkbox */}
                       <button
                         type="button"
-                        onClick={() => toggleItemSelect(item.product.id)}
+                        onClick={() => toggleItemSelection(itemKey)}
                         className={`w-4 h-4 mt-1 rounded border flex items-center justify-center transition-all flex-shrink-0 cursor-pointer ${
                           isSelected
                             ? 'bg-[#7A1C30] border-[#7A1C30] text-white shadow-2xs'
@@ -193,32 +175,52 @@ export default function CartDrawer() {
                         }`}
                         aria-label={isSelected ? `Deselect ${item.product.title}` : `Select ${item.product.title}`}
                       >
-                        {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
                       </button>
 
-                      <img
-                        src={item.product.images[0]}
-                        alt={item.product.title}
-                        className="w-16 h-20 object-cover rounded-lg bg-[#FAF3E4] border border-[#C87F4A]/15 flex-shrink-0"
-                      />
-                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                      {/* Product Media */}
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        onClick={() => setIsCartDrawerOpen(false)}
+                        className="w-16 h-20 rounded-lg overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 relative group"
+                      >
+                        <img
+                          src={item.product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=400&auto=format&fit=crop'}
+                          alt={item.product.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </Link>
+
+                      {/* Item Info */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
-                          <div className="flex justify-between items-start gap-2">
-                            <h4 className="font-editorial text-sm font-semibold text-[#1F1B16] truncate">
+                          <div className="flex items-start justify-between gap-2">
+                            <Link
+                              href={`/products/${item.product.slug}`}
+                              onClick={() => setIsCartDrawerOpen(false)}
+                              className="font-editorial text-sm font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors truncate block"
+                            >
                               {item.product.title}
-                            </h4>
+                            </Link>
                             <button
                               type="button"
-                              onClick={() => removeFromCart(item.product.id)}
-                              className="text-stone-400 hover:text-red-600 transition-colors p-0.5"
+                              onClick={() => removeFromCart(item.product.id, item.variantId, item.selectedColor)}
+                              className="text-stone-400 hover:text-red-600 p-0.5 cursor-pointer"
                               aria-label="Remove item"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <span className="text-[10px] font-mono uppercase text-[#773D21] block mt-0.5">
-                            {item.product.weave} • Pure Silk
-                          </span>
+
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full border border-stone-300 flex-shrink-0"
+                              style={{ backgroundColor: item.selectedColorHex || item.product.colorHex || '#8B1E28' }}
+                            />
+                            <span className="text-[10px] font-mono text-stone-500 truncate">
+                              {item.selectedColor || item.product.color || 'Royal Silk'} • {item.product.weave}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="flex items-center justify-between mt-2">
@@ -239,7 +241,7 @@ export default function CartDrawer() {
                                 <div className="flex items-center border border-stone-200 rounded-lg overflow-hidden bg-[#FAF3E4]">
                                   <button
                                     type="button"
-                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                    onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.variantId, item.selectedColor)}
                                     className="p-1 text-stone-600 hover:bg-stone-200 cursor-pointer"
                                   >
                                     <Minus className="w-3 h-3" />
@@ -250,7 +252,7 @@ export default function CartDrawer() {
                                   <button
                                     type="button"
                                     disabled={isAtMax}
-                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                    onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.variantId, item.selectedColor)}
                                     className={`p-1 transition-colors ${
                                       isAtMax
                                         ? 'opacity-30 cursor-not-allowed text-stone-400 bg-stone-100'
@@ -284,7 +286,7 @@ export default function CartDrawer() {
               <div className="flex items-center justify-between text-xs text-stone-600">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#C87F4A]" />
-                  <span>Complimentary Fall, Pico & Blouse Fabric</span>
+                  <span>Complimentary Blouse Fabric Included</span>
                 </span>
                 <span className="font-mono text-emerald-700 font-semibold">FREE</span>
               </div>
@@ -295,7 +297,7 @@ export default function CartDrawer() {
                     Subtotal ({selectedCount} Selected)
                   </span>
                   <span className="text-[10px] text-stone-400 font-sans">
-                    Includes Govt. Silk Mark & Fall/Pico
+                    Includes Govt. Silk Mark India Certificate
                   </span>
                 </div>
                 <span className="font-editorial text-2xl font-bold text-[#1F1B16]">

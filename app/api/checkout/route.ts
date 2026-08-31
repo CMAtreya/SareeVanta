@@ -73,8 +73,20 @@ export async function POST(request: Request) {
         } else if (coupon.discount_type === 'PERCENTAGE') {
           couponDiscountPaise = Math.round((totalSellingPaise * Number(coupon.discount_value)) / 100);
         }
-        if (coupon.max_discount_paise) {
-          couponDiscountPaise = Math.min(couponDiscountPaise, Number(coupon.max_discount_paise));
+        let maxCapPaise = coupon.max_discount_paise ? Number(coupon.max_discount_paise) : undefined;
+        try {
+          if (coupon.description && coupon.description.startsWith('{')) {
+            const meta = JSON.parse(coupon.description);
+            if (meta.maxCapINR) maxCapPaise = Number(meta.maxCapINR) * 100;
+          }
+        } catch (e) {}
+
+        if (maxCapPaise === undefined && coupon.discount_type === 'PERCENTAGE') {
+          maxCapPaise = 300000; // ₹3,000 default max cap
+        }
+
+        if (maxCapPaise) {
+          couponDiscountPaise = Math.min(couponDiscountPaise, maxCapPaise);
         }
       }
     }
@@ -82,7 +94,7 @@ export async function POST(request: Request) {
     const shippingFeePaise = totalSellingPaise >= 500000 ? 0 : 25000; // Free shipping over ₹5000
     const finalAmountPaise = Math.max(0, totalSellingPaise - couponDiscountPaise + shippingFeePaise);
 
-    // 2. Create Checkout Session
+    // 2. Create Checkout Session with strict 15-minute TTL
     const customerId = user?.id || null;
     const { data: session, error: sessionError } = await adminSupabase
       .from('checkout_sessions')
@@ -95,14 +107,14 @@ export async function POST(request: Request) {
         total_discount_paise: discountPaise + couponDiscountPaise,
         shipping_fee_paise: shippingFeePaise,
         final_amount_paise: finalAmountPaise,
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
       })
       .select('id')
       .single();
 
     const checkoutSessionId = session?.id || `CS-${Date.now()}`;
 
-    // 3. Atomically reserve inventory for each item
+    // 3. Atomically reserve inventory for each item with 15-minute TTL lock
     for (const item of verifiedItems) {
       if (session?.id) {
         await adminSupabase.from('checkout_items').insert({
@@ -119,7 +131,7 @@ export async function POST(request: Request) {
         p_quantity: item.quantity,
         p_source_type: 'CUSTOMER_CHECKOUT',
         p_source_id: checkoutSessionId,
-        p_expiry_minutes: 30,
+        p_expiry_minutes: 15,
       });
 
       // If RPC is not present, directly update reserved_quantity in inventory table
@@ -147,7 +159,7 @@ export async function POST(request: Request) {
       checkout_session_id: checkoutSessionId,
       final_amount_paise: finalAmountPaise,
       final_amount_inr: Math.round(finalAmountPaise / 100),
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     });
   } catch (e: any) {
     console.error('[Checkout API] Error creating checkout session:', e);

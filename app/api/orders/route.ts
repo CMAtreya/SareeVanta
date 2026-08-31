@@ -29,7 +29,19 @@ export async function GET() {
           color_name_snapshot,
           unit_price_paise,
           quantity,
-          line_total_paise
+          line_total_paise,
+          product_variants (
+            id,
+            sku,
+            product_variant_media ( url, is_primary, display_order ),
+            products (
+              id,
+              title,
+              slug,
+              weavings ( name ),
+              fabrics ( name )
+            )
+          )
         ),
         order_delivery_addresses ( recipient_name, city, state, postal_code )
       `)
@@ -41,64 +53,30 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Collect product IDs to enrich with real product media if available
-    const productIds = Array.from(
-      new Set(
-        (orders || [])
-          .flatMap((o: any) => (o.order_items || []).map((it: any) => it.product_id))
-          .filter(Boolean)
-      )
-    );
-
-    let productMap = new Map<string, any>();
-    if (productIds.length > 0) {
-      const { data: prods } = await adminSupabase
-        .from('products')
-        .select(`
-          id, slug,
-          weavings ( name ),
-          fabrics ( name ),
-          product_variants (
-            product_variant_media ( url, is_primary, display_order )
-          )
-        `)
-        .in('id', productIds);
-
-      (prods || []).forEach((p: any) => {
-        const variants = p.product_variants || [];
-        const media = variants.flatMap((v: any) => v.product_variant_media || []);
-        const sorted = media.sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
-        const images = sorted.map((m: any) => m.url).filter((u: any) => typeof u === 'string' && u.trim().length > 5);
-        productMap.set(p.id, {
-          slug: p.slug,
-          weave: Array.isArray(p.weavings) ? p.weavings[0]?.name : p.weavings?.name,
-          fabric: Array.isArray(p.fabrics) ? p.fabrics[0]?.name : p.fabrics?.name,
-          images,
-        });
-      });
-    }
-
     const formattedOrders = (orders || []).map((o: any) => {
       const isDelivered = o.order_status === 'DELIVERED';
       const isShipped = o.order_status === 'SHIPPED';
 
       const items = (o.order_items || []).map((item: any) => {
-        const enriched = item.product_id ? productMap.get(item.product_id) : null;
-        const realImages = enriched?.images || [];
-        const weaveName = enriched?.weave || 'Handloom Silk';
-        const fabricName = enriched?.fabric || 'Pure Silk';
-        const slug = enriched?.slug || '';
+        const pv = item.product_variants;
+        const prod = pv?.products;
+        const mediaList = Array.isArray(pv?.product_variant_media) ? pv.product_variant_media : [];
+        const sorted = [...mediaList].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+        const itemImg = sorted[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
+        const weaveName = Array.isArray(prod?.weavings) ? prod.weavings[0]?.name : prod?.weavings?.name || 'Pure Silk';
+        const fabricName = Array.isArray(prod?.fabrics) ? prod.fabrics[0]?.name : prod?.fabrics?.name || 'Mulberry Silk';
+        const slug = prod?.slug || '';
 
         return {
           product: {
-            id: item.product_id || item.id,
-            title: item.product_name_snapshot || 'Handcrafted Silk Saree',
+            id: item.product_id || pv?.id || item.id,
+            title: item.product_name_snapshot || prod?.title || 'Handcrafted Silk Saree',
             slug,
             color: item.color_name_snapshot || '',
             weave: weaveName,
             fabric: fabricName,
             priceINR: Math.round((item.unit_price_paise || 0) / 100),
-            images: realImages,
+            images: [itemImg],
           },
           quantity: item.quantity || 1,
         };

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 import { Product } from '@/lib/products';
+import TaxInvoiceModal from '@/components/invoice/TaxInvoiceModal';
 
 export default function AccountOrderDetailPage() {
   const params = useParams();
@@ -26,7 +27,7 @@ export default function AccountOrderDetailPage() {
   const orderId = (params?.id as string) || '';
 
   const { currency, addToCart } = useCart();
-  const [downloadingInvoice, setDownloadingInvoice] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [reordered, setReordered] = useState(false);
   const [order, setOrder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,11 +101,7 @@ export default function AccountOrderDetailPage() {
   }
 
   const handleDownloadInvoice = () => {
-    setDownloadingInvoice(true);
-    setTimeout(() => {
-      setDownloadingInvoice(false);
-      alert(`Tax Invoice PDF for Order #${orderId} generated.`);
-    }, 700);
+    setShowInvoiceModal(true);
   };
 
   const isEligibleForReturn = order?.status_type === 'delivered' || order?.status === 'delivered';
@@ -179,18 +176,17 @@ export default function AccountOrderDetailPage() {
 
             <button
               type="button"
-              onClick={handleDownloadInvoice}
-              disabled={downloadingInvoice}
-              className="px-4 py-2.5 bg-[#FAF3E4] hover:bg-[#1F1B16] hover:text-white text-[#1F1B16] border border-[#C87F4A]/30 rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+              onClick={() => setShowInvoiceModal(true)}
+              className="px-4 py-2.5 bg-[#FAF3E4] hover:bg-[#1F1B16] hover:text-white text-[#1F1B16] border border-[#C87F4A]/30 rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>{downloadingInvoice ? 'Downloading...' : 'Invoice'}</span>
+              <span>Tax Invoice</span>
             </button>
 
             <button
               type="button"
               onClick={handleReorder}
-              className="px-4 py-2.5 bg-[#1F1B16] hover:bg-black text-white rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-[#1F1B16] hover:bg-black text-white rounded-xl text-xs font-sans font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
             >
               <ShoppingBag className="w-3.5 h-3.5" />
               <span>{reordered ? 'Added to Bag!' : 'Reorder'}</span>
@@ -201,53 +197,51 @@ export default function AccountOrderDetailPage() {
         {/* Ordered Handlooms List */}
         <div className="space-y-4">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-stone-500 block">
-            Shipment Items ({order.items.length})
+            Shipment Items ({(order.items || []).length})
           </span>
 
           <div className="divide-y divide-stone-100 space-y-4">
-            {(order.items || []).map((item: any, idx: number) => (
-              <div
-                key={idx}
-                className="pt-4 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <Link
-                    href={`/products/${item.product.slug}`}
-                    className="w-18 h-22 rounded-2xl overflow-hidden bg-[#FAF3E4] border border-[#C87F4A]/20 flex-shrink-0"
-                  >
-                    <img
-                      src={item.product.images[0]}
-                      alt={item.product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </Link>
+            {(order.items || []).map((item: any, idx: number) => {
+              const prod = item.product || {};
+              const imgUrl = prod.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
+              return (
+                <div
+                  key={idx}
+                  className="pt-4 first:pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl overflow-hidden bg-[#FAF3E4] border border-[#C87F4A]/20 flex-shrink-0 shadow-2xs">
+                      <img
+                        src={imgUrl}
+                        alt={prod.title || 'Silk Saree'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#C87F4A] font-semibold block">
-                      {item.product.weave} • {item.product.fabric}
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-[#C87F4A] font-semibold block">
+                        {prod.weave || 'Pure Silk'} • {prod.sku || 'NSH-SKU'}
+                      </span>
+                      <h3 className="font-editorial text-base sm:text-lg font-bold text-[#1F1B16] truncate">
+                        {prod.title || 'Handloom Silk Saree'}
+                      </h3>
+                      <span className="text-[10px] font-mono text-emerald-800 block">
+                        Govt. Silk Mark Certified • 100% Pure Silk
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right self-end sm:self-center font-mono flex-shrink-0">
+                    <span className="font-editorial text-lg font-bold text-[#1F1B16] block">
+                      {formatPrice((prod.priceINR || prod.price || 0) * (item.quantity || 1))}
                     </span>
-                    <Link
-                      href={`/products/${item.product.slug}`}
-                      className="font-editorial text-base font-bold text-[#1F1B16] hover:text-[#C87F4A] transition-colors block"
-                    >
-                      {item.product.title}
-                    </Link>
-                    <span className="text-[10px] font-mono text-emerald-800 block">
-                      Govt. Silk Mark Certified • 100% Pure Silk
+                    <span className="text-[11px] text-stone-400">
+                      Qty: {item.quantity || 1}
                     </span>
                   </div>
                 </div>
-
-                <div className="text-right self-end sm:self-center">
-                  <span className="font-editorial text-lg font-bold text-[#1F1B16] block">
-                    {formatPrice(item.product.priceINR * item.quantity)}
-                  </span>
-                  <span className="text-[11px] font-mono text-stone-400">
-                    Qty: {item.quantity}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -260,9 +254,9 @@ export default function AccountOrderDetailPage() {
               <span>Delivery Address</span>
             </div>
             <p className="text-stone-700 leading-relaxed">
-              <strong>{order.shipping_address.name}</strong> ({order.shipping_address.phone})<br />
-              {order.shipping_address.addressLine1}, {order.shipping_address.addressLine2}<br />
-              {order.shipping_address.city}, {order.shipping_address.state} — <strong>{order.shipping_address.pincode}</strong>
+              <strong>{order.shipping_address?.name || 'Valued Patron'}</strong> ({order.shipping_address?.phone || ''})<br />
+              {order.shipping_address?.addressLine1 || order.shipping_address?.address_line_1 || ''}<br />
+              {order.shipping_address?.city || ''}, {order.shipping_address?.state || ''} — <strong>{order.shipping_address?.pincode || order.shipping_address?.postal_code || ''}</strong>
             </p>
           </div>
 
@@ -275,12 +269,14 @@ export default function AccountOrderDetailPage() {
             <div className="space-y-1">
               <div className="flex justify-between text-stone-600">
                 <span>Subtotal:</span>
-                <span className="font-mono">{formatPrice(order.subtotalINR)}</span>
+                <span className="font-mono">{formatPrice(order.subtotalINR || order.totalINR)}</span>
               </div>
-              <div className="flex justify-between text-emerald-800">
-                <span>Privilege Discount:</span>
-                <span className="font-mono">-{formatPrice(order.discountINR)}</span>
-              </div>
+              {order.discountINR > 0 && (
+                <div className="flex justify-between text-emerald-800">
+                  <span>Privilege Discount:</span>
+                  <span className="font-mono">-{formatPrice(order.discountINR)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-stone-600">
                 <span>Insured Express Shipping:</span>
                 <span className="font-mono text-emerald-800 font-bold uppercase text-[10px]">FREE</span>
@@ -295,6 +291,35 @@ export default function AccountOrderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Tax Invoice Modal */}
+      {showInvoiceModal && (
+        <TaxInvoiceModal
+          invoice={{
+            orderId: order.order_number || order.id || orderId,
+            orderDate: order.placed_at || order.date,
+            customerName: order.shipping_address?.name || 'Valued Patron',
+            phone: order.shipping_address?.phone,
+            address: order.shipping_address?.addressLine1 || order.shipping_address?.address_line_1,
+            city: order.shipping_address?.city,
+            state: order.shipping_address?.state,
+            pincode: order.shipping_address?.pincode || order.shipping_address?.postal_code,
+            items: (order.items || []).map((it: any) => ({
+              title: it.product?.title || 'Handloom Silk Saree',
+              sku: it.product?.sku || 'NSH-SKU',
+              hsn: '5007',
+              quantity: it.quantity || 1,
+              price: it.product?.priceINR || it.product?.price || 0,
+            })),
+            subtotalAmount: order.subtotalINR || order.totalINR,
+            discountAmount: order.discountINR || 0,
+            totalAmount: order.totalINR,
+            paymentGateway: order.payment_method || 'Online Payment',
+            paymentStatus: order.status === 'paid' || order.status === 'PAID' ? 'PAID' : 'PAID',
+          }}
+          onClose={() => setShowInvoiceModal(false)}
+        />
+      )}
     </div>
   );
 }

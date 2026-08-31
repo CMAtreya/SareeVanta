@@ -61,6 +61,8 @@ export interface ShipmentRecord {
   awb: string;
   orderId: string;
   dateCreated: string;
+  orderPlacedAt?: string;
+  dispatchedAt?: string;
   customerName: string;
   phone: string;
   email: string;
@@ -106,53 +108,10 @@ export default function AdminShipmentsPage() {
     fetch('/api/admin/shipments')
       .then((res) => res.json())
       .then((data) => {
-        if (data.shipments && Array.isArray(data.shipments) && data.shipments.length > 0) {
+        if (data.shipments && Array.isArray(data.shipments)) {
           setShipments(data.shipments);
         } else {
-          // Fallback mapping from live orders
-          fetch('/api/admin/orders')
-            .then((res) => res.json())
-            .then((orderData) => {
-              if (orderData.orders && Array.isArray(orderData.orders) && orderData.orders.length > 0) {
-                const mappedShipments: ShipmentRecord[] = orderData.orders.map((o: any) => ({
-                  id: `SHP-${o.id}`,
-                  awb: o.awb || `BD-${Math.floor(100000 + Math.random() * 900000)}`,
-                  orderId: o.id,
-                  dateCreated: `${o.date || 'Today'}, ${o.time || '10:00 AM'}`,
-                  customerName: o.customerName || 'Customer',
-                  phone: o.phone || '',
-                  email: o.email || '',
-                  address: o.address || '',
-                  city: o.city || 'Bengaluru',
-                  state: o.state || 'Karnataka',
-                  pincode: o.pincode || '560001',
-                  carrier: o.carrier || 'Blue Dart Air Express',
-                  carrierServiceCode: 'BD-DOM-AIR-01',
-                  shipmentType: 'AIR_EXPRESS',
-                  status: o.fulfillmentState === 'DELIVERED' ? 'DELIVERED' : o.fulfillmentState === 'IN_TRANSIT' ? 'IN_TRANSIT' : 'MANIFEST_GENERATED',
-                  currentLocation: `${o.city || 'Origin'} Sort Hub`,
-                  latestCheckpointText: 'Courier manifest registered',
-                  estimatedDelivery: '2-3 Business Days',
-                  items: (o.items || []).map((it: any) => ({ ...it, weightGrams: 680 })),
-                  totalValueINR: o.totalAmount || 0,
-                  totalWeightGrams: 680,
-                  silkMarkAuditId: o.silkMarkAuditId || 'CSB-2026-MYS-8942',
-                  paymentMode: o.paymentGateway?.includes('COD') ? 'COD' : 'PREPAID',
-                  trackingHistory: [
-                    {
-                      time: o.time || '10:00 AM',
-                      date: o.date || 'Today',
-                      location: 'Mysuru Origin Studio',
-                      activity: 'Order packed & courier manifest sealed',
-                      status: 'COMPLETED',
-                    },
-                  ],
-                }));
-                setShipments(mappedShipments);
-              } else {
-                setShipments([]);
-              }
-            });
+          setShipments([]);
         }
       })
       .catch((err) => {
@@ -615,11 +574,18 @@ export default function AdminShipmentsPage() {
                         </div>
                       </td>
 
-                      {/* 6. Est. Delivery */}
+                      {/* 6. Est. Delivery & Timestamps */}
                       <td className="py-4 px-4 align-top font-mono text-slate-800">
-                        <div className="space-y-0.5">
-                          <div className="font-semibold text-slate-900">{shp.estimatedDelivery}</div>
-                          <div className="text-[10px] text-slate-400">Created: {shp.dateCreated.split(',')[0]}</div>
+                        <div className="space-y-1">
+                          <div className="font-bold text-slate-900 text-xs">{shp.estimatedDelivery}</div>
+                          <div className="text-[10px] text-slate-600 flex flex-col gap-0.5">
+                            <span className="text-slate-500">
+                              <strong className="text-slate-700 font-semibold">Placed:</strong> {shp.orderPlacedAt || shp.dateCreated}
+                            </span>
+                            <span className="text-emerald-800 font-medium">
+                              <strong className="text-slate-700 font-semibold">Dispatched:</strong> {shp.dispatchedAt || 'Pending Pickup'}
+                            </span>
+                          </div>
                         </div>
                       </td>
 

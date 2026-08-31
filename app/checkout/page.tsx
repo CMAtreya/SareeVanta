@@ -34,6 +34,7 @@ import {
 import { useCart } from '@/components/providers/CartContext';
 import { createClient } from '@/lib/supabase/client';
 import { sanitizePincode, validatePincode } from '@/lib/pincode';
+import TaxInvoiceModal from '@/components/invoice/TaxInvoiceModal';
 
 interface SavedAddress {
   id: string;
@@ -56,13 +57,26 @@ export default function CheckoutPage() {
     cart,
     cartSubtotalINR,
     cartTotalINR,
+    selectedCartItems,
+    selectedCount,
+    selectedSubtotalINR,
+    selectedTotalINR,
+    selectedDiscountINR,
+    getItemKey,
     appliedCoupon,
     couponDiscountINR,
     currency,
     clearCart,
+    removePurchasedItems,
     applyCoupon,
     removeCoupon,
   } = useCart();
+
+  const checkoutItems = selectedCartItems;
+  const checkoutCount = selectedCount;
+  const checkoutSubtotal = selectedSubtotalINR;
+  const checkoutDiscount = selectedDiscountINR;
+  const checkoutTotal = selectedTotalINR;
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
@@ -171,7 +185,9 @@ export default function CheckoutPage() {
     paymentMethod: string;
     items?: any[];
   } | null>(null);
+  const [isTaxInvoiceOpen, setIsTaxInvoiceOpen] = useState(false);
 
+  const [orderPlacementError, setOrderPlacementError] = useState<string | null>(null);
   const [copiedOrder, setCopiedOrder] = useState(false);
 
   const formatPrice = (inr: number) => {
@@ -299,9 +315,9 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           address_id: selectedAddress?.id,
           coupon_code: appliedCoupon?.code || null,
-          items: cart.map((item) => ({
+          items: checkoutItems.map((item) => ({
             productId: item.product.id,
-            variant_id: item.product.id,
+            variant_id: item.variantId || item.product.id,
             quantity: item.quantity,
           })),
         }),
@@ -330,7 +346,7 @@ export default function CheckoutPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: couponInput.trim(),
-          cartSubtotalINR,
+          cartSubtotalINR: checkoutSubtotal,
         }),
       });
       const data = await res.json();
@@ -358,37 +374,46 @@ export default function CheckoutPage() {
   // Pay Now Handler: POST /api/checkout/orders -> POST /api/checkout/payment/init -> Render Step 4 Confirmation
   const handlePayNow = async () => {
     setIsSubmittingOrder(true);
+    setOrderPlacementError(null);
+
     try {
-      // 1. Create order record
+      // 1. Create order record in Supabase Database with only selected checkout items
       const orderRes = await fetch('/api/checkout/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: cart,
+          items: checkoutItems,
           shippingAddress: selectedAddress,
-          subtotal: cartSubtotalINR,
-          discount: couponDiscountINR,
+          subtotal: checkoutSubtotal,
+          discount: checkoutDiscount,
           couponCode: appliedCoupon?.code || null,
-          total: cartTotalINR,
+          total: checkoutTotal,
           paymentMethod,
           currency,
         }),
       });
+
       const orderData = await orderRes.json();
-      const orderNumber = orderData.order_number || `NSH-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.message || orderData.error || 'Failed to confirm order with the database.');
+      }
 
-      // 2. Initialize payment gateway
-      await fetch('/api/checkout/payment/init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_number: orderNumber,
-          method: paymentMethod,
-        }),
-      });
+      const orderNumber = orderData.order_number;
 
-      // 3. Set confirmation details and transition to Step 4
-      const purchasedItems = [...cart];
+      // 2. Initialize payment gateway session
+      try {
+        await fetch('/api/checkout/payment/init', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            order_number: orderNumber,
+            method: paymentMethod,
+          }),
+        });
+      } catch (e) {}
+
+      // 3. Set verified confirmation details and transition to Step 4
+      const purchasedItems = [...checkoutItems];
       setConfirmedOrder({
         orderNumber,
         trackingNumber: `BD-AIR-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -399,7 +424,7 @@ export default function CheckoutPage() {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        totalINR: cartTotalINR,
+        totalINR: checkoutTotal,
         items: purchasedItems,
         paymentMethod:
           paymentMethod === 'upi'
@@ -411,35 +436,22 @@ export default function CheckoutPage() {
             : 'Cash on Delivery',
       });
 
-      clearCart();
+      removePurchasedItems(
+        purchasedItems.map((it) => ({
+          productId: it.product.id,
+          variantId: it.variantId,
+          selectedColor: it.selectedColor,
+        }))
+      );
       setTimeout(() => {
         setIsSubmittingOrder(false);
         setCurrentStep(4);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 700);
-    } catch (err) {
-      console.error('Order creation error:', err);
-      const purchasedItems = [...cart];
-      setConfirmedOrder({
-        orderNumber: 'NSH-2026-8942',
-        trackingNumber: 'BD-AIR-928412',
-        placedAt: new Date().toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        totalINR: cartTotalINR,
-        items: purchasedItems,
-        paymentMethod: 'Cash on Delivery',
-      });
-      clearCart();
-      setTimeout(() => {
-        setIsSubmittingOrder(false);
-        setCurrentStep(4);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 700);
+    } catch (err: any) {
+      console.error('[Checkout] Order placement failure:', err);
+      setIsSubmittingOrder(false);
+      setOrderPlacementError(err?.message || 'We encountered an issue registering your order with the vault. Please verify your details and try again.');
     }
   };
 
@@ -881,17 +893,17 @@ export default function CheckoutPage() {
                   {/* 2. Order Items */}
                   <div className="space-y-3">
                     <span className="text-[11px] font-mono uppercase tracking-wider text-stone-700 font-bold block">
-                      Order Items ({cart.length})
+                      Order Items ({checkoutItems.length})
                     </span>
                     <div className="space-y-3">
-                      {cart.map((item) => (
+                      {checkoutItems.map((item) => (
                         <div
-                          key={item.product.id}
+                          key={getItemKey(item)}
                           className="p-3.5 rounded-2xl border border-stone-200 bg-white flex items-center justify-between gap-4"
                         >
                           <div className="flex items-center gap-3.5 min-w-0">
                             <img
-                              src={item.product.images[0]}
+                              src={item.product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80'}
                               alt={item.product.title}
                               className="w-14 h-18 rounded-xl object-cover border border-stone-200 flex-shrink-0"
                             />
@@ -900,10 +912,7 @@ export default function CheckoutPage() {
                                 {item.product.title}
                               </h4>
                               <span className="text-[11px] font-mono text-stone-600 block">
-                                Quantity: {item.quantity}
-                              </span>
-                              <span className="text-[10px] font-sans text-emerald-700 font-semibold block">
-                                ✓ Fall & Pico Included
+                                Quantity: {item.quantity} • {item.selectedColor || item.product.color || 'Pure Silk'}
                               </span>
                             </div>
                           </div>
@@ -941,7 +950,7 @@ export default function CheckoutPage() {
                                 {appliedCoupon.code}
                               </span>
                               <span className="text-[11px] font-mono font-semibold text-emerald-700">
-                                (-{formatPrice(couponDiscountINR)})
+                                (-{formatPrice(checkoutDiscount)})
                               </span>
                             </div>
                             <span className="text-[11px] text-emerald-700 font-sans block">
@@ -1007,7 +1016,7 @@ export default function CheckoutPage() {
                   <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF3E4]/30 border border-[#C87F4A]/20 space-y-2.5 text-xs font-sans">
                     <div className="flex justify-between text-stone-600">
                       <span>Original Subtotal (Before Discount)</span>
-                      <span className="font-mono">{formatPrice(cartSubtotalINR)}</span>
+                      <span className="font-mono">{formatPrice(checkoutSubtotal)}</span>
                     </div>
 
                     {appliedCoupon && (
@@ -1016,14 +1025,9 @@ export default function CheckoutPage() {
                           <Tag className="w-3 h-3 text-emerald-700" />
                           <span>Coupon Discount ({appliedCoupon.code})</span>
                         </span>
-                        <span className="font-mono">-{formatPrice(couponDiscountINR)}</span>
+                        <span className="font-mono">-{formatPrice(checkoutDiscount)}</span>
                       </div>
                     )}
-
-                    <div className="flex justify-between text-stone-600">
-                      <span>Fall & Pico Stitching</span>
-                      <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">Complimentary</span>
-                    </div>
 
                     <div className="flex justify-between text-stone-600">
                       <span>Express Air Delivery</span>
@@ -1033,7 +1037,7 @@ export default function CheckoutPage() {
                     <div className="pt-3 border-t border-[#C87F4A]/20 flex justify-between font-bold text-sm text-[#1F1B16]">
                       <span>Final Total Amount (After Discount)</span>
                       <span className="font-mono text-base text-[#7A1C30]">
-                        {formatPrice(cartTotalINR)}
+                        {formatPrice(checkoutTotal)}
                       </span>
                     </div>
                     <span className="text-[10px] text-stone-400 font-sans block text-right">
@@ -1240,6 +1244,17 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Order Placement Error Alert */}
+                  {orderPlacementError && (
+                    <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-sans flex items-start gap-3 shadow-xs">
+                      <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <span className="font-bold block">Order Placement Unsuccessful</span>
+                        <p className="leading-relaxed">{orderPlacementError}</p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Primary Pay Now & Advance to Step 4 Button */}
                   <button
                     type="button"
@@ -1255,7 +1270,7 @@ export default function CheckoutPage() {
                     ) : (
                       <>
                         <Lock className="w-4 h-4" />
-                        <span>Authorize & Place Order ({formatPrice(cartTotalINR)})</span>
+                        <span>Authorize & Place Order ({formatPrice(checkoutTotal)})</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
@@ -1283,14 +1298,14 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#C87F4A] font-bold block">
-                        Loom Vault Reservation Secured
+                      <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#C87F4A] font-bold block">
+                        Order Placed Successfully
                       </span>
                       <h2 className="font-editorial text-2xl sm:text-4xl font-bold text-[#1F1B16]">
-                        Congratulations on Your Royal Curation!
+                        Thank You for Your Order!
                       </h2>
                       <p className="text-xs sm:text-sm text-stone-600 font-sans max-w-lg mx-auto leading-relaxed">
-                        Your bespoke saree order has been authenticated and registered with the Mysuru Master Weavers guild.
+                        We have received your order and are preparing it for dispatch. You will receive SMS and email updates with live tracking details.
                       </p>
                     </div>
                   </div>
@@ -1299,7 +1314,7 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#FAF3E4]/70 p-5 rounded-2xl border border-[#C87F4A]/25">
                     <div>
                       <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-bold block mb-0.5">
-                        Official Order Reference
+                        Order Number
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-base font-bold text-[#7A1C30]">
@@ -1325,7 +1340,7 @@ export default function CheckoutPage() {
 
                     <div className="sm:text-right">
                       <span className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-bold block mb-0.5">
-                        Express Logistics Consignment
+                        Courier Tracking Number
                       </span>
                       <div className="font-mono text-base font-bold text-emerald-800 flex items-center sm:justify-end gap-1.5">
                         <Truck className="w-4 h-4 text-emerald-600" />
@@ -1362,7 +1377,7 @@ export default function CheckoutPage() {
                                 {item.product?.title || 'Heirloom Silk Saree'}
                               </h4>
                               <span className="text-[11px] font-mono text-[#773D21] block">
-                                Qty: {item.quantity} • {item.blouseOption === 'stitched' ? 'Custom Tailored Blouse' : 'Fall & Pico Hemmed'}
+                                Qty: {item.quantity} • {item.blouseOption === 'stitched' ? 'Custom Tailored Blouse' : 'Unstitched Blouse Piece'}
                               </span>
                               <span className="text-[10px] font-sans text-emerald-700 font-semibold block">
                                 ✓ Govt. Silk Mark Authenticity Seal Attached
@@ -1392,13 +1407,40 @@ export default function CheckoutPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => alert('PDF Tax Invoice generated and downloaded.')}
+                      onClick={() => setIsTaxInvoiceOpen(true)}
                       className="px-4 py-2 bg-white hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 shadow-2xs cursor-pointer flex-shrink-0"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download Tax Invoice (PDF)</span>
                     </button>
                   </div>
+
+                  {/* Standardized Tax Invoice Modal */}
+                  {isTaxInvoiceOpen && (
+                    <TaxInvoiceModal
+                      invoice={{
+                        orderId: confirmedOrder.orderNumber,
+                        orderDate: new Date().toLocaleDateString('en-IN'),
+                        customerName: selectedAddress?.name || newAddress.name || 'Valued Patron',
+                        phone: selectedAddress?.phone || newAddress.phone || '',
+                        address: selectedAddress?.addressLine1 || newAddress.addressLine1 || '',
+                        city: selectedAddress?.city || newAddress.city || 'Bengaluru',
+                        state: selectedAddress?.state || newAddress.state || 'Karnataka',
+                        pincode: selectedAddress?.pincode || newAddress.pincode || '560001',
+                        items: (confirmedOrder.items || cart).map((it: any) => ({
+                          title: it.product?.title || it.title || 'Pure Silk Saree',
+                          sku: it.selectedSku || it.sku || 'NSH-SKU-MYS-01',
+                          hsn: '5007',
+                          quantity: it.quantity || 1,
+                          price: it.product?.priceINR || it.price || Math.round(confirmedOrder.totalINR),
+                        })),
+                        totalAmount: confirmedOrder.totalINR,
+                        paymentGateway: confirmedOrder.paymentMethod || 'Razorpay UPI',
+                        paymentStatus: 'PAID',
+                      }}
+                      onClose={() => setIsTaxInvoiceOpen(false)}
+                    />
+                  )}
 
                   {/* Navigation Action Buttons */}
                   <div className="pt-4 border-t border-stone-100 flex flex-col sm:flex-row items-center gap-3 justify-between">
@@ -1432,16 +1474,16 @@ export default function CheckoutPage() {
                 <h3 className="font-editorial text-xl font-bold text-[#1F1B16] pb-3 border-b border-[#C87F4A]/20 flex items-center justify-between">
                   <span>Order Summary</span>
                   <span className="text-xs font-mono text-[#773D21] font-semibold">
-                    {cart.length} {cart.length === 1 ? 'Item' : 'Items'}
+                    {checkoutItems.length} {checkoutItems.length === 1 ? 'Item' : 'Items'}
                   </span>
                 </h3>
 
                 {/* Saree Line Items */}
                 <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-                  {cart.map((item) => (
-                    <div key={item.product.id} className="flex gap-3 text-xs">
+                  {checkoutItems.map((item) => (
+                    <div key={getItemKey(item)} className="flex gap-3 text-xs">
                       <img
-                        src={item.product.images[0]}
+                        src={item.product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=400&q=80'}
                         alt={item.product.title}
                         className="w-12 h-16 rounded-lg object-cover border border-stone-200 flex-shrink-0"
                       />
@@ -1450,10 +1492,7 @@ export default function CheckoutPage() {
                           {item.product.title}
                         </span>
                         <span className="text-[10px] text-stone-500 font-sans block">
-                          Qty: {item.quantity}
-                        </span>
-                        <span className="text-[10px] text-[#773D21] font-mono block">
-                          ✓ Fall & Pico Included
+                          Qty: {item.quantity} • {item.selectedColor || item.product.color || 'Pure Silk'}
                         </span>
                       </div>
                       <div className="text-right font-mono font-bold text-[#1F1B16]">
@@ -1469,22 +1508,15 @@ export default function CheckoutPage() {
                 <div className="pt-4 border-t border-[#C87F4A]/20 space-y-2 text-xs font-sans">
                   <div className="flex justify-between text-stone-600">
                     <span>Subtotal</span>
-                    <span className="font-mono">{formatPrice(cartSubtotalINR)}</span>
+                    <span className="font-mono">{formatPrice(checkoutSubtotal)}</span>
                   </div>
 
                   {appliedCoupon && (
                     <div className="flex justify-between text-emerald-800 font-semibold">
                       <span>Discount ({appliedCoupon.code})</span>
-                      <span className="font-mono">-{formatPrice(couponDiscountINR)}</span>
+                      <span className="font-mono">-{formatPrice(checkoutDiscount)}</span>
                     </div>
                   )}
-
-                  <div className="flex justify-between text-stone-600">
-                    <span>Fall & Pico Stitching</span>
-                    <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">
-                      Complimentary
-                    </span>
-                  </div>
 
                   <div className="flex justify-between text-stone-600">
                     <span>Express Air Delivery</span>
@@ -1496,7 +1528,7 @@ export default function CheckoutPage() {
                   <div className="pt-3 border-t border-[#C87F4A]/20 flex justify-between font-bold text-sm text-[#1F1B16]">
                     <span>Total Amount</span>
                     <span className="font-mono text-base text-[#7A1C30]">
-                      {formatPrice(cartTotalINR)}
+                      {formatPrice(checkoutTotal)}
                     </span>
                   </div>
                   <span className="text-[10px] text-stone-400 font-sans block text-right">

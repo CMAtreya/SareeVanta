@@ -54,7 +54,15 @@ export default function ProductDetailPage() {
 
   // Gallery & Variant State
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
-  const [galleryImages, setGalleryImages] = useState<string[]>(initialCached?.images || []);
+  const initialVariantImgs = (
+    initialCached?.colorVariants?.[0]?.images?.length
+      ? initialCached.colorVariants[0].images
+      : initialCached?.images || []
+  )
+    .filter((url: any) => typeof url === 'string' && url.trim().length > 5)
+    .slice(0, 3);
+
+  const [galleryImages, setGalleryImages] = useState<string[]>(initialVariantImgs);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
 
   // Zoom on Hover State
@@ -95,6 +103,23 @@ export default function ProductDetailPage() {
   useEffect(() => {
     async function loadCustomer() {
       try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const meta = user.user_metadata || {};
+          const name =
+            meta.full_name ||
+            meta.name ||
+            (meta.given_name ? `${meta.given_name} ${meta.family_name || ''}`.trim() : '') ||
+            (user.email ? user.email.split('@')[0] : 'Valued Patron');
+          if (name) {
+            setNewReviewAuthor(name);
+            setIsUserLoggedIn(true);
+            return;
+          }
+        }
+
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
@@ -109,7 +134,39 @@ export default function ProductDetailPage() {
       }
     }
     loadCustomer();
-  }, []);
+
+    // Fetch live customer reviews from DB
+    async function loadReviews() {
+      if (!product?.slug) return;
+      try {
+        const res = await fetch(`/api/reviews?slug=${encodeURIComponent(product.slug)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.reviews && Array.isArray(data.reviews) && data.reviews.length > 0) {
+            setReviews((prev) => {
+              const combined = [...data.reviews];
+              prev.forEach((r) => {
+                if (!combined.some((c) => c.id === r.id || c.comment === r.comment)) {
+                  combined.push(r);
+                }
+              });
+              return combined;
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch DB reviews:', err);
+      }
+    }
+    loadReviews();
+  }, [product?.slug]);
+
+  // Dynamic review metrics
+  const liveReviewCount = reviews.length;
+  const liveAvgRating =
+    liveReviewCount > 0
+      ? (reviews.reduce((acc, r) => acc + (r.rating || 5), 0) / liveReviewCount).toFixed(1)
+      : (product?.rating || 4.9);
 
   // Carousel Ref for "You May Also Like"
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -244,7 +301,27 @@ export default function ProductDetailPage() {
 
   // Add to Cart Action
   const handleAddToCart = (e: React.MouseEvent) => {
-    addToCart(product, quantity, undefined, 0, e);
+    const activeVar = (product.colorVariants && product.colorVariants[selectedVariantIndex]) || product.colorVariants?.[0];
+    const variantProduct: Product = {
+      ...product,
+      color: activeVar?.name || product.color,
+      colorHex: activeVar?.hex || product.colorHex,
+      sku: activeVar?.sku || product.sku,
+      images: (activeVar?.images && activeVar.images.length > 0) ? activeVar.images : product.images,
+      stockCount: activeVar?.stock !== undefined ? activeVar.stock : product.stockCount,
+    };
+
+    addToCart(
+      variantProduct,
+      quantity,
+      undefined,
+      0,
+      e,
+      activeVar?.id,
+      activeVar?.name || product.color,
+      activeVar?.hex || product.colorHex,
+      activeVar?.sku || product.sku
+    );
     setAddedAnimation(true);
     setTimeout(() => setAddedAnimation(false), 3000);
   };
@@ -311,9 +388,10 @@ export default function ProductDetailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order_id: 'pending-guest-order',
-          order_item_id: 'item-guest',
-          variant_id: product?.id || 'default-variant',
+          slug: product.slug,
+          variant_id: activeVariant?.id || product?.id,
+          author_name: newReviewAuthor.trim(),
+          title: newReviewTitle.trim() || 'Exceptional Pure Silk Saree',
           rating: newReviewRating,
           review_text: newReviewComment.trim(),
           photos: newReviewPhotos.slice(0, 2),
@@ -339,7 +417,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="bg-[#FAF3E4] min-h-screen text-[#1F1B16] py-6 sm:py-10">
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* 1. Breadcrumb Row at Top */}
         <nav className="flex items-center space-x-2 text-xs text-stone-500 font-sans mb-6">
           <Link href="/" className="hover:text-[#C87F4A] transition-colors">
@@ -367,7 +445,7 @@ export default function ProductDetailPage() {
           {/* ==================================================== */}
           {/* LEFT: IMAGE GALLERY (Main + Zoom + Thumbnails)      */}
           {/* ==================================================== */}
-          <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4">
+          <div className="lg:col-span-7 flex flex-col-reverse md:flex-row gap-4 max-w-2xl mx-auto w-full">
             {/* Thumbnail Strip */}
             <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-visible pb-2 md:pb-0">
               {galleryImages.map((img, idx) => (
@@ -406,7 +484,7 @@ export default function ProductDetailPage() {
 
                 if (hasValidImage) {
                   return (
-                    <div className="relative w-full h-[580px] sm:h-[680px] lg:h-[720px] bg-white flex items-center justify-center overflow-hidden">
+                    <div className="relative w-full aspect-[3/4] max-h-[640px] bg-white flex items-center justify-center overflow-hidden rounded-2xl">
                       <img
                         src={currentImg}
                         alt={product.title}
@@ -490,12 +568,12 @@ export default function ProductDetailPage() {
 
               {/* Reviews & Cluster Provenance */}
               <div className="mt-2.5 flex items-center gap-3 text-xs text-stone-600">
-                {product.reviewCount && product.reviewCount > 0 ? (
+                {liveReviewCount > 0 ? (
                   <div className="flex items-center gap-1 text-amber-700">
                     <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                    <span className="font-bold">{product.rating}</span>
+                    <span className="font-bold">{liveAvgRating}</span>
                     <a href="#reviews" className="text-stone-500 underline ml-1">
-                      ({product.reviewCount} verified patron reviews)
+                      ({liveReviewCount} verified patron {liveReviewCount === 1 ? 'review' : 'reviews'})
                     </a>
                   </div>
                 ) : (
@@ -1100,28 +1178,33 @@ export default function ProductDetailPage() {
 
               <form onSubmit={handleSubmitReview} className="space-y-4 text-xs font-sans">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="font-semibold text-stone-700">Customer Name</label>
-                    {isUserLoggedIn && (
-                      <span className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Verified Account</span>
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    readOnly={isUserLoggedIn}
-                    value={newReviewAuthor}
-                    onChange={(e) => setNewReviewAuthor(e.target.value)}
-                    placeholder="e.g. Radhika Sundaram"
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none ${
-                      isUserLoggedIn
-                        ? 'bg-stone-100/90 border-stone-300 text-stone-800 font-semibold cursor-not-allowed'
-                        : 'bg-white border-stone-300 focus:ring-2 focus:ring-[#C87F4A]'
-                    }`}
-                  />
+                  <label className="font-semibold text-stone-700 block mb-1">Customer Profile</label>
+                  {isUserLoggedIn && newReviewAuthor ? (
+                    <div className="p-3 bg-white border border-[#C87F4A]/30 rounded-xl flex items-center justify-between shadow-2xs">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-[#7A1C30] text-[#FAF3E4] flex items-center justify-center font-bold text-xs font-mono">
+                          {newReviewAuthor[0]?.toUpperCase() || 'P'}
+                        </div>
+                        <div>
+                          <span className="font-bold text-stone-900 block">{newReviewAuthor}</span>
+                          <span className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Verified Handloom Patron</span>
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono text-stone-400">Auto-Linked</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      required
+                      value={newReviewAuthor}
+                      onChange={(e) => setNewReviewAuthor(e.target.value)}
+                      placeholder="e.g. Radhika Sundaram"
+                      className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C87F4A]"
+                    />
+                  )}
                 </div>
 
                 <div>

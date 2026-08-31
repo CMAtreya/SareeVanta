@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export async function GET(
@@ -7,46 +8,76 @@ export async function GET(
 ) {
   const orderIdOrNumber = params.id;
   const supabase = createClient();
+  const adminSupabase = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Try finding order in Supabase
-  let query = supabase
+  // Check if identifier is a UUID or an Order Number (e.g. NSH-2026-XXXXX)
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderIdOrNumber);
+
+  let orderQuery = adminSupabase
     .from('orders')
     .select(`
       *,
-      order_items (*),
+      order_items (
+        *,
+        product_variants (
+          id,
+          sku,
+          colors ( name, hex_code ),
+          product_variant_media ( url, display_order ),
+          products (
+            id,
+            title,
+            slug,
+            weavings ( name ),
+            fabrics ( name )
+          )
+        )
+      ),
       order_delivery_addresses (*)
-    `)
-    .eq('customer_id', user.id);
+    `);
 
-  if (orderIdOrNumber.includes('-')) {
-    query = query.eq('order_number', orderIdOrNumber);
+  if (isUuid) {
+    orderQuery = orderQuery.eq('id', orderIdOrNumber);
   } else {
-    query = query.eq('id', orderIdOrNumber);
+    orderQuery = orderQuery.eq('order_number', orderIdOrNumber);
   }
 
-  const { data: orderData, error } = await query.maybeSingle();
+  const { data: orderData, error } = await orderQuery.maybeSingle();
 
   if (error || !orderData) {
+    console.error('[Orders API] Order lookup failed:', { id: orderIdOrNumber, error });
     return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
-  const address = orderData.order_delivery_addresses?.[0] || {};
-  const items = (orderData.order_items || []).map((item: any) => ({
-    product: {
-      id: item.product_id || item.id,
-      title: item.product_name_snapshot || 'Heirloom Silk Saree',
-      sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
-      color: item.color_name_snapshot || 'Royal Crimson',
-      price: Math.round((item.unit_price_paise || 0) / 100),
-      images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop'],
-    },
-    quantity: item.quantity || 1,
-  }));
+  const address = orderData.order_delivery_addresses?.[0] || orderData.order_delivery_addresses || {};
+  const items = (orderData.order_items || []).map((item: any) => {
+    const pv = item.product_variants;
+    const prod = pv?.products;
+    const media = Array.isArray(pv?.product_variant_media) ? pv.product_variant_media : [];
+    const sortedMedia = [...media].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    const itemImg = sortedMedia[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop';
+    const weaveName = Array.isArray(prod?.weavings) ? prod.weavings[0]?.name : prod?.weavings?.name || 'Pure Silk';
+    const fabricName = Array.isArray(prod?.fabrics) ? prod.fabrics[0]?.name : prod?.fabrics?.name || 'Mulberry Silk';
+
+    return {
+      product: {
+        id: item.product_id || pv?.id || item.id,
+        title: item.product_name_snapshot || prod?.title || 'Heirloom Silk Saree',
+        sku: item.sku_snapshot || pv?.sku || 'NSH-SKU-MYS-01',
+        color: item.color_name_snapshot || pv?.colors?.name || 'Royal Shade',
+        weave: weaveName,
+        fabric: fabricName,
+        priceINR: Math.round((item.unit_price_paise || 0) / 100),
+        images: [itemImg],
+      },
+      quantity: item.quantity || 1,
+    };
+  });
 
   const isDelivered = orderData.order_status === 'DELIVERED';
   const placedDateStr = orderData.placed_at

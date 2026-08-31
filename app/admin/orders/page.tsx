@@ -42,8 +42,8 @@ import {
   DollarSign,
   User,
   Share2,
-  BadgePercent,
 } from 'lucide-react';
+import TaxInvoiceModal from '@/components/invoice/TaxInvoiceModal';
 
 export interface OrderItem {
   title: string;
@@ -51,6 +51,7 @@ export interface OrderItem {
   sku: string;
   price: number;
   qty: number;
+  quantity?: number;
   image: string;
   zari: string;
 }
@@ -110,20 +111,39 @@ export default function RedesignedAdminOrdersPage() {
           const formatted = data.orders.map((o: any) => {
             const addr = o.order_delivery_addresses?.[0] || o.order_delivery_addresses || {};
             const cust = o.customers || {};
-            const items = (o.order_items || []).map((item: any) => ({
-              title: item.product_name_snapshot || 'Heirloom Silk Saree',
-              weave: 'Pure Mulberry Silk',
-              sku: item.sku_snapshot || 'NSH-SKU-MYS-01',
-              color: item.color_name_snapshot || 'Royal Crimson',
-              price: Math.round((item.unit_price_paise || 0) / 100),
-              quantity: item.quantity || 1,
-              image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop',
-            }));
+            const items = (o.order_items || []).map((item: any) => {
+              const pv = item.product_variants;
+              const prod = pv?.products;
+              const media = Array.isArray(pv?.product_variant_media) ? pv.product_variant_media : [];
+              const sortedMedia = [...media].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+              const itemImg = sortedMedia[0]?.url || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=600&auto=format&fit=crop';
+              const weaveName = Array.isArray(prod?.weavings) ? prod.weavings[0]?.name : prod?.weavings?.name || 'Pure Silk';
+              const zariName = Array.isArray(prod?.zari_specifications) ? prod.zari_specifications[0]?.name : prod?.zari_specifications?.name || '24K Tested Zari';
+
+              return {
+                title: item.product_name_snapshot || prod?.title || 'Heirloom Silk Saree',
+                weave: weaveName,
+                sku: item.sku_snapshot || pv?.sku || 'NSH-SKU-MYS-01',
+                color: item.color_name_snapshot || (Array.isArray(pv?.colors) ? pv.colors[0]?.name : pv?.colors?.name) || 'Royal Shade',
+                zari: zariName,
+                price: Math.round((item.unit_price_paise || 0) / 100),
+                quantity: item.quantity || 1,
+                image: itemImg,
+              };
+            });
+
+            const dateStr = o.placed_at
+              ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+              : 'Recent';
+            const timeStr = o.placed_at
+              ? new Date(o.placed_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+              : '';
 
             return {
               id: o.order_number || o.id,
               db_id: o.id,
-              date: o.placed_at ? new Date(o.placed_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent',
+              date: dateStr,
+              time: timeStr,
               customerName: cust.name || addr.recipient_name || 'Customer',
               phone: cust.phone || addr.phone || '+91 98860 00000',
               email: cust.email || 'customer@sareevanta.com',
@@ -621,7 +641,7 @@ export default function RedesignedAdminOrdersPage() {
               <tr className="bg-[#FAF6F0] border-b border-[#E8DCC9] text-stone-700 font-mono uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 font-semibold">Order ID & Date</th>
                 <th className="py-3.5 px-4 font-semibold">Patron Details</th>
-                <th className="py-3.5 px-4 font-semibold">Saree Items & Zari Specs</th>
+                <th className="py-3.5 px-4 font-semibold">Saree Items</th>
                 <th className="py-3.5 px-4 font-semibold">Total & Gateway</th>
                 <th className="py-3.5 px-4 font-semibold">Fulfillment State</th>
                 <th className="py-3.5 px-4 font-semibold">Logistics AWB</th>
@@ -660,7 +680,7 @@ export default function RedesignedAdminOrdersPage() {
                             </button>
                           </div>
                           <div className="text-[11px] text-slate-500 font-mono">
-                            {order.date}, {order.time}
+                            {order.date}{order.time ? ` • ${order.time}` : ''}
                           </div>
                         </div>
                       </td>
@@ -681,7 +701,7 @@ export default function RedesignedAdminOrdersPage() {
                         </div>
                       </td>
 
-                      {/* 3. Saree Items & Specs */}
+                      {/* 3. Saree Items */}
                       <td className="py-4 px-4 align-top">
                         <div className="space-y-2 max-w-[240px]">
                           {(order.items || []).map((item: any, idx: number) => (
@@ -695,19 +715,12 @@ export default function RedesignedAdminOrdersPage() {
                                 <div className="font-semibold text-slate-900 text-xs truncate">
                                   {item.title}
                                 </div>
-                                <div className="text-[10px] font-mono text-slate-500">
+                                <div className="text-[10px] font-mono text-slate-500 truncate">
                                   {item.weave} • {item.sku}
-                                </div>
-                                <div className="text-[10px] font-mono text-amber-700 font-medium">
-                                  {item.zari}
                                 </div>
                               </div>
                             </div>
                           ))}
-                          <div className="text-[9px] font-mono text-slate-400 flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                            <span>Silk Mark: {order.silkMarkAuditId}</span>
-                          </div>
                         </div>
                       </td>
 
@@ -746,15 +759,30 @@ export default function RedesignedAdminOrdersPage() {
                               <span>Dispatch & Shiprocket AWB →</span>
                             </button>
                           )}
-                          {(order.fulfillmentState === 'IN_TRANSIT' || order.fulfillmentState === 'OUT_FOR_DELIVERY') && (
+                          {order.fulfillmentState === 'IN_TRANSIT' && (
+                            <div className="flex flex-col gap-1">
+                              <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold font-mono">
+                                <span>In Air Transit</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateStatus(order.id, 'OUT_FOR_DELIVERY')}
+                                className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition-colors cursor-pointer text-left inline-flex items-center gap-1 shadow-2xs"
+                              >
+                                <Truck className="w-3 h-3" />
+                                <span>Out for Delivery →</span>
+                              </button>
+                            </div>
+                          )}
+                          {order.fulfillmentState === 'OUT_FOR_DELIVERY' && (
                             <div className="flex flex-col gap-1">
                               <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 text-xs font-bold font-mono">
-                                <span>In Transit (AWB Active)</span>
+                                <span>Out with Courier</span>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleUpdateStatus(order.id, 'DELIVERED')}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors cursor-pointer text-left inline-flex items-center gap-1"
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors cursor-pointer text-left inline-flex items-center gap-1 shadow-2xs"
                               >
                                 <CheckCircle2 className="w-3 h-3" />
                                 <span>Mark Delivered ✓</span>
@@ -823,166 +851,48 @@ export default function RedesignedAdminOrdersPage() {
       </div>
 
       {/* ========================================================= */}
-      {/* MODAL 1: BILINGUAL GST TAX INVOICE (OFFICIAL PRINTABLE)    */}
+      {/* MODAL 1: STANDARDIZED GST TAX INVOICE                     */}
       {/* ========================================================= */}
       {activeInvoiceOrder && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto font-sans">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-              <div>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#7A1C30]">
-                  Official Tax Document • Rule 46 CGST Act
-                </span>
-                <h3 className="font-editorial text-xl font-bold text-slate-900">
-                  GST Tax Invoice: {activeInvoiceOrder.id}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveInvoiceOrder(null)}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Printable Invoice Container */}
-            <div className="border border-slate-300 rounded-2xl p-5 space-y-4 text-xs font-sans bg-white">
-              {/* Header */}
-              <div className="grid grid-cols-2 gap-4 pb-4 border-b border-slate-200">
-                <div>
-                  <div className="font-editorial text-lg font-bold text-[#7A1C30]">NEEL SAREE HOUSE</div>
-                  <div className="text-[11px] text-slate-600 font-mono">Handloom Silk Masterpieces Since 1978</div>
-                  <div className="text-[10px] text-slate-500 leading-tight mt-1">
-                    Devaraja Market Complex, Sayyaji Rao Road, Mysuru, Karnataka - 570001
-                  </div>
-                  <div className="text-[10px] font-mono font-bold text-slate-700 mt-0.5">
-                    GSTIN: 29AABCN8842P1Z4 • PAN: AABCN8842P
-                  </div>
-                </div>
-
-                <div className="text-right font-mono space-y-0.5 text-[11px]">
-                  <div className="font-bold text-slate-900">INVOICE #: INV-2026-{activeInvoiceOrder.id.split('-')[2]}</div>
-                  <div className="text-slate-500">Date: {activeInvoiceOrder.date}</div>
-                  <div className="text-slate-500">Place of Supply: {activeInvoiceOrder.state} (State Code 29)</div>
-                  <div className="text-emerald-700 font-bold">STATUS: PAID ({activeInvoiceOrder.paymentGateway})</div>
-                </div>
-              </div>
-
-              {/* Bill To / Ship To */}
-              <div className="grid grid-cols-2 gap-4 pb-3 border-b border-slate-200 text-[11px]">
-                <div className="space-y-0.5">
-                  <div className="font-bold text-slate-500 uppercase text-[10px]">BILLED TO / CONSIGNEE:</div>
-                  <div className="font-bold text-slate-900">{activeInvoiceOrder.customerName}</div>
-                  <div className="text-slate-600">{activeInvoiceOrder.address}</div>
-                  <div className="text-slate-600">
-                    {activeInvoiceOrder.city}, {activeInvoiceOrder.state} - {activeInvoiceOrder.pincode}
-                  </div>
-                  <div className="text-slate-600 font-mono">Phone: {activeInvoiceOrder.phone}</div>
-                </div>
-
-                <div className="space-y-0.5 text-right font-mono">
-                  <div className="font-bold text-slate-500 uppercase text-[10px]">AUTHENTICITY AUDIT:</div>
-                  <div className="text-slate-800">Silk Mark No: {activeInvoiceOrder.silkMarkAuditId}</div>
-                  <div className="text-slate-800">Zari Purity: 24K Tested Certified</div>
-                  <div className="text-slate-800">Dispatch AWB: {activeInvoiceOrder.awb}</div>
-                  <div className="text-slate-800">Carrier: {activeInvoiceOrder.carrier}</div>
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <table className="w-full text-left text-[11px] border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 font-mono text-slate-500">
-                    <th className="py-2">#</th>
-                    <th className="py-2">Item Description</th>
-                    <th className="py-2">HSN Code</th>
-                    <th className="py-2 text-center">Qty</th>
-                    <th className="py-2 text-right">Taxable Value</th>
-                    <th className="py-2 text-right">Total (INR)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-mono">
-                  {activeInvoiceOrder.items.map((item, i) => (
-                    <tr key={i}>
-                      <td className="py-2.5">{i + 1}</td>
-                      <td className="py-2.5 font-sans">
-                        <div className="font-semibold text-slate-900">{item.title}</div>
-                        <div className="text-[10px] text-slate-500 font-mono">SKU: {item.sku}</div>
-                      </td>
-                      <td className="py-2.5">5007.20.10</td>
-                      <td className="py-2.5 text-center">{item.qty}</td>
-                      <td className="py-2.5 text-right">
-                        ₹{(item.price - Math.round(item.price * 0.05)).toLocaleString('en-IN')}
-                      </td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">
-                        ₹{item.price.toLocaleString('en-IN')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Totals & Tax Calculation */}
-              <div className="pt-3 border-t border-slate-200 flex justify-end">
-                <div className="w-64 space-y-1 font-mono text-[11px]">
-                  <div className="flex justify-between text-slate-600">
-                    <span>Subtotal (Taxable):</span>
-                    <span>₹{(activeInvoiceOrder.totalAmount - activeInvoiceOrder.taxINR).toLocaleString('en-IN')}</span>
-                  </div>
-                  {activeInvoiceOrder.discountINR > 0 && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Discount ({activeInvoiceOrder.couponCode}):</span>
-                      <span>-₹{activeInvoiceOrder.discountINR.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-slate-600">
-                    <span>GST (5% Handloom Silk):</span>
-                    <span>₹{activeInvoiceOrder.taxINR.toLocaleString('en-IN')}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Insured Air Shipping:</span>
-                    <span className="text-emerald-700 font-bold">COMPLIMENTARY</span>
-                  </div>
-                  <div className="flex justify-between text-base font-bold text-slate-900 pt-2 border-t border-slate-300">
-                    <span>Grand Total:</span>
-                    <span>₹{activeInvoiceOrder.totalAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer Stamp */}
-              <div className="pt-4 border-t border-slate-200 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                <div>
-                  Certified 100% Pure Natural Mulberry Silk with Silk Mark India Authority.
-                </div>
-                <div className="text-right font-bold text-slate-800">
-                  Authorized Signatory • Neel Saree House
-                </div>
-              </div>
-            </div>
-
-            {/* Print Action */}
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center gap-2 cursor-pointer shadow-md"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Official GST Invoice</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <TaxInvoiceModal
+          invoice={{
+            orderId: activeInvoiceOrder.id,
+            orderDate: activeInvoiceOrder.date,
+            customerName: activeInvoiceOrder.customerName,
+            phone: activeInvoiceOrder.phone,
+            email: activeInvoiceOrder.email,
+            address: activeInvoiceOrder.address,
+            city: activeInvoiceOrder.city,
+            state: activeInvoiceOrder.state,
+            pincode: activeInvoiceOrder.pincode,
+            items: (activeInvoiceOrder.items || []).map((it: any) => ({
+              title: it.title,
+              sku: it.sku,
+              hsn: '5007',
+              quantity: it.quantity || it.qty || 1,
+              price: it.price || 0,
+            })),
+            subtotalAmount: activeInvoiceOrder.subtotalINR || activeInvoiceOrder.totalAmount,
+            discountAmount: activeInvoiceOrder.discountINR || 0,
+            totalAmount: activeInvoiceOrder.totalAmount,
+            paymentGateway: activeInvoiceOrder.paymentGateway,
+            paymentStatus: activeInvoiceOrder.paymentStatus,
+          }}
+          onClose={() => setActiveInvoiceOrder(null)}
+        />
       )}
 
       {/* ========================================================= */}
       {/* MODAL 2: ORDER QUICK-VIEW & EDIT DRAWER                  */}
       {/* ========================================================= */}
       {activeDetailOrder && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto overscroll-contain"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActiveDetailOrder(null);
+          }}
+        >
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-6 animate-in zoom-in-95 duration-200 max-h-[85vh] overflow-y-auto overscroll-contain my-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
                 <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#7A1C30]">
@@ -995,7 +905,7 @@ export default function RedesignedAdminOrdersPage() {
               <button
                 type="button"
                 onClick={() => setActiveDetailOrder(null)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 cursor-pointer transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1009,27 +919,28 @@ export default function RedesignedAdminOrdersPage() {
               {activeDetailOrder.items.map((item, idx) => (
                 <div
                   key={idx}
-                  className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3"
+                  className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-12 h-16 rounded-xl object-cover border border-slate-300 shadow-2xs"
+                      className="w-12 h-16 rounded-xl object-cover border border-slate-300 shadow-2xs flex-shrink-0"
                     />
-                    <div>
-                      <div className="font-bold text-sm text-slate-900">{item.title}</div>
-                      <div className="text-xs text-slate-500 font-mono">
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-slate-900 truncate">{item.title}</div>
+                      <div className="text-xs text-slate-500 font-mono truncate">
                         {item.weave} • SKU: {item.sku}
                       </div>
-                      <div className="text-xs text-amber-800 font-medium font-mono">{item.zari}</div>
                     </div>
                   </div>
-                  <div className="text-right font-mono">
+                  <div className="text-right font-mono flex-shrink-0">
                     <div className="font-bold text-slate-900 text-sm">
                       ₹{item.price.toLocaleString('en-IN')}
                     </div>
-                    <div className="text-xs text-slate-400">Qty: {item.qty}</div>
+                    <div className="text-xs font-semibold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded-md mt-0.5 inline-block">
+                      Qty: {item.quantity || item.qty || 1}
+                    </div>
                   </div>
                 </div>
               ))}

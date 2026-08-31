@@ -8,6 +8,10 @@ import { createClient } from '@/lib/supabase/client';
 
 export interface CartItem {
   product: Product;
+  variantId?: string;
+  selectedColor?: string;
+  selectedColorHex?: string;
+  selectedSku?: string;
   quantity: number;
   blouseOption?: string;
   tailoringExtraINR?: number;
@@ -35,10 +39,14 @@ interface CartContextType {
     quantity?: number,
     blouseOption?: string,
     tailoringExtraINR?: number,
-    sourcePosition?: SourcePosition
+    sourcePosition?: SourcePosition,
+    variantId?: string,
+    selectedColor?: string,
+    selectedColorHex?: string,
+    selectedSku?: string
   ) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, variantId?: string, selectedColor?: string) => void;
+  updateQuantity: (productId: string, quantity: number, variantId?: string, selectedColor?: string) => void;
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
   setIsCartDrawerOpen: (open: boolean) => void;
@@ -46,10 +54,21 @@ interface CartContextType {
   cartCount: number;
   cartSubtotalINR: number;
   cartTotalINR: number;
+  selectedKeys: string[];
+  selectedCartItems: CartItem[];
+  selectedCount: number;
+  selectedSubtotalINR: number;
+  selectedTotalINR: number;
+  selectedDiscountINR: number;
+  toggleItemSelection: (itemKey: string) => void;
+  selectAllItems: () => void;
+  deselectAllItems: () => void;
+  getItemKey: (item: CartItem) => string;
   wishlistCount: number;
   appliedCoupon: AppliedCoupon | null;
   couponDiscountINR: number;
   clearCart: () => void;
+  removePurchasedItems: (purchased: { productId: string; variantId?: string; selectedColor?: string }[]) => void;
   applyCoupon: (coupon: AppliedCoupon) => void;
   removeCoupon: () => void;
   cartBounced: boolean;
@@ -174,6 +193,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   description: '',
                   artisanCluster: 'Neel Saree House Artisan Guild',
                   silkMarkCertified: true,
+                  sku: variantData?.sku || '',
+                  variantId: variantData?.id || item.variant_id,
                 };
 
                 return {
@@ -181,6 +202,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                   quantity: item.quantity || 1,
                   blouseOption: item.blouse_option || 'unstitched',
                   tailoringExtraINR: item.tailoring_extra_inr || 0,
+                  variantId: variantData?.id || item.variant_id,
+                  selectedColor: colorData?.name || resolvedProduct.color,
+                  selectedColorHex: colorData?.hex_code || resolvedProduct.colorHex,
+                  selectedSku: variantData?.sku || resolvedProduct.sku,
                 };
               });
               setCart(dbItems);
@@ -212,13 +237,52 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             const pending = JSON.parse(pendingCartStr);
             if (pending?.product) {
               const targetProduct = products.find(p => p.id === pending.product.id) || pending.product;
+              const targetColor = pending.selectedColor || targetProduct.color;
+              const targetSku = pending.selectedSku || targetProduct.sku;
+              const vId = pending.variantId;
+
               setCart((prev) => {
-                const existing = prev.find(item => item.product.id === targetProduct.id);
-                if (existing) {
-                  return prev.map(item => item.product.id === targetProduct.id ? { ...item, quantity: item.quantity + (pending.quantity || 1) } : item);
+                const existingIdx = prev.findIndex((item) => {
+                  if (item.product.id !== targetProduct.id) return false;
+                  if (vId && item.variantId) return item.variantId === vId;
+                  if (targetColor && item.selectedColor) return item.selectedColor === targetColor;
+                  return true;
+                });
+
+                if (existingIdx >= 0) {
+                  return prev.map((item, idx) =>
+                    idx === existingIdx ? { ...item, quantity: item.quantity + (pending.quantity || 1) } : item
+                  );
                 }
-                return [...prev, { product: targetProduct, quantity: pending.quantity || 1, blouseOption: pending.blouseOption, tailoringExtraINR: pending.tailoringExtraINR }];
+                return [
+                  ...prev,
+                  {
+                    product: targetProduct,
+                    quantity: pending.quantity || 1,
+                    blouseOption: pending.blouseOption,
+                    tailoringExtraINR: pending.tailoringExtraINR,
+                    variantId: vId,
+                    selectedColor: targetColor,
+                    selectedColorHex: pending.selectedColorHex || targetProduct.colorHex,
+                    selectedSku: targetSku,
+                  },
+                ];
               });
+
+              fetch('/api/cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  productId: targetProduct.id,
+                  variantId: vId,
+                  quantity: pending.quantity || 1,
+                  blouseOption: pending.blouseOption,
+                  tailoringExtraINR: pending.tailoringExtraINR,
+                  sku: targetSku,
+                  color: targetColor,
+                }),
+              }).catch(() => {});
+
               setIsCartDrawerOpen(true);
             }
           }
@@ -314,7 +378,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     quantity = 1,
     blouseOption?: string,
     tailoringExtraINR = 0,
-    sourcePosition?: SourcePosition
+    sourcePosition?: SourcePosition,
+    variantId?: string,
+    selectedColor?: string,
+    selectedColorHex?: string,
+    selectedSku?: string
   ) => {
     // Strict Authentication Enforcement: User must be logged in to add to cart
     if (!currentUser) {
@@ -324,6 +392,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           quantity,
           blouseOption,
           tailoringExtraINR,
+          variantId,
+          selectedColor,
+          selectedColorHex,
+          selectedSku,
         }));
         const currentPath = window.location.pathname + window.location.search;
         router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
@@ -332,20 +404,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     const maxStock = product.stockCount ?? 5;
+    const targetColor = selectedColor || product.color;
+    const targetSku = selectedSku || product.sku;
 
-    // 1. Update Cart Data State with strict stock count cap
+    // 1. Update Cart Data State with distinct variant line items
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
+      const existingIdx = prev.findIndex((item) => {
+        const sameProduct = item.product.id === product.id;
+        if (!sameProduct) return false;
+        if (variantId && item.variantId) return item.variantId === variantId;
+        if (targetColor && item.selectedColor) return item.selectedColor === targetColor;
+        return true;
+      });
+
+      if (existingIdx >= 0) {
+        const existing = prev[existingIdx];
         const cappedQty = Math.min(maxStock, existing.quantity + quantity);
-        return prev.map((item) =>
-          item.product.id === product.id
+        return prev.map((item, idx) =>
+          idx === existingIdx
             ? { ...item, quantity: cappedQty }
             : item
         );
       }
+
       const initialQty = Math.min(quantity, maxStock);
-      return [...prev, { product, quantity: initialQty, blouseOption, tailoringExtraINR }];
+      return [
+        ...prev,
+        {
+          product,
+          quantity: initialQty,
+          blouseOption,
+          tailoringExtraINR,
+          variantId,
+          selectedColor: targetColor,
+          selectedColorHex: selectedColorHex || product.colorHex,
+          selectedSku: targetSku,
+        },
+      ];
     });
 
     // 2. Sync to Supabase Database if user is authenticated
@@ -355,9 +450,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: product.id,
+          variantId,
           quantity,
           blouseOption,
           tailoringExtraINR,
+          sku: targetSku,
+          color: targetColor,
         }),
       }).catch((err) => console.error('[CartContext] DB sync error:', err));
     }
@@ -367,26 +465,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     triggerFlyAnimation(productImage, sourcePosition);
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  const removeFromCart = (productId: string, variantId?: string, selectedColor?: string) => {
+    setCart((prev) =>
+      prev.filter((item) => {
+        if (item.product.id !== productId) return true;
+        if (variantId && item.variantId) return item.variantId !== variantId;
+        if (selectedColor && item.selectedColor) return item.selectedColor !== selectedColor;
+        return false;
+      })
+    );
     if (currentUser) {
       fetch('/api/cart', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId }),
-      }).catch(err => console.error('[CartContext] DB remove error:', err));
+        body: JSON.stringify({ productId, variantId }),
+      }).catch((err) => console.error('[CartContext] DB remove error:', err));
     }
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, variantId?: string, selectedColor?: string) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, variantId, selectedColor);
       return;
     }
 
     setCart((prev) =>
       prev.map((item) => {
-        if (item.product.id === productId) {
+        const matches =
+          item.product.id === productId &&
+          (!variantId || item.variantId === variantId) &&
+          (!selectedColor || item.selectedColor === selectedColor);
+
+        if (matches) {
           const maxStock = item.product.stockCount ?? 5;
           const cappedQty = Math.min(quantity, maxStock);
           return { ...item, quantity: cappedQty };
@@ -399,8 +509,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       fetch('/api/cart', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId, quantity }),
-      }).catch(err => console.error('[CartContext] DB update error:', err));
+        body: JSON.stringify({ productId, variantId, quantity }),
+      }).catch((err) => console.error('[CartContext] DB update error:', err));
     }
   };
 
@@ -439,6 +549,85 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setAppliedCoupon(null);
   };
 
+  const getItemKey = (item: CartItem) =>
+    item.variantId
+      ? `${item.product.id}_${item.variantId}`
+      : `${item.product.id}_${item.selectedColor || item.product.color || 'default'}`;
+
+  const [selectedKeys, setSelectedKeys] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = sessionStorage.getItem('sareevanta_selected_keys');
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const [hasInitializedSelection, setHasInitializedSelection] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('sareevanta_selected_keys') !== null;
+    }
+    return false;
+  });
+
+  // Sync selectedKeys when items are added/removed from cart
+  useEffect(() => {
+    setSelectedKeys((prev) => {
+      const currentKeys = cart.map(getItemKey);
+      if (!hasInitializedSelection && prev.length === 0 && currentKeys.length > 0) {
+        setHasInitializedSelection(true);
+        return currentKeys;
+      }
+      return prev.filter((k) => currentKeys.includes(k));
+    });
+  }, [cart, hasInitializedSelection]);
+
+  // Persist user selection
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('sareevanta_selected_keys', JSON.stringify(selectedKeys));
+      } catch (e) {}
+    }
+  }, [selectedKeys]);
+
+  const toggleItemSelection = (itemKey: string) => {
+    setSelectedKeys((prev) =>
+      prev.includes(itemKey) ? prev.filter((k) => k !== itemKey) : [...prev, itemKey]
+    );
+  };
+
+  const selectAllItems = () => {
+    setSelectedKeys(cart.map(getItemKey));
+  };
+
+  const deselectAllItems = () => {
+    setSelectedKeys([]);
+  };
+
+  const selectedCartItems = cart.filter((item) => selectedKeys.includes(getItemKey(item)));
+
+  const selectedCount = selectedCartItems.reduce((acc, it) => acc + it.quantity, 0);
+
+  const selectedSubtotalINR = selectedCartItems.reduce(
+    (total, item) =>
+      total + (item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity,
+    0
+  );
+
+  const rawSelectedDiscount = appliedCoupon
+    ? appliedCoupon.discountPercent
+      ? Math.round((selectedSubtotalINR * appliedCoupon.discountPercent) / 100)
+      : appliedCoupon.discountFixedINR || 0
+    : 0;
+
+  const selectedDiscountINR = appliedCoupon?.maxDiscountCapINR
+    ? Math.min(appliedCoupon.maxDiscountCapINR, rawSelectedDiscount)
+    : rawSelectedDiscount;
+
+  const selectedTotalINR = Math.max(0, selectedSubtotalINR - selectedDiscountINR);
+
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
   const cartSubtotalINR = cart.reduce(
@@ -463,6 +652,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = async () => {
     setCart([]);
+    setSelectedKeys([]);
     setAppliedCoupon(null);
     if (typeof window !== 'undefined') {
       try {
@@ -470,13 +660,47 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('sareevanta_coupon');
       } catch (e) {}
     }
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: userCart } = await supabase.from('carts').select('id').eq('customer_id', user.id).single();
-      if (userCart) {
-        await supabase.from('cart_items').delete().eq('cart_id', userCart.id);
-      }
+    fetch('/api/cart?clearAll=true', { method: 'DELETE' }).catch((err) =>
+      console.error('[CartContext] clearCart DB error:', err)
+    );
+  };
+
+  const removePurchasedItems = async (
+    purchased: { productId: string; variantId?: string; selectedColor?: string }[]
+  ) => {
+    if (!purchased || purchased.length === 0) return;
+
+    setCart((prev) =>
+      prev.filter((item) => {
+        const wasPurchased = purchased.some((p) => {
+          if (p.variantId && item.variantId) return p.variantId === item.variantId;
+          if (p.productId === item.product.id) {
+            if (p.selectedColor && item.selectedColor) return p.selectedColor === item.selectedColor;
+            return true;
+          }
+          return false;
+        });
+        return !wasPurchased;
+      })
+    );
+
+    setAppliedCoupon(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('sareevanta_coupon');
+      } catch (e) {}
+    }
+
+    try {
+      await fetch('/api/cart', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: purchased,
+        }),
+      });
+    } catch (e) {
+      console.error('[CartContext] removePurchasedItems error:', e);
     }
   };
 
@@ -493,6 +717,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        removePurchasedItems,
         toggleWishlist,
         isInWishlist,
         setIsCartDrawerOpen,
@@ -500,6 +725,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         cartCount,
         cartSubtotalINR,
         cartTotalINR,
+        selectedKeys,
+        selectedCartItems,
+        selectedCount,
+        selectedSubtotalINR,
+        selectedTotalINR,
+        selectedDiscountINR,
+        toggleItemSelection,
+        selectAllItems,
+        deselectAllItems,
+        getItemKey,
         wishlistCount,
         appliedCoupon,
         couponDiscountINR,

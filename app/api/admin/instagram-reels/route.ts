@@ -8,8 +8,21 @@ function extractInstagramShortcode(url: string): string | null {
   if (!url || typeof url !== 'string') return null;
   const trimmed = url.trim();
   if (/^[A-Za-z0-9_-]{5,35}$/.test(trimmed)) return trimmed;
-  const match = trimmed.match(/(?:reel|reels|p)\/([A-Za-z0-9_-]+)/i);
-  return match ? match[1] : null;
+  
+  // Match /(reel|reels|p)/SHORTCODE accurately (avoiding matching username.reels)
+  const match = trimmed.match(/\/(?:reel|reels|p)\/([A-Za-z0-9_-]{5,35})/i);
+  if (match) return match[1];
+
+  // Fallback: inspect URL segments from right to left
+  const cleanPath = trimmed.split('?')[0].split('#')[0];
+  const segments = cleanPath.split('/').filter(Boolean);
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const seg = segments[i];
+    if (/^[A-Za-z0-9_-]{5,35}$/.test(seg) && seg.toLowerCase() !== 'reel' && seg.toLowerCase() !== 'reels') {
+      return seg;
+    }
+  }
+  return null;
 }
 
 export async function GET() {
@@ -24,16 +37,24 @@ export async function GET() {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
-    const formatted = (dbReels || []).map((r: any) => ({
-      id: r.id,
-      url: r.instagram_url,
-      shortcode: extractInstagramShortcode(r.instagram_url) || r.id,
-      caption: r.caption || '',
-      thumbnail_url: r.thumbnail_storage_path || '',
-      sort_order: r.display_order || 0,
-      is_active: r.is_active !== false,
-      created_at: r.created_at,
-    }));
+    const formatted = (dbReels || []).map((r: any) => {
+      const code = extractInstagramShortcode(r.instagram_url) || r.id;
+      let cleanCaption = r.caption || '';
+      if (cleanCaption.endsWith('@reel')) {
+        cleanCaption = `Mysuru Pure Silk Atelier Drape — Reel #${code.slice(0, 7)}`;
+      }
+
+      return {
+        id: r.id,
+        url: r.instagram_url,
+        shortcode: code,
+        caption: cleanCaption || 'Royal Heritage Silk Draping Masterclass',
+        thumbnail_url: r.thumbnail_storage_path || '',
+        sort_order: r.display_order || 0,
+        is_active: r.is_active !== false,
+        created_at: r.created_at,
+      };
+    });
 
     return NextResponse.json(
       { success: true, data: formatted, count: formatted.length },
@@ -70,12 +91,15 @@ export async function POST(request: Request) {
 
     const autoInstagramFrame = `https://instagram.com/p/${shortcode}/media/?size=l`;
     const resolvedThumbnail = thumbnail_url && thumbnail_url.trim() ? thumbnail_url.trim() : autoInstagramFrame;
+    const resolvedCaption = caption && caption.trim() 
+      ? caption.trim() 
+      : `Mysuru Pure Silk Atelier Drape — Reel #${shortcode.slice(0, 7)}`;
 
     const { data: newReel, error } = await supabase
       .from('instagram_reels')
       .insert({
         instagram_url: url.trim(),
-        caption: caption ? caption.trim() : `Neel Saree House Atelier Drape — @${shortcode}`,
+        caption: resolvedCaption,
         thumbnail_storage_path: resolvedThumbnail,
         display_order: 0,
         is_active: is_active !== undefined ? Boolean(is_active) : true,

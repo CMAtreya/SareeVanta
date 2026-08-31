@@ -63,6 +63,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isStoreSwitcherOpen, setIsStoreSwitcherOpen] = useState(false);
   const [environment, setEnvironment] = useState<'LIVE' | 'STAGING'>('LIVE');
   const [pendingAppointmentsCount, setPendingAppointmentsCount] = useState<number>(0);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState<number>(0);
+  const [newOrderToast, setNewOrderToast] = useState<{
+    orderNumber: string;
+    patron: string;
+    totalINR: number;
+  } | null>(null);
+  const knownOrderIdsRef = React.useRef<Set<string>>(new Set());
 
   // Modals & Panels
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -77,81 +84,135 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { id: string; type: string; title: string; desc: string; time: string; unread: boolean }[]
   >([]);
 
-  // Fetch real alerts from backend
-  useEffect(() => {
-    async function loadAlerts() {
-      try {
-        const alerts: { id: string; type: string; title: string; desc: string; time: string; unread: boolean }[] = [];
-        
-        // 1. Fetch pending orders
-        const ordersRes = await fetch('/api/admin/orders', { cache: 'no-store' });
-        if (ordersRes.ok) {
-          const { orders } = await ordersRes.json();
-          if (Array.isArray(orders)) {
-            const pendingOrders = orders.filter((o: any) => o.order_status === 'PENDING' || o.order_status === 'PLACED');
-            pendingOrders.slice(0, 3).forEach((o: any) => {
-              alerts.push({
-                id: `ord-${o.id}`,
-                type: 'ORDER',
-                title: 'New Order Received',
-                desc: `Order #${o.order_number || o.id?.slice(0, 8)} from ${o.customers?.name || 'Patron'} (₹${(o.total_amount || 0).toLocaleString('en-IN')})`,
-                time: 'Pending Fulfillment',
-                unread: true,
-              });
-            });
-          }
-        }
+  // Web Audio Synth Chime for New Order Notification
+  const playOrderAlertChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {}
+  };
 
-        // 2. Fetch low stock items
-        const invRes = await fetch('/api/admin/inventory', { cache: 'no-store' });
-        if (invRes.ok) {
-          const invData = await invRes.json();
-          const items = invData.inventory || invData.items || [];
-          if (Array.isArray(items)) {
-            const lowStock = items.filter((i: any) => (i.available_quantity !== undefined && i.available_quantity <= 2) || (i.stock_quantity !== undefined && i.stock_quantity <= 2));
-            lowStock.slice(0, 3).forEach((i: any) => {
-              alerts.push({
-                id: `inv-${i.id}`,
-                type: 'LOW_STOCK',
-                title: 'Low Stock Alert on Looms',
-                desc: `${i.products?.title || i.title || 'Saree'} has only ${i.available_quantity ?? i.stock_quantity ?? 0} pieces remaining.`,
-                time: 'Live Inventory',
-                unread: true,
-              });
-            });
-          }
-        }
+  // Fetch real alerts and count from backend
+  const loadAlerts = React.useCallback(async () => {
+    try {
+      const alerts: { id: string; type: string; title: string; desc: string; time: string; unread: boolean }[] = [];
+      
+      // 1. Fetch live orders
+      const ordersRes = await fetch('/api/admin/orders', { cache: 'no-store' });
+      if (ordersRes.ok) {
+        const { orders } = await ordersRes.json();
+        if (Array.isArray(orders)) {
+          const ordersNeedingAttention = orders.filter((o: any) =>
+            ['PENDING', 'PLACED', 'PROCESSING', 'TO_PACK', 'READY_TO_SHIP'].includes(
+              (o.order_status || '').toUpperCase()
+            )
+          );
+          setPendingOrdersCount(ordersNeedingAttention.length);
 
-        // 3. Fetch video appointments
-        const apptRes = await fetch('/api/admin/video-appointments', { cache: 'no-store' });
-        if (apptRes.ok) {
-          const { appointments } = await apptRes.json();
-          if (Array.isArray(appointments)) {
-            const pendingAppts = appointments.filter((a: any) => a.status === 'PENDING');
-            setPendingAppointmentsCount(pendingAppts.length);
-            pendingAppts.slice(0, 3).forEach((a: any) => {
-              alerts.push({
-                id: `appt-${a.id}`,
-                type: 'APPOINTMENT',
-                title: 'New Video Shopping Request',
-                desc: `${a.customer_name} requested a loom consult on ${a.appointment_date} (${a.time_slot})`,
-                time: 'Pending Review',
-                unread: true,
+          // Detect new incoming order if system was already initialized
+          if (knownOrderIdsRef.current.size > 0) {
+            const newlyArrived = orders.find((o: any) => !knownOrderIdsRef.current.has(o.id));
+            if (newlyArrived) {
+              playOrderAlertChime();
+              setNewOrderToast({
+                orderNumber: newlyArrived.order_number || newlyArrived.id?.slice(0, 8),
+                patron: newlyArrived.customers?.name || 'Valued Patron',
+                totalINR: Math.round(
+                  (newlyArrived.total_paise || newlyArrived.total_amount || 0) /
+                    (newlyArrived.total_paise ? 100 : 1)
+                ),
               });
-            });
+              // Auto-dismiss toast after 6s
+              setTimeout(() => setNewOrderToast(null), 6000);
+            }
           }
-        }
 
-        setNotifications(alerts);
-      } catch (err) {
-        console.error('[AdminLayout] Failed to load alerts:', err);
+          // Update known orders set
+          orders.forEach((o: any) => knownOrderIdsRef.current.add(o.id));
+
+          ordersNeedingAttention.slice(0, 3).forEach((o: any) => {
+            alerts.push({
+              id: `ord-${o.id}`,
+              type: 'ORDER',
+              title: 'Order Needs Attention',
+              desc: `Order #${o.order_number || o.id?.slice(0, 8)} from ${o.customers?.name || 'Patron'} (₹${(Math.round((o.total_paise || o.total_amount || 0) / (o.total_paise ? 100 : 1))).toLocaleString('en-IN')})`,
+              time: 'Action Required',
+              unread: true,
+            });
+          });
+        }
       }
-    }
 
+      // 2. Fetch low stock items
+      const invRes = await fetch('/api/admin/inventory', { cache: 'no-store' });
+      if (invRes.ok) {
+        const invData = await invRes.json();
+        const items = invData.inventory || invData.items || [];
+        if (Array.isArray(items)) {
+          const lowStock = items.filter(
+            (i: any) =>
+              (i.available_quantity !== undefined && i.available_quantity <= 2) ||
+              (i.stock_quantity !== undefined && i.stock_quantity <= 2)
+          );
+          lowStock.slice(0, 3).forEach((i: any) => {
+            alerts.push({
+              id: `inv-${i.id}`,
+              type: 'LOW_STOCK',
+              title: 'Low Stock Alert on Looms',
+              desc: `${i.products?.title || i.title || 'Saree'} has only ${i.available_quantity ?? i.stock_quantity ?? 0} pieces remaining.`,
+              time: 'Live Inventory',
+              unread: true,
+            });
+          });
+        }
+      }
+
+      // 3. Fetch video appointments
+      const apptRes = await fetch('/api/admin/video-appointments', { cache: 'no-store' });
+      if (apptRes.ok) {
+        const { appointments } = await apptRes.json();
+        if (Array.isArray(appointments)) {
+          const pendingAppts = appointments.filter((a: any) => a.status === 'PENDING');
+          setPendingAppointmentsCount(pendingAppts.length);
+          pendingAppts.slice(0, 3).forEach((a: any) => {
+            alerts.push({
+              id: `appt-${a.id}`,
+              type: 'APPOINTMENT',
+              title: 'New Video Shopping Request',
+              desc: `${a.customer_name} requested a loom consult on ${a.appointment_date} (${a.time_slot})`,
+              time: 'Pending Review',
+              unread: true,
+            });
+          });
+        }
+      }
+
+      setNotifications(alerts);
+    } catch (err) {
+      console.error('[AdminLayout] Failed to load alerts:', err);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isAuthorized) {
       loadAlerts();
+      // Poll every 12 seconds for real-time new order detection
+      const interval = setInterval(loadAlerts, 12000);
+      return () => clearInterval(interval);
     }
-  }, [isAuthorized]);
+  }, [isAuthorized, loadAlerts]);
 
   // Check auth on every navigation / mount
   useEffect(() => {
@@ -417,6 +478,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <ShoppingCart className="w-4 h-4 flex-shrink-0 text-[#C87F4A]" />
                   {!isSidebarCollapsed && <span>Orders</span>}
                 </div>
+                {pendingOrdersCount > 0 && !isSidebarCollapsed && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#C87F4A] text-[#18110E] shadow-xs">
+                    {pendingOrdersCount}
+                  </span>
+                )}
               </Link>
 
               <Link
@@ -839,6 +905,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Floating Real-Time New Order Alert Toast */}
+      <AnimatePresence>
+        {newOrderToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-5 right-5 z-50 bg-[#18110E] text-[#FAF3E4] border border-[#C87F4A] p-4 rounded-2xl shadow-2xl flex items-center gap-3.5 max-w-sm"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 text-emerald-400">
+              <Sparkles className="w-5 h-5 animate-spin" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#E2CE9F] font-bold">
+                  New Order Received
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                  ₹{newOrderToast.totalINR.toLocaleString('en-IN')}
+                </span>
+              </div>
+              <p className="text-xs font-sans font-semibold text-white truncate">
+                Order #{newOrderToast.orderNumber}
+              </p>
+              <p className="text-[11px] text-stone-400 truncate">
+                Patron: {newOrderToast.patron}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewOrderToast(null)}
+              className="text-stone-400 hover:text-white p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Global Command Palette & Modals */}
       <CommandPalette

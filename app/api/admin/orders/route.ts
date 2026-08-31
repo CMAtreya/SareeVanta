@@ -18,7 +18,23 @@ export async function GET() {
     .select(`
       *,
       customers ( name, email, phone ),
-      order_items ( * ),
+      order_items (
+        *,
+        product_variants (
+          id,
+          sku,
+          colors ( name, hex_code ),
+          product_variant_media ( url, is_primary, display_order ),
+          products (
+            id,
+            title,
+            slug,
+            weavings ( name ),
+            fabrics ( name ),
+            zari_specifications ( name )
+          )
+        )
+      ),
       order_delivery_addresses ( * ),
       shipments ( * )
     `)
