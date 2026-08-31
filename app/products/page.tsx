@@ -19,6 +19,7 @@ import { Product } from '@/lib/products';
 import ProductCard from '@/components/ecommerce/ProductCard';
 import ProductCardSkeleton from '@/components/ecommerce/ProductCardSkeleton';
 import ProductFilters, { FilterCounts } from '@/components/ecommerce/ProductFilters';
+import { seedPdpCacheFromCatalog } from '@/lib/pdpCache';
 
 // Client-side in-memory query cache with TTL for instant (0ms) filter switching without stale retention
 const filterQueryCache = new Map<string, { data: any; timestamp: number }>();
@@ -185,7 +186,7 @@ function ProductsListingContent() {
   // Fetch products from GET /api/products with instant 0ms local filtering & SWR
   useEffect(() => {
     let isMounted = true;
-    const limit = gridCols === 4 ? 12 : 9;
+    const limit = 16;
 
     const fetchProducts = async () => {
       const params = new URLSearchParams();
@@ -253,13 +254,14 @@ function ProductsListingContent() {
       }
 
       try {
-        const res = await fetch(`/api/products?${cacheKey}`, { cache: 'no-store' });
+        const res = await fetch(`/api/products?${cacheKey}`, { cache: 'default' });
         if (res.ok) {
           const data = await res.json();
           filterQueryCache.set(cacheKey, { data, timestamp: Date.now() });
 
-          // Accumulate unique products into catalogSnapshotRef
+          // Accumulate unique products into catalogSnapshotRef and pre-seed PDP cache
           if (Array.isArray(data.products)) {
+            data.products.forEach((p: Product) => seedPdpCacheFromCatalog(p));
             const currentIds = new Set(catalogSnapshotRef.current.map((p) => p.id));
             const newItems = data.products.filter((p: Product) => !currentIds.has(p.id));
             if (newItems.length > 0) {
@@ -289,8 +291,26 @@ function ProductsListingContent() {
 
     fetchProducts();
 
+    const handleRevalidate = () => {
+      filterQueryCache.clear();
+      fetchProducts();
+    };
+
+    window.addEventListener('focus', handleRevalidate);
+    document.addEventListener('visibilitychange', handleRevalidate);
+    window.addEventListener('sareevanta:products_updated', handleRevalidate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sareevanta_last_product_update') {
+        filterQueryCache.clear();
+        fetchProducts();
+      }
+    });
+
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', handleRevalidate);
+      document.removeEventListener('visibilitychange', handleRevalidate);
+      window.removeEventListener('sareevanta:products_updated', handleRevalidate);
     };
   }, [
     selectedWeaves,

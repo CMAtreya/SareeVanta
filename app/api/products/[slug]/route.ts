@@ -9,6 +9,16 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   const { slug } = params;
+  const cacheKey = `pdp_product_${slug}`;
+  const cached = getCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
+    });
+  }
+
   const supabase = createAdminClient();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -56,7 +66,12 @@ export async function GET(
           supabase.from('products').select(`
             id, slug, title, base_mrp_paise, base_selling_price_paise,
             weavings(name),
-            product_variants(product_variant_media(url, is_primary, display_order))
+            fabrics(name),
+            product_variants(
+              id,
+              colors(name, hex_code),
+              product_variant_media(url, is_primary, display_order)
+            )
           `).neq('id', prodId).limit(6),
         ]);
 
@@ -85,30 +100,17 @@ export async function GET(
           };
         });
 
-        // Ensure variants without individual media inherit the product's primary images if available
-        colorVariants.forEach((cv: any) => {
-          if (cv.images.length === 0 && allImagesList.length > 0) {
-            cv.images = allImagesList;
-          }
-        });
-
-        // Parse Care Instructions Metadata
-        let parsedMeta: any = {};
-        if (prod.care_instructions) {
-          try {
-            parsedMeta = JSON.parse(prod.care_instructions);
-          } catch (e) {}
+        // Fallback to top-level product images if variants have no media
+        if (allImagesList.length === 0) {
+          allImagesList.push('https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80');
         }
-
-        // Calculate Stock
-        const totalStock = colorVariants.reduce((sum: number, cv: any) => sum + (cv.stock || 0), 0);
 
         // Reviews Assembly
         const revs = reviewsRes.data || [];
         const reviewCount = revs.length;
         const rating = reviewCount > 0
           ? Number((revs.reduce((acc: number, r: any) => acc + (r.rating || 5), 0) / reviewCount).toFixed(1))
-          : 5.0;
+          : 0;
 
         const reviewsList = revs.map((r: any) => {
           const photoList = r.review_photos?.map((p: any) => p.storage_path) || [];
@@ -126,27 +128,46 @@ export async function GET(
           };
         });
 
+        const totalStock = colorVariants.reduce((sum: number, v: any) => sum + v.stock, 0);
+        const parsedMeta = typeof prod.metadata === 'object' && prod.metadata !== null ? prod.metadata : {};
+
         const weaveName = Array.isArray(prod.weavings) ? prod.weavings[0]?.name : prod.weavings?.name || '';
         const fabricName = Array.isArray(prod.fabrics) ? prod.fabrics[0]?.name : prod.fabrics?.name || '';
         const occasionName = Array.isArray(prod.occasions) ? prod.occasions[0]?.name : prod.occasions?.name || (parsedMeta.occasions?.[0]) || '';
         const patternName = Array.isArray(prod.patterns) ? prod.patterns[0]?.name : prod.patterns?.name || '';
         const zariGrade = Array.isArray(prod.zari_specifications) ? prod.zari_specifications[0]?.name : prod.zari_specifications?.name || '';
 
-        // Related Products Assembly with each product's own distinct media
+        // Related Products Assembly with each product's own distinct media & color
         const relatedProducts = (relatedRes.data || []).map((rp: any) => {
-          const rpWeave = Array.isArray(rp.weavings) ? rp.weavings[0]?.name : rp.weavings?.name || '';
-          const rpMedia = (rp.product_variants || [])
+          const rpWeave = Array.isArray(rp.weavings) ? rp.weavings[0]?.name : rp.weavings?.name || 'Silk';
+          const rpFabric = Array.isArray(rp.fabrics) ? rp.fabrics[0]?.name : rp.fabrics?.name || 'Pure Silk';
+          const variants = rp.product_variants || [];
+          const rpMedia = variants
             .flatMap((v: any) => (v.product_variant_media || []).map((m: any) => m.url))
             .filter((u: any) => typeof u === 'string' && u.trim().length > 5);
+
+          const firstColor = Array.isArray(variants[0]?.colors) ? variants[0]?.colors[0] : variants[0]?.colors;
+          const rpColorVariants = variants.map((v: any) => {
+            const c = Array.isArray(v.colors) ? v.colors[0] : v.colors;
+            return {
+              id: v.id,
+              name: c?.name || '',
+              hex: c?.hex_code || '#8B1E28',
+            };
+          }).filter((cv: any) => cv.name);
 
           return {
             id: rp.id,
             slug: rp.slug,
             title: rp.title,
             weave: rpWeave,
+            fabric: rpFabric,
             priceINR: Math.round((rp.base_selling_price_paise || 0) / 100),
             originalPriceINR: Math.round((rp.base_mrp_paise || 0) / 100),
             images: rpMedia,
+            color: firstColor?.name || '',
+            colorHex: firstColor?.hex_code || '#8B1E28',
+            colorVariants: rpColorVariants,
           };
         });
 
@@ -171,6 +192,11 @@ export async function GET(
           zariGrade: zariGrade,
           dimensions: `${parsedMeta.saree_length || '5.50'}m Saree (${parsedMeta.saree_width || '1.14'}m width)`,
           blouseDimensions: `${parsedMeta.blouse_length || '0.80'}m Blouse Piece`,
+          sareeLength: parsedMeta.saree_length ? String(parsedMeta.saree_length) : '5.50',
+          sareeWidth: parsedMeta.saree_width ? String(parsedMeta.saree_width) : '1.14',
+          blouseLength: parsedMeta.blouse_length ? String(parsedMeta.blouse_length) : '0.80',
+          blouseWidth: parsedMeta.blouse_width ? String(parsedMeta.blouse_width) : '1.14',
+          hasBlousePiece: parsedMeta.has_blouse_piece !== false,
           packageWeight: `${parsedMeta.package_weight || '680'}g`,
           packageDimensions: parsedMeta.package_dimensions || '38 x 28 x 4 cm',
           inStock: totalStock > 0,
@@ -182,12 +208,13 @@ export async function GET(
         };
 
         const responsePayload = { product: formatted, relatedProducts, source: 'database' };
+        setCache(cacheKey, responsePayload, 60);
 
         return NextResponse.json(
           responsePayload,
           {
             headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
             },
           }
         );

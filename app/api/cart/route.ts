@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   const supabase = createClient();
+  const adminSupabase = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -10,26 +12,26 @@ export async function GET() {
   }
 
   // Get active cart for customer
-  let { data: cart } = await supabase
+  let { data: cart } = await adminSupabase
     .from('carts')
     .select('id')
     .eq('customer_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!cart) {
-    const { data: newCart, error: createError } = await supabase
+    const { data: newCart, error: createError } = await adminSupabase
       .from('carts')
       .insert({ customer_id: user.id })
       .select('id')
       .single();
 
-    if (createError) {
+    if (createError || !newCart) {
       return NextResponse.json({ error: 'Failed to initialize cart' }, { status: 500 });
     }
     cart = newCart;
   }
 
-  const { data: items } = await supabase
+  const { data: items } = await adminSupabase
     .from('cart_items')
     .select(`
       id,
@@ -41,7 +43,20 @@ export async function GET() {
         price_paise,
         mrp_paise,
         colors ( name, hex_code ),
-        products ( title, slug )
+        products (
+          id,
+          title,
+          slug,
+          base_selling_price_paise,
+          base_mrp_paise,
+          fabrics ( name ),
+          weavings ( name )
+        ),
+        product_variant_media (
+          url,
+          display_order,
+          is_primary
+        )
       )
     `)
     .eq('cart_id', cart.id);
@@ -51,6 +66,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const supabase = createClient();
+  const adminSupabase = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
@@ -64,13 +80,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'variant_id or productId is required' }, { status: 400 });
   }
 
-  // If passed string is a product slug or product ID, attempt to resolve first active variant
-  if (!targetVariantId.includes('-') || targetVariantId.length < 30) {
-    const { data: prod } = await supabase
+  // Verify whether targetVariantId is a variant_id or a product_id/slug
+  const { data: directVariant } = await adminSupabase
+    .from('product_variants')
+    .select('id')
+    .eq('id', targetVariantId)
+    .maybeSingle();
+
+  if (!directVariant) {
+    const { data: prod } = await adminSupabase
       .from('products')
       .select('id, product_variants(id)')
       .or(`slug.eq.${targetVariantId},id.eq.${targetVariantId}`)
-      .single();
+      .maybeSingle();
 
     if (prod && prod.product_variants && prod.product_variants.length > 0) {
       targetVariantId = prod.product_variants[0].id;
@@ -80,14 +102,14 @@ export async function POST(request: Request) {
   const quantity = body.quantity || 1;
 
   // Ensure cart exists
-  let { data: cart } = await supabase
+  let { data: cart } = await adminSupabase
     .from('carts')
     .select('id')
     .eq('customer_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (!cart) {
-    const { data: newCart, error: createError } = await supabase
+    const { data: newCart, error: createError } = await adminSupabase
       .from('carts')
       .insert({ customer_id: user.id })
       .select('id')
@@ -100,7 +122,7 @@ export async function POST(request: Request) {
   }
 
   // Upsert item
-  const { data: cartItem, error } = await supabase
+  const { data: cartItem, error } = await adminSupabase
     .from('cart_items')
     .upsert({
       cart_id: cart.id,
@@ -112,6 +134,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    console.error('[Cart API] Error upserting cart item:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

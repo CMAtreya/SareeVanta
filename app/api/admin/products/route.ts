@@ -82,6 +82,7 @@ export async function GET(request: Request) {
     const [
       { data: products, error: pErr },
       { data: variants, error: vErr },
+      { data: colors, error: cErr },
       { data: weavings, error: wErr },
       { data: fabrics, error: fErr },
       { data: zari, error: zErr },
@@ -89,7 +90,8 @@ export async function GET(request: Request) {
       { data: media, error: mErr },
     ] = await Promise.all([
       supabase.from('products').select('id, title, slug, is_published, base_mrp_paise, base_selling_price_paise, weaving_id, fabric_id, zari_specification_id, created_at').order('created_at', { ascending: false }),
-      supabase.from('product_variants').select('id, product_id, sku, barcode, price_paise, mrp_paise, is_active'),
+      supabase.from('product_variants').select('id, product_id, color_id, sku, barcode, price_paise, mrp_paise, is_active'),
+      supabase.from('colors').select('id, name, hex_code'),
       supabase.from('weavings').select('id, name'),
       supabase.from('fabrics').select('id, name'),
       supabase.from('zari_specifications').select('id, name'),
@@ -104,6 +106,7 @@ export async function GET(request: Request) {
     const weaveMap = Object.fromEntries((weavings || []).map((w) => [w.id, w.name]));
     const fabricMap = Object.fromEntries((fabrics || []).map((f) => [f.id, f.name]));
     const zariMap = Object.fromEntries((zari || []).map((z) => [z.id, z.name]));
+    const colorMap = Object.fromEntries((colors || []).map((c) => [c.id, c]));
     const invMap = Object.fromEntries((inventory || []).map((i) => [i.variant_id, i]));
 
     const mediaMap: Record<string, any[]> = {};
@@ -115,8 +118,10 @@ export async function GET(request: Request) {
     const variantMap: Record<string, any[]> = {};
     (variants || []).forEach((v) => {
       if (!variantMap[v.product_id]) variantMap[v.product_id] = [];
+      const col = v.color_id && colorMap[v.color_id] ? colorMap[v.color_id] : null;
       variantMap[v.product_id].push({
         ...v,
+        colors: col ? [col] : [],
         inventory: invMap[v.id] ? [invMap[v.id]] : [],
         product_variant_media: mediaMap[v.id] || [],
       });

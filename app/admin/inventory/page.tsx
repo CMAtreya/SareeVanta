@@ -633,10 +633,10 @@ export default function InventoryMatrixPage() {
                           </td>
 
                           {/* 4. Reserved Stock */}
-                          <td className="p-3.5 text-center font-mono text-xs">
+                          <td className="p-3.5 text-center font-mono">
                             {item.reservedStock > 0 ? (
-                              <span className="text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                                {item.reservedStock} Locked
+                              <span className="text-amber-700 font-bold text-sm">
+                                {item.reservedStock}
                               </span>
                             ) : (
                               <span className="text-slate-400">—</span>

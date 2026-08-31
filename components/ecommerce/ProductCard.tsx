@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Heart, ShoppingBag, Eye, Star, ShieldCheck, Check } from 'lucide-react';
 import { Product } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
+import { seedPdpCacheFromCatalog, setCachedProduct } from '@/lib/pdpCache';
 
 interface ProductCardProps {
   product: Product;
@@ -30,7 +31,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation();
     addToCart(product, 1, undefined, 0, e);
     setAddedAnimation(true);
-    setTimeout(() => setAddedAnimation(false), 1500);
+    setTimeout(() => setAddedAnimation(false), 2500);
   };
 
   const handleToggleWishlist = (e: React.MouseEvent) => {
@@ -53,10 +54,28 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const discountPercent = Math.round(((originalPrice - product.priceINR) / originalPrice) * 100);
 
+  const handlePrefetch = () => {
+    if (typeof window !== 'undefined' && product.slug) {
+      seedPdpCacheFromCatalog(product);
+      fetch(`/api/products/${product.slug}`, { cache: 'default' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.product) {
+            setCachedProduct(product.slug, data);
+          }
+        })
+        .catch(() => {});
+    }
+  };
+
   return (
     <div
       className="group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-[#C87F4A]/20 transition-all duration-500 hover:shadow-silk-lg hover:border-[#C87F4A]/50"
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+        handlePrefetch();
+      }}
+      onTouchStart={handlePrefetch}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Product Image Container */}
@@ -163,30 +182,32 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         {/* Color Variants & Swatches */}
-        <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-stone-500 font-sans">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {product.colorVariants && product.colorVariants.length > 0 ? (
-              product.colorVariants.map((cv, cvIdx) => (
+        {(Boolean(product.color) || Boolean(product.colorVariants && product.colorVariants.length > 0)) && (
+          <div className="mt-1.5 flex items-center gap-2 text-xs text-stone-500 font-sans">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {product.colorVariants && product.colorVariants.length > 0 ? (
+                product.colorVariants.map((cv, cvIdx) => (
+                  <span
+                    key={cv.id || cvIdx}
+                    className="w-3 h-3 rounded-full border border-stone-300 shadow-2xs inline-block"
+                    style={{ backgroundColor: cv.hex || '#8B1E28' }}
+                    title={cv.name}
+                  />
+                ))
+              ) : (
                 <span
-                  key={cv.id || cvIdx}
-                  className="w-3 h-3 rounded-full border border-stone-300 shadow-2xs inline-block"
-                  style={{ backgroundColor: cv.hex || '#8B1E28' }}
-                  title={cv.name}
+                  className="w-2.5 h-2.5 rounded-full border border-stone-300 inline-block"
+                  style={{ backgroundColor: product.colorHex || '#8B1E28' }}
                 />
-              ))
-            ) : (
-              <span
-                className="w-2.5 h-2.5 rounded-full border border-stone-300"
-                style={{ backgroundColor: product.colorHex || '#8B1E28' }}
-              />
-            )}
+              )}
+            </div>
+            <span className="text-[11px] font-mono text-stone-600 truncate font-medium">
+              {product.colorVariants && product.colorVariants.length > 1
+                ? `${product.colorVariants.length} Colors Available`
+                : product.color}
+            </span>
           </div>
-          <span className="text-[11px] font-mono text-stone-400 truncate">
-            {product.colorVariants && product.colorVariants.length > 1
-              ? `${product.colorVariants.length} Colors`
-              : product.color}
-          </span>
-        </div>
+        )}
 
         {/* Price & Action Row */}
         <div className="mt-auto pt-3 border-t border-stone-100 flex items-end justify-between">

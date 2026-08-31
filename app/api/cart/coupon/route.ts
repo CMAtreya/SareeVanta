@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin-client';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
 
     const cleanCode = code.trim().toUpperCase();
 
-    // 1. Query Supabase coupons table exclusively
-    const supabase = createClient();
+    // 1. Query Supabase coupons table with admin client (bypasses RLS read restriction)
+    const supabase = createAdminClient();
     const { data: dbCoupon, error } = await supabase
       .from('coupons')
       .select('*')

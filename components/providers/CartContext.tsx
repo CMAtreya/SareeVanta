@@ -71,6 +71,53 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
   const [cartBounced, setCartBounced] = useState(false);
 
+  // Initial load from localStorage on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('sareevanta_cart');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCart(parsed);
+          }
+        }
+        const savedCoupon = localStorage.getItem('sareevanta_coupon');
+        if (savedCoupon) {
+          setAppliedCoupon(JSON.parse(savedCoupon));
+        }
+      } catch (e) {
+        console.warn('Error reading from localStorage:', e);
+      }
+    }
+  }, []);
+
+  // Sync cart changes to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (cart.length > 0) {
+          localStorage.setItem('sareevanta_cart', JSON.stringify(cart));
+        } else {
+          localStorage.removeItem('sareevanta_cart');
+        }
+      } catch (e) {}
+    }
+  }, [cart]);
+
+  // Sync appliedCoupon to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (appliedCoupon) {
+          localStorage.setItem('sareevanta_coupon', JSON.stringify(appliedCoupon));
+        } else {
+          localStorage.removeItem('sareevanta_coupon');
+        }
+      } catch (e) {}
+    }
+  }, [appliedCoupon]);
+
   // --------------------------------------------------------------------------
   // 1. AUTH & DB SYNC & PENDING ACTION EXECUTOR
   // --------------------------------------------------------------------------
@@ -91,30 +138,47 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               const dbItems: CartItem[] = rawItems.map((item: any) => {
                 const variantData = item.product_variants;
                 const productData = variantData?.products;
-                const foundProduct = products.find(p => p.id === item.product_id || p.slug === item.product_id || p.id === variantData?.id) || {
-                  id: variantData?.id || item.variant_id || item.product_id || 'db-prod',
-                  slug: productData?.slug || 'heirloom-silk-saree',
-                  title: productData?.title || 'Heirloom Silk Saree',
-                  weave: 'Mysore Silk',
-                  fabric: 'Pure Mulberry Silk',
-                  occasion: 'Bridal & Muhurtham',
-                  priceINR: Math.round((variantData?.price_paise || 2850000) / 100),
-                  rating: 4.9,
-                  reviewCount: 12,
-                  color: variantData?.colors?.name || 'Crimson Red',
-                  colorHex: variantData?.colors?.hex_code || '#8B1E28',
-                  images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=85'],
-                  zariGrade: 'Tested Pure Zari',
+                const colorData = Array.isArray(variantData?.colors) ? variantData?.colors[0] : variantData?.colors;
+                const mediaList = Array.isArray(variantData?.product_variant_media) ? variantData?.product_variant_media : [];
+                const sortedMedia = [...mediaList].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+                const itemImages = sortedMedia.map((m: any) => m.url).filter((u: any) => typeof u === 'string' && u.trim().length > 5);
+                
+                const weaveName = Array.isArray(productData?.weavings) ? productData?.weavings[0]?.name : productData?.weavings?.name || '';
+                const fabricName = Array.isArray(productData?.fabrics) ? productData?.fabrics[0]?.name : productData?.fabrics?.name || '';
+
+                const sellingPriceINR = variantData?.price_paise 
+                  ? Math.round(variantData.price_paise / 100) 
+                  : (productData?.base_selling_price_paise ? Math.round(productData.base_selling_price_paise / 100) : 0);
+
+                const mrpINR = variantData?.mrp_paise 
+                  ? Math.round(variantData.mrp_paise / 100) 
+                  : (productData?.base_mrp_paise ? Math.round(productData.base_mrp_paise / 100) : sellingPriceINR);
+
+                const resolvedProduct: Product = {
+                  id: productData?.id || variantData?.id || item.variant_id || item.product_id || 'db-prod',
+                  slug: productData?.slug || '',
+                  title: productData?.title || 'Pure Silk Saree',
+                  weave: weaveName,
+                  fabric: fabricName,
+                  occasion: '',
+                  priceINR: sellingPriceINR,
+                  originalPriceINR: mrpINR,
+                  rating: 5,
+                  reviewCount: 0,
+                  color: colorData?.name || '',
+                  colorHex: colorData?.hex_code || '#8B1E28',
+                  images: itemImages,
+                  zariGrade: '',
                   dimensions: '5.5m Pure Silk Saree',
                   inStock: true,
-                  description: 'Authentic silk saree from Neelsareehouse guild.',
-                  artisanCluster: 'Mysuru Loom Guild',
+                  description: '',
+                  artisanCluster: 'Neel Saree House Artisan Guild',
                   silkMarkCertified: true,
                 };
 
                 return {
-                  product: foundProduct,
-                  quantity: item.quantity,
+                  product: resolvedProduct,
+                  quantity: item.quantity || 1,
                   blouseOption: item.blouse_option || 'unstitched',
                   tailoringExtraINR: item.tailoring_extra_inr || 0,
                 };
@@ -252,6 +316,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     tailoringExtraINR = 0,
     sourcePosition?: SourcePosition
   ) => {
+    // Strict Authentication Enforcement: User must be logged in to add to cart
     if (!currentUser) {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('pending_cart_action', JSON.stringify({
@@ -260,7 +325,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           blouseOption,
           tailoringExtraINR,
         }));
-        const currentPath = window.location.pathname;
+        const currentPath = window.location.pathname + window.location.search;
         router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
       }
       return;
@@ -268,7 +333,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     const maxStock = product.stockCount ?? 5;
 
-    // 1. Update Cart Data State with strict stock count cap (BFS 9.3)
+    // 1. Update Cart Data State with strict stock count cap
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
@@ -283,17 +348,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return [...prev, { product, quantity: initialQty, blouseOption, tailoringExtraINR }];
     });
 
-    // 2. Sync to Supabase Database
-    fetch('/api/cart', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        productId: product.id,
-        quantity,
-        blouseOption,
-        tailoringExtraINR,
-      }),
-    }).catch(err => console.error('[CartContext] DB sync error:', err));
+    // 2. Sync to Supabase Database if user is authenticated
+    if (currentUser) {
+      fetch('/api/cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity,
+          blouseOption,
+          tailoringExtraINR,
+        }),
+      }).catch((err) => console.error('[CartContext] DB sync error:', err));
+    }
 
     // 3. Trigger silk-flight animation
     const productImage = product.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80';
@@ -380,11 +447,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     0
   );
 
-  const couponDiscountINR = appliedCoupon
+  const rawDiscount = appliedCoupon
     ? appliedCoupon.discountPercent
       ? Math.round((cartSubtotalINR * appliedCoupon.discountPercent) / 100)
       : appliedCoupon.discountFixedINR || 0
     : 0;
+
+  const couponDiscountINR = appliedCoupon?.maxDiscountCapINR
+    ? Math.min(appliedCoupon.maxDiscountCapINR, rawDiscount)
+    : rawDiscount;
 
   const cartTotalINR = Math.max(0, cartSubtotalINR - couponDiscountINR);
 
@@ -393,6 +464,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = async () => {
     setCart([]);
     setAppliedCoupon(null);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('sareevanta_cart');
+        localStorage.removeItem('sareevanta_coupon');
+      } catch (e) {}
+    }
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {

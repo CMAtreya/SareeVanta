@@ -53,6 +53,13 @@ export default function HomePage() {
         setLiveHeroSlides([]);
       })
       .finally(() => setIsLoadingBanners(false));
+
+    // Background prefetch /products data in idle time for instant 0ms catalog navigation
+    const prefetchTimer = setTimeout(() => {
+      fetch('/api/products?limit=12', { cache: 'force-cache' }).catch(() => {});
+    }, 1200);
+
+    return () => clearTimeout(prefetchTimer);
   }, []);
 
   const activeSlides = liveHeroSlides;
@@ -147,7 +154,7 @@ export default function HomePage() {
       {/* 2. HERO PROMO CAROUSEL (Live Supabase Hero Slides)  */}
       {/* ==================================================== */}
       <section className="relative w-full overflow-hidden bg-[#1F1B16] text-[#FAF3E4]">
-        <div className="relative w-full h-[420px] sm:h-[520px] md:h-[580px] lg:h-[640px]">
+        <div className="relative w-full aspect-[16/9] sm:aspect-[20/8] md:aspect-[21/8] lg:aspect-[24/9] min-h-[300px] sm:min-h-[380px] md:min-h-[440px] lg:min-h-[500px] max-h-[600px]">
           {isLoadingBanners ? (
             <div className="absolute inset-0 bg-[#1F1B16] flex items-center justify-center">
               <div className="text-center space-y-4 animate-pulse">
@@ -185,55 +192,61 @@ export default function HomePage() {
             </div>
           ) : (
             activeSlides.map((slide, idx) => (
-              <div
+              <Link
+                href={slide.link || '/products'}
                 key={slide.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out block overflow-hidden ${
                   currentSlide === idx ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
               >
-                {/* Slide Background Image with Vignette Overlay */}
+                {/* Full-width High-Res Banner Graphic (Edge-to-Edge) */}
                 <img
                   src={slide.image}
-                  alt={slide.title}
-                  className="w-full h-full object-cover object-center transform scale-105 transition-transform duration-[6000ms]"
+                  alt={slide.title || 'Saree Promo Banner'}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  // @ts-ignore
+                  fetchPriority={idx === 0 ? 'high' : 'auto'}
+                  className="w-full h-full object-cover object-center transition-transform duration-1000"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1F1B16]/90 via-[#1F1B16]/60 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1F1B16]/80 via-transparent to-[#1F1B16]/40" />
 
-                {/* Slide Editorial Copy Container */}
-                <div className="absolute inset-0 flex items-center">
-                  <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
-                    <div className="max-w-2xl space-y-4 sm:space-y-5 animate-fade-in">
-                      {/* Eyebrow */}
-                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF3E4]/15 backdrop-blur-md border border-white/20 text-[#FAF3E4] text-[11px] font-mono font-semibold uppercase tracking-[0.25em]">
-                        <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
-                        <span>{slide.tag}</span>
-                      </div>
+                {/* Editorial Text Overlay (Only rendered if title or subtitle has text) */}
+                {(slide.title?.trim() || slide.subtitle?.trim()) && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#141210]/85 via-[#141210]/40 to-transparent flex items-center">
+                    <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 w-full">
+                      <div className="max-w-xl space-y-3 sm:space-y-4 animate-fade-in">
+                        {slide.tag && (
+                          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-[#FAF3E4] text-[11px] font-mono font-semibold uppercase tracking-[0.25em]">
+                            <Sparkles className="w-3.5 h-3.5 text-[#C87F4A]" />
+                            <span>{slide.tag}</span>
+                          </div>
+                        )}
 
-                      {/* Headline */}
-                      <h2 className="font-editorial text-4xl sm:text-6xl lg:text-7xl font-normal text-white leading-[1.05] tracking-tight">
-                        {slide.title}
-                      </h2>
+                        {slide.title && (
+                          <h2 className="font-editorial text-2xl sm:text-4xl lg:text-5xl font-normal text-white leading-[1.08] tracking-tight drop-shadow-md">
+                            {slide.title}
+                          </h2>
+                        )}
 
-                      {/* Subtitle */}
-                      <p className="text-xs sm:text-sm md:text-base text-stone-200 font-sans leading-relaxed max-w-lg">
-                        {slide.subtitle}
-                      </p>
+                        {slide.subtitle && (
+                          <p className="text-xs sm:text-sm md:text-base text-stone-200 font-sans leading-relaxed max-w-lg drop-shadow-md">
+                            {slide.subtitle}
+                          </p>
+                        )}
 
-                      {/* Action Link Button */}
-                      <div className="pt-2 sm:pt-4">
-                        <Link
-                          href={slide.link}
-                          className="inline-flex items-center gap-2.5 bg-[#C87F4A] hover:bg-[#B36737] text-white px-8 py-4 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg shadow-black/40"
-                        >
-                          <span>{slide.ctaText}</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </Link>
+                        {slide.ctaText && (
+                          <div className="pt-1 sm:pt-2">
+                            <span className="inline-flex items-center gap-2.5 bg-[#C87F4A] hover:bg-[#B36737] text-white px-7 py-3.5 rounded-sm text-xs font-sans font-bold uppercase tracking-[0.2em] transition-all shadow-lg">
+                              <span>{slide.ctaText}</span>
+                              <ArrowRight className="w-4 h-4" />
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                )}
+              </Link>
             ))
           )}
 

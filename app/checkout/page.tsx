@@ -28,6 +28,8 @@ import {
   Calendar,
   ExternalLink,
   Crown,
+  Tag,
+  Trash2,
 } from 'lucide-react';
 import { useCart } from '@/components/providers/CartContext';
 import { createClient } from '@/lib/supabase/client';
@@ -50,9 +52,25 @@ const initialSavedAddresses: SavedAddress[] = [];
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cart, cartSubtotalINR, cartTotalINR, appliedCoupon, couponDiscountINR, currency, clearCart } = useCart();
+  const {
+    cart,
+    cartSubtotalINR,
+    cartTotalINR,
+    appliedCoupon,
+    couponDiscountINR,
+    currency,
+    clearCart,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
+
+  // Coupon State
+  const [couponInput, setCouponInput] = useState('');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccessMsg, setCouponSuccessMsg] = useState<string | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   // Address State
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -151,6 +169,7 @@ export default function CheckoutPage() {
     placedAt: string;
     totalINR: number;
     paymentMethod: string;
+    items?: any[];
   } | null>(null);
 
   const [copiedOrder, setCopiedOrder] = useState(false);
@@ -272,9 +291,68 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleContinueToPayment = () => {
+  const handleContinueToPayment = async () => {
+    try {
+      await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          address_id: selectedAddress?.id,
+          coupon_code: appliedCoupon?.code || null,
+          items: cart.map((item) => ({
+            productId: item.product.id,
+            variant_id: item.product.id,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+    } catch (e) {
+      console.warn('[Checkout] Stock reservation request initiated:', e);
+    }
+
     setCurrentStep(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!couponInput.trim()) {
+      setCouponError('Please enter a valid coupon code.');
+      return;
+    }
+    setIsApplyingCoupon(true);
+    setCouponError(null);
+    setCouponSuccessMsg(null);
+
+    try {
+      const res = await fetch('/api/cart/coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponInput.trim(),
+          cartSubtotalINR,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        applyCoupon(data);
+        setCouponSuccessMsg(data.message || `Coupon "${data.code}" applied successfully!`);
+        setCouponInput('');
+      } else {
+        setCouponError(data.message || 'Invalid or inactive coupon code.');
+      }
+    } catch (err) {
+      setCouponError('Failed to validate coupon code. Please try again.');
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    removeCoupon();
+    setCouponSuccessMsg(null);
+    setCouponError(null);
+    setCouponInput('');
   };
 
   // Pay Now Handler: POST /api/checkout/orders -> POST /api/checkout/payment/init -> Render Step 4 Confirmation
@@ -290,6 +368,7 @@ export default function CheckoutPage() {
           shippingAddress: selectedAddress,
           subtotal: cartSubtotalINR,
           discount: couponDiscountINR,
+          couponCode: appliedCoupon?.code || null,
           total: cartTotalINR,
           paymentMethod,
           currency,
@@ -309,6 +388,7 @@ export default function CheckoutPage() {
       });
 
       // 3. Set confirmation details and transition to Step 4
+      const purchasedItems = [...cart];
       setConfirmedOrder({
         orderNumber,
         trackingNumber: `BD-AIR-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -320,6 +400,7 @@ export default function CheckoutPage() {
           minute: '2-digit',
         }),
         totalINR: cartTotalINR,
+        items: purchasedItems,
         paymentMethod:
           paymentMethod === 'upi'
             ? `UPI Instant (${upiId})`
@@ -338,6 +419,7 @@ export default function CheckoutPage() {
       }, 700);
     } catch (err) {
       console.error('Order creation error:', err);
+      const purchasedItems = [...cart];
       setConfirmedOrder({
         orderNumber: 'NSH-2026-8942',
         trackingNumber: 'BD-AIR-928412',
@@ -348,12 +430,16 @@ export default function CheckoutPage() {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        totalINR: cartTotalINR || 18500,
-        paymentMethod: 'UPI Instant (Verified)',
+        totalINR: cartTotalINR,
+        items: purchasedItems,
+        paymentMethod: 'Cash on Delivery',
       });
-      setIsSubmittingOrder(false);
-      setCurrentStep(4);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      clearCart();
+      setTimeout(() => {
+        setIsSubmittingOrder(false);
+        setCurrentStep(4);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 700);
     }
   };
 
@@ -829,16 +915,107 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* 3. Cost & Subtotal Breakdown */}
+                  {/* 3. Have a Coupon Code? Section */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#C87F4A]/30 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono uppercase tracking-wider text-[#1F1B16] font-bold flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-[#C87F4A]" />
+                        <span>Have a Coupon Code?</span>
+                      </span>
+                      {appliedCoupon && (
+                        <span className="text-[10px] font-mono text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full font-bold border border-emerald-200">
+                          Coupon Applied
+                        </span>
+                      )}
+                    </div>
+
+                    {appliedCoupon ? (
+                      <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-emerald-700 text-white flex items-center justify-center flex-shrink-0">
+                            <Check className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-xs text-emerald-900 tracking-wider uppercase">
+                                {appliedCoupon.code}
+                              </span>
+                              <span className="text-[11px] font-mono font-semibold text-emerald-700">
+                                (-{formatPrice(couponDiscountINR)})
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-emerald-700 font-sans block">
+                              {appliedCoupon.description || 'Privilege discount activated'}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-xs font-mono text-stone-500 hover:text-red-600 flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleApplyCoupon} className="space-y-2">
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type="text"
+                              value={couponInput}
+                              onChange={(e) => {
+                                setCouponInput(e.target.value.toUpperCase());
+                                if (couponError) setCouponError(null);
+                              }}
+                              placeholder="Enter coupon code (e.g. FESTIVE10)"
+                              className="w-full px-3.5 py-2.5 bg-[#FAF3E4]/50 border border-stone-300 rounded-xl text-xs font-mono uppercase tracking-wider focus:outline-none focus:border-[#C87F4A]"
+                            />
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={isApplyingCoupon || !couponInput.trim()}
+                            className="px-5 py-2.5 bg-[#1F1B16] hover:bg-[#C87F4A] text-white text-xs font-sans font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                          >
+                            {isApplyingCoupon ? (
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <span>Apply</span>
+                            )}
+                          </button>
+                        </div>
+
+                        {couponError && (
+                          <div className="flex items-center gap-1.5 text-xs text-red-600 font-sans pt-0.5">
+                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{couponError}</span>
+                          </div>
+                        )}
+
+                        {couponSuccessMsg && (
+                          <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-sans pt-0.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                            <span>{couponSuccessMsg}</span>
+                          </div>
+                        )}
+                      </form>
+                    )}
+                  </div>
+
+                  {/* 4. Cost & Subtotal Breakdown */}
                   <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF3E4]/30 border border-[#C87F4A]/20 space-y-2.5 text-xs font-sans">
                     <div className="flex justify-between text-stone-600">
-                      <span>Subtotal</span>
+                      <span>Original Subtotal (Before Discount)</span>
                       <span className="font-mono">{formatPrice(cartSubtotalINR)}</span>
                     </div>
 
                     {appliedCoupon && (
-                      <div className="flex justify-between text-emerald-800 font-semibold">
-                        <span>Discount ({appliedCoupon.code})</span>
+                      <div className="flex justify-between text-emerald-800 font-semibold bg-emerald-50/60 px-2.5 py-1 rounded-lg border border-emerald-200/60">
+                        <span className="flex items-center gap-1">
+                          <Tag className="w-3 h-3 text-emerald-700" />
+                          <span>Coupon Discount ({appliedCoupon.code})</span>
+                        </span>
                         <span className="font-mono">-{formatPrice(couponDiscountINR)}</span>
                       </div>
                     )}
@@ -849,12 +1026,12 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="flex justify-between text-stone-600">
-                      <span>Delivery</span>
+                      <span>Express Air Delivery</span>
                       <span className="text-emerald-700 font-mono font-bold uppercase text-[10px]">Free</span>
                     </div>
 
                     <div className="pt-3 border-t border-[#C87F4A]/20 flex justify-between font-bold text-sm text-[#1F1B16]">
-                      <span>Total Amount</span>
+                      <span>Final Total Amount (After Discount)</span>
                       <span className="font-mono text-base text-[#7A1C30]">
                         {formatPrice(cartTotalINR)}
                       </span>
@@ -1163,40 +1340,29 @@ export default function CheckoutPage() {
                   {/* Order Line Summary */}
                   <div className="space-y-3">
                     <span className="text-xs font-mono uppercase tracking-wider text-stone-700 font-bold block">
-                      Reserved Heirlooms ({cart.length || 1})
+                      Reserved Heirlooms ({confirmedOrder.items?.length || 1})
                     </span>
                     <div className="space-y-3">
-                      {(cart.length > 0
-                        ? cart
-                        : [
-                            {
-                              product: {
-                                id: 'mysore-royal-gold',
-                                title: 'Mysore Pure Silk Crepe • 24K Tested Zari Royal Drape',
-                                priceINR: confirmedOrder.totalINR || 18500,
-                                images: ['https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80'],
-                              },
-                              quantity: 1,
-                              tailoringExtraINR: 0,
-                            },
-                          ]
+                      {(confirmedOrder.items && confirmedOrder.items.length > 0
+                        ? confirmedOrder.items
+                        : cart
                       ).map((item) => (
                         <div
-                          key={item.product.id}
+                          key={item.product?.id || item.product?.title}
                           className="p-4 rounded-2xl border border-stone-200 bg-white flex items-center justify-between gap-4"
                         >
                           <div className="flex items-center gap-3.5 min-w-0">
                             <img
-                              src={item.product.images[0]}
-                              alt={item.product.title}
+                              src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80'}
+                              alt={item.product?.title || 'Heirloom Silk Saree'}
                               className="w-14 h-18 rounded-xl object-cover border border-stone-200 flex-shrink-0 shadow-2xs"
                             />
                             <div className="truncate space-y-0.5">
                               <h4 className="text-sm font-editorial font-bold text-[#1F1B16] truncate">
-                                {item.product.title}
+                                {item.product?.title || 'Heirloom Silk Saree'}
                               </h4>
                               <span className="text-[11px] font-mono text-[#773D21] block">
-                                Qty: {item.quantity} • Fall & Pico Hemmed
+                                Qty: {item.quantity} • {item.blouseOption === 'stitched' ? 'Custom Tailored Blouse' : 'Fall & Pico Hemmed'}
                               </span>
                               <span className="text-[10px] font-sans text-emerald-700 font-semibold block">
                                 ✓ Govt. Silk Mark Authenticity Seal Attached
@@ -1204,7 +1370,7 @@ export default function CheckoutPage() {
                             </div>
                           </div>
                           <div className="text-right flex-shrink-0 font-mono text-sm font-bold text-[#1F1B16]">
-                            {formatPrice((item.product.priceINR + (item.tailoringExtraINR || 0)) * item.quantity)}
+                            {formatPrice(((item.product?.priceINR || item.product?.price || 0) + (item.tailoringExtraINR || 0)) * item.quantity)}
                           </div>
                         </div>
                       ))}
@@ -1335,18 +1501,6 @@ export default function CheckoutPage() {
                   </div>
                   <span className="text-[10px] text-stone-400 font-sans block text-right">
                     Includes 18% Handloom GST
-                  </span>
-                </div>
-
-                {/* Trust Seal */}
-                <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] font-sans text-stone-500">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#C87F4A]" />
-                    <span>Silk Mark Certified</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-[#B8892B]" />
-                    <span>24K Tested Zari</span>
                   </span>
                 </div>
               </div>

@@ -603,12 +603,10 @@ export default function CouponsMarketingPage() {
                       <td className="p-3.5">
                         {coupon.type === 'PERCENTAGE' ? (
                           <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 font-bold font-mono text-xs inline-flex items-center gap-1">
-                            <span>%</span>
                             <span>{coupon.value}% Flat Off</span>
                           </span>
                         ) : (
                           <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold font-mono text-xs inline-flex items-center gap-1">
-                            <span>₹</span>
                             <span>₹{coupon.value.toLocaleString('en-IN')} Off</span>
                           </span>
                         )}

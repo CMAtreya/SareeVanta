@@ -58,15 +58,22 @@ function formatDbProduct(p: any): Product {
   const colorVariants = rawVariants.map((v: any, idx: number) => {
     const vColor = Array.isArray(v.colors) ? v.colors[0] : v.colors;
     const vMedia = (v.product_variant_media || []).map((m: any) => m.url).filter(Boolean);
+    const invItem = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
+    const vStock = invItem
+      ? Math.max(0, (invItem.quantity || 0) - (invItem.reserved_quantity || 0))
+      : (v.is_active !== false ? 1 : 0);
+
     return {
       id: v.id,
       sku: v.sku || `${p.slug}-${idx + 1}`,
       name: vColor?.name || '',
       hex: vColor?.hex_code || '',
-      stock: 10,
+      stock: vStock,
       images: vMedia,
     };
   });
+
+  const totalStock = colorVariants.reduce((sum: number, cv: any) => sum + (cv.stock || 0), 0);
 
   return {
     id: p.id,
@@ -87,12 +94,20 @@ function formatDbProduct(p: any): Product {
     images,
     colorVariants: colorVariants.length > 0 ? colorVariants : undefined,
     zariGrade: zariGrade,
-    dimensions: '5.5m Pure Silk Saree',
-    inStock: true,
+    dimensions: parsedMeta.saree_length && parsedMeta.saree_width 
+      ? `${parsedMeta.saree_length} m X ${parsedMeta.saree_width} m` 
+      : '5.50 m X 1.14 m',
+    sareeLength: parsedMeta.saree_length ? String(parsedMeta.saree_length) : '5.50',
+    sareeWidth: parsedMeta.saree_width ? String(parsedMeta.saree_width) : '1.14',
+    blouseLength: parsedMeta.blouse_length ? String(parsedMeta.blouse_length) : '0.80',
+    blouseWidth: parsedMeta.blouse_width ? String(parsedMeta.blouse_width) : '1.14',
+    hasBlousePiece: parsedMeta.has_blouse_piece !== false,
+    inStock: totalStock > 0,
+    stockCount: totalStock,
     isBridal,
     isNew,
     isBestseller,
-    silkMarkCertified: true,
+    silkMarkCertified: parsedMeta.is_silk_mark_certified !== false,
     description: p.description || '',
     artisanCluster: 'Mysuru Master Loom Guild',
   };
@@ -135,6 +150,7 @@ export async function GET(request: Request) {
         product_variants(
           id, sku, barcode, price_paise, mrp_paise, is_active,
           colors(id, name, hex_code),
+          inventory(quantity, reserved_quantity),
           product_variant_media(url, is_primary, display_order)
         )
       `)

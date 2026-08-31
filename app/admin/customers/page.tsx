@@ -12,7 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
-import { CustomerRecord, SAMPLE_CUSTOMERS } from '@/lib/customers';
+import { CustomerRecord } from '@/lib/customers';
 
 export default function CustomerDirectoryPage() {
   const [customers, setCustomers] = useState<CustomerRecord[]>([]);
@@ -168,12 +168,21 @@ export default function CustomerDirectoryPage() {
       </div>
 
       {/* Customer Directory Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCustomers.map((customer) => (
-          <div
-            key={customer.id}
-            className="bg-white border border-[#E8DCC9] rounded-xl p-4 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between"
-          >
+      {filteredCustomers.length === 0 ? (
+        <div className="bg-white border border-[#E8DCC9] rounded-xl p-12 text-center">
+          <Users className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-stone-800">No Customers Found</h3>
+          <p className="text-xs text-stone-500 max-w-sm mx-auto mt-1">
+            {searchQuery ? 'No customer matches your search criteria.' : 'Registered customers and order patrons will automatically appear here.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredCustomers.map((customer) => (
+            <div
+              key={customer.id}
+              className="bg-white border border-[#E8DCC9] rounded-xl p-4 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between"
+            >
             <div>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -231,8 +240,9 @@ export default function CustomerDirectoryPage() {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

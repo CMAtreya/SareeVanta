@@ -36,9 +36,7 @@ import { Product, Review } from '@/lib/products';
 import { useCart } from '@/components/providers/CartContext';
 import ProductCard from '@/components/ecommerce/ProductCard';
 import ProductDetailSkeleton from '@/components/ecommerce/ProductDetailSkeleton';
-
-// In-memory PDP cache for instant (0ms) product loading
-const pdpCache = new Map<string, any>();
+import { getCachedProduct, setCachedProduct } from '@/lib/pdpCache';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -47,10 +45,11 @@ export default function ProductDetailPage() {
 
   const { addToCart, toggleWishlist, isInWishlist, currency } = useCart();
 
-  // Local / API Product Data
-  const initialCached = pdpCache.get(slug)?.product || null;
+  // Local / API Product Data initialized instantly from cache
+  const cachedData = getCachedProduct(slug);
+  const initialCached = cachedData?.product || null;
   const [product, setProduct] = useState<Product | null>(initialCached);
-  const [relatedItems, setRelatedItems] = useState<Product[]>([]);
+  const [relatedItems, setRelatedItems] = useState<Product[]>(cachedData?.relatedProducts || []);
   const [loading, setLoading] = useState(!initialCached);
 
   // Gallery & Variant State
@@ -121,16 +120,18 @@ export default function ProductDetailPage() {
 
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${slug}?_t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`/api/products/${slug}`, { cache: 'default' });
         if (res.ok) {
           const data = await res.json();
           if (isMounted && data.product) {
+            setCachedProduct(slug, data);
             setProduct(data.product);
             setRelatedItems(data.relatedProducts || []);
-            const primaryImgs = (data.product.images && data.product.images.length > 0
-              ? data.product.images
-              : data.product.colorVariants?.[0]?.images || []
-            ).filter((url: any) => typeof url === 'string' && url.trim().length > 5);
+            const firstVarImgs = data.product.colorVariants?.[0]?.images || [];
+            const primaryImgs = (firstVarImgs.length > 0
+              ? firstVarImgs
+              : data.product.images || []
+            ).filter((url: any) => typeof url === 'string' && url.trim().length > 5).slice(0, 3);
             setGalleryImages(primaryImgs);
             setSelectedImageIdx(0);
             if (data.product.reviewsList) {
@@ -145,18 +146,39 @@ export default function ProductDetailPage() {
       }
 
       if (isMounted) {
-        setProduct(null);
+        setProduct((prev) => prev);
         setLoading(false);
       }
     };
 
-    fetchProduct();
+    let lastFetchedAt = Date.now();
+
+    const handleSoftRevalidate = () => {
+      const now = Date.now();
+      if (document.visibilityState === 'visible' && now - lastFetchedAt > 30000) {
+        lastFetchedAt = now;
+        fetchProduct();
+      }
+    };
+
+    const handleForcedRevalidate = () => {
+      lastFetchedAt = Date.now();
+      fetchProduct();
+    };
+
+    window.addEventListener('focus', handleSoftRevalidate);
+    document.addEventListener('visibilitychange', handleSoftRevalidate);
+    window.addEventListener('sareevanta:products_updated', handleForcedRevalidate);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', handleSoftRevalidate);
+      document.removeEventListener('visibilitychange', handleSoftRevalidate);
+      window.removeEventListener('sareevanta:products_updated', handleForcedRevalidate);
     };
   }, [slug]);
 
-  // Color Variant Selection (Strict max 3 photos)
+  // Color Variant Selection (Strict max 3 photos per variant)
   const handleVariantClick = (idx: number) => {
     setSelectedVariantIndex(idx);
     if (product?.colorVariants && product.colorVariants[idx]) {
@@ -208,7 +230,9 @@ export default function ProductDetailPage() {
 
   const inWishlist = isInWishlist(product.id);
   const totalPriceINR = product.priceINR * quantity;
-  const stock = product.stockCount ?? 2;
+  const activeVariant = (product.colorVariants && product.colorVariants[selectedVariantIndex]) || product.colorVariants?.[0];
+  const activeVariantStock = activeVariant?.stock !== undefined ? activeVariant.stock : (product.stockCount ?? 1);
+  const stock = activeVariantStock;
 
   const formatPrice = (inr: number) => {
     if (currency === 'USD') return `$${(inr / 83).toFixed(0)}`;
@@ -218,24 +242,11 @@ export default function ProductDetailPage() {
     return `₹${inr.toLocaleString('en-IN')}`;
   };
 
-  // Add to Cart Action via POST /api/cart/items
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    try {
-      await fetch('/api/cart/items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          productId: product.id,
-          quantity,
-        }),
-      });
-    } catch (err) {
-      console.warn('API cart items call failed, using client context');
-    }
-
+  // Add to Cart Action
+  const handleAddToCart = (e: React.MouseEvent) => {
     addToCart(product, quantity, undefined, 0, e);
     setAddedAnimation(true);
-    setTimeout(() => setAddedAnimation(false), 1500);
+    setTimeout(() => setAddedAnimation(false), 3000);
   };
 
   // Handle Review Photo Upload (Max 2 photos per DSS specification)
@@ -395,11 +406,11 @@ export default function ProductDetailPage() {
 
                 if (hasValidImage) {
                   return (
-                    <div className="relative w-full h-[520px] sm:h-[620px] bg-white flex items-center justify-center p-2">
+                    <div className="relative w-full h-[580px] sm:h-[680px] lg:h-[720px] bg-white flex items-center justify-center overflow-hidden">
                       <img
                         src={currentImg}
                         alt={product.title}
-                        className={`w-full h-full object-contain object-center transition-opacity duration-200 ${
+                        className={`w-full h-full object-cover object-top transition-opacity duration-200 ${
                           isZoomed ? 'opacity-0' : 'opacity-100'
                         }`}
                       />
@@ -479,13 +490,26 @@ export default function ProductDetailPage() {
 
               {/* Reviews & Cluster Provenance */}
               <div className="mt-2.5 flex items-center gap-3 text-xs text-stone-600">
-                <div className="flex items-center gap-1 text-amber-700">
-                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                  <span className="font-bold">{product.rating}</span>
-                  <a href="#reviews" className="text-stone-500 underline ml-1">
-                    ({product.reviewCount} verified patron reviews)
-                  </a>
-                </div>
+                {product.reviewCount && product.reviewCount > 0 ? (
+                  <div className="flex items-center gap-1 text-amber-700">
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    <span className="font-bold">{product.rating}</span>
+                    <a href="#reviews" className="text-stone-500 underline ml-1">
+                      ({product.reviewCount} verified patron reviews)
+                    </a>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-stone-500">
+                    <div className="flex items-center text-stone-300">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5" />
+                      ))}
+                    </div>
+                    <a href="#reviews" className="text-stone-500 hover:text-[#C87F4A] hover:underline font-mono text-[11px]">
+                      No reviews yet • Be the first to review
+                    </a>
+                  </div>
+                )}
                 <span>•</span>
                 <span className="font-mono text-[#773D21] font-medium">{product.artisanCluster}</span>
               </div>
@@ -597,14 +621,14 @@ export default function ProductDetailPage() {
               );
             })()}
 
-            {/* Stock Indicator (Warning tone badge when stock is low) */}
+            {/* Stock Indicator (Dynamic for selected color variant) */}
             <div className="flex items-center gap-2 py-1">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
                 <AlertCircle className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
                 <span>
                   {stock <= 3
-                    ? `⚡ Only ${stock} pieces left in Mysuru flagship vault`
-                    : `In Stock • ${stock} available for immediate dispatch`}
+                    ? `⚡ Only ${stock} pieces left for ${activeVariant?.name || 'this shade'}`
+                    : `In Stock • ${stock} available in ${activeVariant?.name || 'this shade'} for immediate dispatch`}
                 </span>
               </span>
             </div>
@@ -753,6 +777,23 @@ export default function ProductDetailPage() {
                             </span>
                           </div>
                         </div>
+
+                        <div className="grid grid-cols-12 py-3 items-center">
+                          <span className="col-span-4 text-xs font-medium text-stone-600 font-sans">
+                            Blouse Dimension:
+                          </span>
+                          <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
+                            <span className="text-xs font-semibold text-stone-900 font-sans">
+                              {product.hasBlousePiece === false
+                                ? 'N/A (Not Included)'
+                                : product.blouseLength && product.blouseWidth
+                                ? `${product.blouseLength} m X ${product.blouseWidth} m (Unstitched)`
+                                : product.blouseDimensions
+                                ? product.blouseDimensions
+                                : '0.80 m X 1.14 m (Unstitched)'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Right Column */}
@@ -763,7 +804,7 @@ export default function ProductDetailPage() {
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              {product.color}
+                              {activeVariant?.name || product.color}
                             </span>
                           </div>
                         </div>
@@ -785,7 +826,11 @@ export default function ProductDetailPage() {
                           </span>
                           <div className="col-span-8 bg-[#FAF6F0] px-3 py-2 rounded-md">
                             <span className="text-xs font-semibold text-stone-900 font-sans">
-                              {product.dimensions || '5.5 M X 1.14 M'}
+                              {product.sareeLength && product.sareeWidth
+                                ? `${product.sareeLength} m X ${product.sareeWidth} m`
+                                : product.dimensions
+                                ? product.dimensions
+                                : '5.50 m X 1.14 m'}
                             </span>
                           </div>
                         </div>

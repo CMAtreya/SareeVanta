@@ -34,8 +34,15 @@ export function useProducts(options: UseProductsOptions = {}) {
 
   useEffect(() => {
     let isMounted = true;
+    let lastFetchedAt = Date.now();
 
-    async function loadProducts() {
+    async function loadProducts(isForced = false) {
+      const now = Date.now();
+      if (!isForced && now - lastFetchedAt < 30000 && globalProductCache.has(cacheKey)) {
+        return;
+      }
+      lastFetchedAt = now;
+
       if (!globalProductCache.has(cacheKey)) {
         setLoading(true);
       }
@@ -62,10 +69,33 @@ export function useProducts(options: UseProductsOptions = {}) {
       }
     }
 
-    loadProducts();
+    loadProducts(true);
+
+    const handleSoftRevalidate = () => {
+      if (document.visibilityState === 'visible') {
+        loadProducts(false);
+      }
+    };
+
+    const handleForcedRevalidate = () => {
+      globalProductCache.clear();
+      loadProducts(true);
+    };
+
+    window.addEventListener('focus', handleSoftRevalidate);
+    document.addEventListener('visibilitychange', handleSoftRevalidate);
+    window.addEventListener('sareevanta:products_updated', handleForcedRevalidate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sareevanta_last_product_update') {
+        handleForcedRevalidate();
+      }
+    });
 
     return () => {
       isMounted = false;
+      window.removeEventListener('focus', handleSoftRevalidate);
+      document.removeEventListener('visibilitychange', handleSoftRevalidate);
+      window.removeEventListener('sareevanta:products_updated', handleForcedRevalidate);
     };
   }, [cacheKey]);
 

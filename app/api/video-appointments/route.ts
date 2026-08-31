@@ -49,25 +49,11 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.warn('[Video Appointments POST] DB insert warning, using in-memory store:', error.message);
-      // Even if table does not exist in raw Supabase schema, return valid success with appointment metadata
-      return NextResponse.json({
-        success: true,
-        appointment: {
-          id: `va-${Date.now()}`,
-          customer_name: name.trim(),
-          customer_email: email.trim(),
-          customer_phone: phone.trim(),
-          appointment_date: date,
-          time_slot: timeSlot,
-          preferred_weaves: weaves,
-          occasion,
-          platform,
-          notes,
-          status: 'PENDING',
-          created_at: new Date().toISOString(),
-        },
-      });
+      console.error('[Video Appointments POST] DB insert error:', error.message);
+      return NextResponse.json(
+        { error: 'Unable to schedule appointment at this moment. Please try again or reach out on WhatsApp.' },
+        { status: 500 }
+      );
     }
 
     invalidateCache('admin_video_appointments');

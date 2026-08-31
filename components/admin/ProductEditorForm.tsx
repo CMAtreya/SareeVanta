@@ -166,6 +166,7 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     'Daily Classic',
     'Temple Visits',
   ]);
+  const [customOccasionInput, setCustomOccasionInput] = useState('');
 
   // Form State: Special Marketing Badges & Tags
   const [selectedBadges, setSelectedBadges] = useState<string[]>(['New Arrival']);
@@ -217,9 +218,55 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
         if (Array.isArray(data.fabrics)) setFabricOptions(data.fabrics);
         if (Array.isArray(data.zari)) setZariOptions(data.zari);
         if (Array.isArray(data.patterns)) setPatternOptions(data.patterns);
-        if (Array.isArray(data.occasions) && data.occasions.length > 0) {
-          setAvailableOccasions(data.occasions);
-        }
+
+        // Load saved occasions from localStorage or backend
+        let loadedOccasions = Array.isArray(data.occasions) ? [...data.occasions] : [
+          'Bridal & Muhurtham',
+          'Festive & Puja',
+          'Reception & Cocktail',
+          'Daily Classic',
+          'Temple Visits',
+        ];
+        try {
+          if (typeof window !== 'undefined') {
+            const savedOcc = localStorage.getItem('sareevanta_saved_occasions');
+            if (savedOcc) {
+              const parsed = JSON.parse(savedOcc);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((po: string) => {
+                  if (po && !loadedOccasions.some((o) => o.toLowerCase() === po.toLowerCase())) {
+                    loadedOccasions.push(po);
+                  }
+                });
+              }
+            }
+          }
+        } catch (e) {}
+        setAvailableOccasions(loadedOccasions);
+
+        // Load saved badges from backend and localStorage
+        let loadedBadges = Array.isArray(data.badges) && data.badges.length > 0 ? [...data.badges] : [
+          'New Arrival',
+          'Best Seller',
+          'Bridal Edit',
+          'Limited Edition',
+        ];
+        try {
+          if (typeof window !== 'undefined') {
+            const savedBadges = localStorage.getItem('sareevanta_saved_badges');
+            if (savedBadges) {
+              const parsed = JSON.parse(savedBadges);
+              if (Array.isArray(parsed)) {
+                parsed.forEach((pb: string) => {
+                  if (pb && !loadedBadges.some((b) => b.toLowerCase() === pb.toLowerCase())) {
+                    loadedBadges.push(pb);
+                  }
+                });
+              }
+            }
+          }
+        } catch (e) {}
+        setAvailableBadges(loadedBadges);
 
         if (mode === 'create') {
           if (data.weaves?.length > 0) setWeave((prev) => prev || data.weaves[0]);
@@ -362,11 +409,15 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               if (o && !restoredOccasions.includes(o)) restoredOccasions.push(o);
             });
           }
-          if (restoredOccasions.length > 0) setSelectedOccasions(restoredOccasions);
+          if (restoredOccasions.length > 0) {
+            setSelectedOccasions(restoredOccasions);
+            setAvailableOccasions((prev) => Array.from(new Set([...prev, ...restoredOccasions])));
+          }
 
           // Restore special badges
-          if (parsedMeta.badges && Array.isArray(parsedMeta.badges)) {
+          if (parsedMeta.badges && Array.isArray(parsedMeta.badges) && parsedMeta.badges.length > 0) {
             setSelectedBadges(parsedMeta.badges);
+            setAvailableBadges((prev) => Array.from(new Set([...prev, ...parsedMeta.badges])));
           }
 
           setSellingPrice(String(Math.round((found.base_selling_price_paise || 0) / 100)));
@@ -457,6 +508,35 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     setIsDirty(true);
   };
 
+  // Add Custom Occasion Action (Deduplicated case-insensitively & persisted globally)
+  const handleAddCustomOccasion = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = customOccasionInput.trim();
+    if (!trimmed) return;
+
+    setAvailableOccasions((prev) => {
+      const match = prev.find((o) => o.toLowerCase() === trimmed.toLowerCase());
+      const updated = match ? prev : [...prev, trimmed];
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sareevanta_saved_occasions', JSON.stringify(updated));
+        }
+      } catch (err) {}
+      return updated;
+    });
+
+    setSelectedOccasions((prev) => {
+      const existingMatch = availableOccasions.find((o) => o.toLowerCase() === trimmed.toLowerCase()) || trimmed;
+      if (!prev.includes(existingMatch)) {
+        return [...prev, existingMatch];
+      }
+      return prev;
+    });
+
+    setCustomOccasionInput('');
+    setIsDirty(true);
+  };
+
   // Toggle Special Badge Tag
   const toggleBadge = (badge: string) => {
     if (selectedBadges.includes(badge)) {
@@ -467,17 +547,31 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     setIsDirty(true);
   };
 
-  // Add Custom Badge Action
-  const handleAddCustomBadge = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Add Custom Badge Action (Deduplicated case-insensitively & persisted globally)
+  const handleAddCustomBadge = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const trimmed = customTagInput.trim();
     if (!trimmed) return;
-    if (!availableBadges.includes(trimmed)) {
-      setAvailableBadges([...availableBadges, trimmed]);
-    }
-    if (!selectedBadges.includes(trimmed)) {
-      setSelectedBadges([...selectedBadges, trimmed]);
-    }
+
+    setAvailableBadges((prev) => {
+      const match = prev.find((b) => b.toLowerCase() === trimmed.toLowerCase());
+      const updated = match ? prev : [...prev, trimmed];
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sareevanta_saved_badges', JSON.stringify(updated));
+        }
+      } catch (err) {}
+      return updated;
+    });
+
+    setSelectedBadges((prev) => {
+      const existingMatch = availableBadges.find((b) => b.toLowerCase() === trimmed.toLowerCase()) || trimmed;
+      if (!prev.includes(existingMatch)) {
+        return [...prev, existingMatch];
+      }
+      return prev;
+    });
+
     setCustomTagInput('');
     setIsDirty(true);
   };
@@ -491,22 +585,30 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     setIsDirty(true);
   };
 
-  // Handle Multi-File Local Upload (Instant Data URL Preview)
-  const handleLocalImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle Multi-File Local Upload (Direct Supabase Storage Upload)
+  const handleLocalImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Url = event.target?.result as string;
-        if (base64Url) {
-          setImages((prev) => [...prev, base64Url]);
-          setIsDirty(true);
+    for (const file of Array.from(files)) {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url) {
+            setImages((prev) => [...prev, data.url]);
+            setIsDirty(true);
+          }
         }
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch (err) {
+        console.error('Image upload failed:', err);
+      }
+    }
   };
 
   // Remove Image
@@ -686,6 +788,8 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
     try {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('sareevanta_admin_catalog');
+        localStorage.setItem('sareevanta_last_product_update', Date.now().toString());
+        window.dispatchEvent(new Event('sareevanta:products_updated'));
       }
     } catch (e) {}
 
@@ -1830,6 +1934,29 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
                 );
               })}
             </div>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
+              <input
+                type="text"
+                value={customOccasionInput}
+                onChange={(e) => setCustomOccasionInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomOccasion();
+                  }
+                }}
+                placeholder="Add custom occasion (e.g. Sangeet, Pooja)..."
+                className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-[#7A1C30]"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddCustomOccasion()}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold cursor-pointer"
+              >
+                + Occasion
+              </button>
+            </div>
           </div>
 
           {/* Special Marketing Badges & Custom Tags */}
@@ -1859,21 +1986,28 @@ export default function ProductEditorForm({ mode, productId }: ProductEditorForm
               })}
             </div>
 
-            <form onSubmit={handleAddCustomBadge} className="flex gap-2 pt-2 border-t border-slate-100">
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
               <input
                 type="text"
                 value={customTagInput}
                 onChange={(e) => setCustomTagInput(e.target.value)}
-                placeholder="Add custom tag..."
-                className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomBadge();
+                  }
+                }}
+                placeholder="Add custom marketing badge..."
+                className="flex-1 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-hidden focus:ring-1 focus:ring-amber-500"
               />
               <button
-                type="submit"
-                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold"
+                type="button"
+                onClick={() => handleAddCustomBadge()}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold cursor-pointer"
               >
                 + Tag
               </button>
-            </form>
+            </div>
           </div>
 
           {/* Blouse & Dimensions */}

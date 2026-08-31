@@ -55,8 +55,13 @@ export interface Product {
   colorHex: string;
   images: string[];
   zariGrade: string;
-  blousePiece?: string;
   dimensions: string;
+  sareeLength?: string;
+  sareeWidth?: string;
+  blouseLength?: string;
+  blouseWidth?: string;
+  blouseDimensions?: string;
+  hasBlousePiece?: boolean;
   inStock: boolean;
   stockCount?: number;
   isNew?: boolean;

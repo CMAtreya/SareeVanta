@@ -56,6 +56,7 @@ interface CatalogSaree {
   status: 'ACTIVE' | 'LOW_STOCK' | 'SINGLE_PIECE' | 'DRAFT' | 'ARCHIVED';
   images: string[];
   silkMarkNumber: string;
+  colorVariants?: Array<{ name: string; hex: string; sku: string; stock: number }>;
 }
 
 // Global in-memory cache for instant 0ms back-navigation and persistence
@@ -121,6 +122,18 @@ export default function AdminCatalogPage() {
             }, 0);
             const rawSku = firstVariant.sku || p.sku || `NSH-SKU-00${idx + 1}`;
             const masterSku = rawSku.replace(/-[A-Z0-9]{3,}$/, '').trim() || rawSku;
+            const colorVariants = allVars.map((v: any, vIdx: number) => {
+              const inv = Array.isArray(v.inventory) ? v.inventory[0] : v.inventory;
+              const vStock = inv ? Math.max(0, (inv.quantity || 0) - (inv.reserved_quantity || 0)) : 0;
+              const col = Array.isArray(v.colors) ? v.colors[0] : v.colors;
+              return {
+                name: col?.name || `Variant ${vIdx + 1}`,
+                hex: col?.hex_code || '#8B1E28',
+                sku: v.sku || '',
+                stock: vStock,
+              };
+            });
+
             const weave = p.weavings?.name || 'Mysore Silk Crepe';
             const fabric = p.fabrics?.name || '100% Pure Mulberry Silk';
             const zari = p.zari_specifications?.name || 'Pure 24K Tested Zari';
@@ -148,6 +161,7 @@ export default function AdminCatalogPage() {
               status: p.is_published ? (totalStock <= 3 && totalStock > 0 ? 'LOW_STOCK' : totalStock === 0 ? 'DRAFT' : 'ACTIVE') : 'DRAFT',
               images: displayImages,
               silkMarkNumber: `CSB-2026-MYS-${1000 + idx}`,
+              colorVariants,
             };
           });
           adminCatalogCache = formatted;
@@ -796,6 +810,24 @@ export default function AdminCatalogPage() {
                         <div className="text-[10px] font-mono text-slate-500 flex items-center gap-1.5 mt-0.5">
                           <span className="font-bold text-slate-700">{saree.sku}</span>
                         </div>
+                        {saree.colorVariants && saree.colorVariants.length > 0 && (
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {saree.colorVariants.map((cv, cvIdx) => (
+                              <span
+                                key={cvIdx}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[10px] font-mono text-slate-700"
+                                title={`Variant SKU: ${cv.sku} | Stock: ${cv.stock} units`}
+                              >
+                                <span
+                                  className="w-2 h-2 rounded-full border border-black/20"
+                                  style={{ backgroundColor: cv.hex }}
+                                />
+                                <span>{cv.name}</span>
+                                <strong className="text-slate-900 font-bold">({cv.stock})</strong>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </td>
 
                       {/* Weave & Fabric */}
@@ -858,7 +890,8 @@ export default function AdminCatalogPage() {
                                 : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                             }`}
                           >
-                            {saree.stock} {saree.stock === 1 ? 'Unit' : 'Units'}
+                            <span className="block leading-tight">{saree.stock} {saree.stock === 1 ? 'Unit' : 'Units'}</span>
+                            <span className="block text-[10px] font-normal opacity-75">(Total)</span>
                           </span>
                           <button
                             type="button"

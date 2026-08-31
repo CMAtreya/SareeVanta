@@ -14,6 +14,7 @@ export async function GET() {
       { data: patternsData },
       { data: occasionsData },
       { data: variantsData },
+      { data: productsData },
     ] = await Promise.all([
       supabase.from('weavings').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('fabrics').select('name').eq('is_active', true).order('created_at', { ascending: true }),
@@ -21,6 +22,7 @@ export async function GET() {
       supabase.from('patterns').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('occasions').select('name').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('product_variants').select('sku, barcode'),
+      supabase.from('products').select('care_instructions'),
     ]);
 
     // Extract exact list from database rows without frontend hardcoded merging
@@ -31,6 +33,43 @@ export async function GET() {
       });
       return Array.from(set);
     };
+
+    // Aggregate all distinct occasions and custom marketing badges across entire database
+    const occasionSet = new Set<string>([
+      'Bridal & Muhurtham',
+      'Festive & Puja',
+      'Reception & Cocktail',
+      'Daily Classic',
+      'Temple Visits',
+    ]);
+    (occasionsData || []).forEach((row) => {
+      if (row.name && row.name.trim()) occasionSet.add(row.name.trim());
+    });
+
+    const badgeSet = new Set<string>([
+      'New Arrival',
+      'Best Seller',
+      'Bridal Edit',
+      'Limited Edition',
+    ]);
+
+    (productsData || []).forEach((p) => {
+      if (p.care_instructions) {
+        try {
+          const parsed = typeof p.care_instructions === 'string' ? JSON.parse(p.care_instructions) : p.care_instructions;
+          if (Array.isArray(parsed.occasions)) {
+            parsed.occasions.forEach((occ: string) => {
+              if (occ && typeof occ === 'string' && occ.trim()) occasionSet.add(occ.trim());
+            });
+          }
+          if (Array.isArray(parsed.badges)) {
+            parsed.badges.forEach((bdg: string) => {
+              if (bdg && typeof bdg === 'string' && bdg.trim()) badgeSet.add(bdg.trim());
+            });
+          }
+        } catch (e) {}
+      }
+    });
 
     // Calculate highest sequential SKU index directly from database records
     let maxSeq = 0;
@@ -52,7 +91,8 @@ export async function GET() {
       fabrics: extractNames(fabricsData),
       zari: extractNames(zariData),
       patterns: extractNames(patternsData),
-      occasions: extractNames(occasionsData),
+      occasions: Array.from(occasionSet),
+      badges: Array.from(badgeSet),
       nextSku,
       nextBarcode,
       nextSeq: nextNum,
